@@ -3,7 +3,7 @@
 // ╚════════════════════════════════════════════════════════════════╝
 
 const CFG = {
-  SCRIPT_URL: '',   // ★★★ Apps Script deploy URL shu yerga (QOLLANMA.md da ko'rsatilgan)
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwQmrdnDNJNaxiTX4iZ2qpReeuWC6dYvlr_uRzeHY9LCZ9AD26dl3uxoNW9DD_e9fcb9w/exec',   // ★★★ Apps Script deploy URL shu yerga (QOLLANMA.md da ko'rsatilgan)
 };
 
 const PREPS = [
