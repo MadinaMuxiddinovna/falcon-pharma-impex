@@ -7,8 +7,7 @@
 
 // ★ Apps Script Web App URL — deploy qilgandan keyin shu yerga qo'ying
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwGfCFaoTnr0Vg0Ci4zsNMqaearg2bmOH_nrM4kr6XxNMRGVqtOImMOdXZk9HVt9-y3/exec
-',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwQmrdnDNJNaxiTX4iZ2qpReeuWC6dYvlr_uRzeHY9LCZ9AD26dl3uxoNW9DD_e9fcb9w/exec',
 };
 
 // 25 ta preparat (Apps Script dagi PREPS bilan AYNAN bir xil tartibda bo'lishi shart)
@@ -90,6 +89,39 @@ function demoLogin(id,pass){
   return{status:'ok',name:e.name,role:e.role,region:e.region};
 }
 
+// Hodimlar_Login dagi parollarni cache dan tekshirish
+// (server ishlamasa ham kirish mumkin bo'lsin)
+const _LOGIN_CACHE = {
+  'ADMIN':  {name:'Administrator',role:'admin',pass:'Falcon@2025',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+  'MGR01':  {name:'Murhamedova Zuhra',role:'manager',pass:'Zuhra#8842',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+  'MGR02':  {name:'Radjabova Fotima',role:'manager',pass:'Fotima#3317',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+  'MGR03':  {name:'Abdullayeva Ra'no',role:'manager',pass:'Rano#5591',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+  'MGR04':  {name:'Zuparova Umida',role:'manager',pass:'Umida#7763',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+  'MP01':   {name:'Mominova Diyora',role:'mp',pass:'Diyora#2284',region:'Toshkent shahri',mgrId:'MGR01',district:'',group:''},
+  'MP02':   {name:'Xasanova Nodirabegim',role:'mp',pass:'Nodira#6615',region:'Toshkent viloyati',mgrId:'MGR01',district:'',group:''},
+  'MP03':   {name:'Xabibullaxanova Ruxsoraxon',role:'mp',pass:'Ruxsora#4423',region:'Toshkent shahri',mgrId:'MGR02',district:'',group:''},
+  'MP04':   {name:'Qunduzova Xadicha',role:'mp',pass:'Xadicha#8871',region:'Toshkent shahri',mgrId:'MGR02',district:'',group:''},
+  'MP05':   {name:'Muminova Umida',role:'mp',pass:'Umida#3356',region:'Toshkent shahri',mgrId:'MGR02',district:'',group:''},
+  'MP06':   {name:'Abduraimova Durdona',role:'mp',pass:'Durdona#7712',region:'Toshkent shahri',mgrId:'MGR02',district:'',group:''},
+  'MP07':   {name:'Tojiddinova Durdona',role:'mp',pass:'Tojiddin#5534',region:'Toshkent shahri',mgrId:'MGR02',district:'',group:''},
+  'MP08':   {name:'Shukurova Xolida',role:'mp',pass:'Xolida#9923',region:'Toshkent shahri',mgrId:'MGR02',district:'',group:''},
+  'MP09':   {name:'Mirzayeva Zilola',role:'mp',pass:'Zilola#4478',region:'Toshkent shahri',mgrId:'MGR03',district:'',group:''},
+  'MP10':   {name:'Ismolova Madina',role:'mp',pass:'Madina#6641',region:'Toshkent shahri',mgrId:'MGR03',district:'',group:''},
+  'MP11':   {name:'Najmiddinova Ziyoda',role:'mp',pass:'Ziyoda#2267',region:'Toshkent shahri',mgrId:'MGR03',district:'',group:''},
+  'MP12':   {name:'Ilxomova Nodirabegim',role:'mp',pass:'Nodira2#8853',region:'Toshkent shahri',mgrId:'MGR03',district:'',group:''},
+  'MP13':   {name:'Xodjayeva Nigora',role:'mp',pass:'Nigora#3312',region:'Toshkent shahri',mgrId:'MGR03',district:'',group:''},
+  'MP14':   {name:'Adilova Madina',role:'mp',pass:'Adilova#7789',region:'Toshkent shahri',mgrId:'MGR03',district:'',group:''},
+  'MP15':   {name:'Abduganiyeva Saidaxon',role:'mp',pass:'Saidaxon#5545',region:'Toshkent shahri',mgrId:'MGR04',district:'',group:''},
+  'MP16':   {name:'Shosalimova Zuhra',role:'mp',pass:'Zuhra2#1123',region:'Toshkent shahri',mgrId:'MGR04',district:'',group:''},
+  'MP17':   {name:'Sultonova Gulchexra',role:'mp',pass:'Gulchexra#6678',region:'Toshkent shahri',mgrId:'MGR04',district:'',group:''},
+  'TA01':   {name:'Deryabin Ivan',role:'ta',pass:'Ivan#9934',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+  'TA02':   {name:'Anvarxodjayev Akmal',role:'ta',pass:'Akmal#4456',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+};
+function sheetLogin(id,pass){
+  const e=_LOGIN_CACHE[id];
+  if(!e||e.pass!==pass) return{status:'error'};
+  return{status:'ok',name:e.name,role:e.role,region:e.region,mgrId:e.mgrId,district:e.district,group:e.group};
+}
 function showLoginErr(msg){const el=document.getElementById('l-err');el.textContent=msg;el.classList.remove('hide');}
 
 document.addEventListener('DOMContentLoaded',()=>{
