@@ -56,7 +56,7 @@ function vfOnFoto(e) {
 async function vfFinishVisit() {
   if(!ST.visit.fotoData){alert('Rasm olish majburiy!');return;}
 
-  // End GPS
+  // End GPS (oflayn ham ishlaydi — telefon GPS dan)
   await new Promise(resolve=>{
     navigator.geolocation.getCurrentPosition(
       pos=>{ST.visit.gpsEnd={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};resolve();},
@@ -65,6 +65,8 @@ async function vfFinishVisit() {
 
   await vfSaveBranchToBase();
   showOv('Vizit saqlanmoqda...');
+  // Oflayn ekanligini tekshiramiz
+  const isOnline = navigator.onLine;
 
   const duration=Math.floor((Date.now()-ST.visit.timerStart)/1000);
   const ref='FF-'+Date.now();
@@ -115,10 +117,17 @@ async function vfFinishVisit() {
     });
   }
 
-  ST.todayVisits.push({ref,type:ST.visit.type,target:isDoc?ST.visit.target.name:ST.visit.target.legalName,result:ST.visit.vals.result||'OK'});
+  // Lokal navbatga saqlash (oflayn bo'lsa yoki yuborishda xato bo'lsa)
+  const visitData = isDoc ? visitPayloadMP : visitPayloadTA;
+  // Navbatdan muvaffaqiyatli yuborilganini belgilash
+  ST.todayVisits.push({ref,type:ST.visit.type,
+    target:isDoc?ST.visit.target.name:ST.visit.target.legalName,
+    result:ST.visit.vals.result||'OK',
+    time:nowTimeStr(),
+    offline:!isOnline});
   hideOv();
   vfShowStep(5);
-  renderVfStep5(resp,isDoc,duration);
+  renderVfStep5(resp,isDoc,duration,!isOnline);
 }
 
 function renderVfStep5(resp,isDoc,duration) {
