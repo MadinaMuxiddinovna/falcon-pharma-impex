@@ -321,6 +321,9 @@ function vfGoToFoto() {
     if(!ST.visit.vals.goal){alert('Vizit maqsadini tanlang!');return;}
     if(ST.visit.vals.goal==='BOSHQA'&&!v('vf-goal-other').trim()){alert('Maqsadni yozing!');return;}
     if(!ST.visit.vals.result){alert('Natijani tanlang!');return;}
+    // Preparat soni majburiy
+    const hasProds=ST.visit.products.some(p=>p.name&&(Number(p.qty)||0)>0);
+    if(!hasProds){alert('Kamida 1 ta preparat va sonini kiriting!');return;}
     if(ST.visit.vals.result==='BOSHQA'&&!v('vf-result-other').trim()){alert('Natijani yozing!');return;}
     if(ST.visit.vals.sample===undefined){alert('Probnik bo\'yicha tanlov qiling!');return;}
     // O'tkazib yuborish: promoRequested undefined bo'lsa ham o'tadi
