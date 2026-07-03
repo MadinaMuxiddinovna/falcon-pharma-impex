@@ -7,7 +7,7 @@
 
 // ★ Apps Script Web App URL — deploy qilgandan keyin shu yerga qo'ying
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwGfCFaoTnr0Vg0Ci4zsNMqaearg2bmOH_nrM4kr6XxNMRGVqtOImMOdXZk9HVt9-y3/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwQmrdnDNJNaxiTX4iZ2qpReeuWC6dYvlr_uRzeHY9LCZ9AD26dl3uxoNW9DD_e9fcb9w/exec',
 };
 
 // 25 ta preparat (Apps Script dagi PREPS bilan AYNAN bir xil tartibda bo'lishi shart)
@@ -41,16 +41,53 @@ let ST = {
 };
 
 // ── OFLAYN NAVBAT ─────────────────────────────────────────────────
-function queueSave(d){const q=JSON.parse(localStorage.getItem('ff_q')||'[]');q.push({...d,_t:Date.now()});localStorage.setItem('ff_q',JSON.stringify(q));}
+// ── OFLAYN NAVBAT ─────────────────────────────────────────────
+// Vizit oflayn paytda qurilmada saqlanadi.
+// Internet kelganda barcha navbatdagi vizitlar yuboriladi.
+// MUHIM: vaqt, sana, GPS — oflayn paytda aniq saqlanadi,
+//         internet kelganda aynan o'sha ma'lumotlar yuboriladi.
+function queueSave(d){
+  const q=JSON.parse(localStorage.getItem('ff_q')||'[]');
+  // _savedAt — saqlanish vaqti (oflayn paytida)
+  q.push({...d, _savedAt:new Date().toISOString(), _retries:0});
+  localStorage.setItem('ff_q',JSON.stringify(q));
+  console.log('Oflayn saqlandi:', d.action, '| Navbat:', q.length);
+}
+
 async function flushQueue(){
   if(!navigator.onLine||!CFG.SCRIPT_URL) return;
-  const q=JSON.parse(localStorage.getItem('ff_q')||'[]');if(!q.length) return;
+  const q=JSON.parse(localStorage.getItem('ff_q')||'[]');
+  if(!q.length) return;
+  console.log('Internet keldi, navbat yuborilmoqda:', q.length, 'ta vizit');
   const failed=[];
-  for(const item of q){try{await apiPost(item);}catch(e){failed.push(item);}}
+  for(const item of q){
+    try{
+      // _savedAt va _retries meta-maydonlarini olib tashlab yuboramiz
+      const {_savedAt,_retries,...data}=item;
+      await apiPost(data);
+      console.log('Yuborildi:', data.action, data.ref||'');
+    }catch(e){
+      item._retries=(item._retries||0)+1;
+      if(item._retries<5) failed.push(item); // 5 martadan ko'p xato bo'lsa tashlaydi
+      console.error('Yuborishda xato:', e);
+    }
+  }
   localStorage.setItem('ff_q',JSON.stringify(failed));
+  if(failed.length===0){
+    console.log('Barcha vizitlar muvaffaqiyatli yuborildi!');
+  }
 }
-window.addEventListener('online',()=>{document.getElementById('offline-bar').style.display='none';flushQueue();});
-window.addEventListener('offline',()=>{document.getElementById('offline-bar').style.display='block';});
+
+window.addEventListener('online',()=>{
+  const bar=document.getElementById('offline-bar');
+  if(bar) bar.style.display='none';
+  // Internet keldi — navbatni yuboramiz
+  setTimeout(flushQueue, 1000); // 1 soniya kutib yuboramiz
+});
+window.addEventListener('offline',()=>{
+  const bar=document.getElementById('offline-bar');
+  if(bar) bar.style.display='block';
+});
 
 // ── API ───────────────────────────────────────────────────────────
 async function apiGet(action,params){
@@ -63,8 +100,25 @@ async function apiGet(action,params){
 }
 async function apiPost(d){
   if(!CFG.SCRIPT_URL){queueSave(d);return{status:'queued'};}
-  await fetch(CFG.SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
-  return{status:'sent'};
+  if(!navigator.onLine){
+    // Internet yo'q — navbatga saqlaymiz
+    queueSave(d);
+    return{status:'queued',offline:true};
+  }
+  try{
+    // Apps Script POST — no-cors sabab javob o'qilmaydi, lekin yoziladi
+    await fetch(CFG.SCRIPT_URL,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(d)
+    });
+    return{status:'sent'};
+  }catch(e){
+    // Xato bo'lsa navbatga saqlaymiz
+    queueSave(d);
+    return{status:'queued',error:e.message};
+  }
 }
 
 // ── LOGIN ─────────────────────────────────────────────────────────
