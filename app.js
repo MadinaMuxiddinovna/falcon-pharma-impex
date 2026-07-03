@@ -7,7 +7,8 @@
 
 // ★ Apps Script Web App URL — deploy qilgandan keyin shu yerga qo'ying
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwQmrdnDNJNaxiTX4iZ2qpReeuWC6dYvlr_uRzeHY9LCZ9AD26dl3uxoNW9DD_e9fcb9w/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwGfCFaoTnr0Vg0Ci4zsNMqaearg2bmOH_nrM4kr6XxNMRGVqtOImMOdXZk9HVt9-y3/exec
+',
 };
 
 // 25 ta preparat (Apps Script dagi PREPS bilan AYNAN bir xil tartibda bo'lishi shart)
