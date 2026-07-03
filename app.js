@@ -7,7 +7,7 @@
 
 // ★ Apps Script Web App URL — deploy qilgandan keyin shu yerga qo'ying
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwswSaAw36ngM5ddbeLx_q3XoG5qgk3_gEzCQKYP2AzZ5sew2hUK-kzP9PURU0NRKvXpQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwQmrdnDNJNaxiTX4iZ2qpReeuWC6dYvlr_uRzeHY9LCZ9AD26dl3uxoNW9DD_e9fcb9w/exec',
 };
 
 // 25 ta preparat (Apps Script dagi PREPS bilan AYNAN bir xil tartibda bo'lishi shart)
@@ -144,6 +144,7 @@ function showPage(p){
   if(p==='paydoctor') renderPayDoctorPage();
   if(p==='adminbalance') renderAdminBalance();
   if(p==='map') renderMapPage();
+  if(p==='feedbackbox') { const el=document.getElementById('fb-inbox'); if(el) el.innerHTML='<div class="alert alert-i">Barcha murojaatlar Google Sheets → Murojaatlar sahifasida saqlanadi. Vaqt, sana, hodim ismi va xabar mazmuni bilan ko\'rinadi.</div>'; }
 }
 
 // ── MA'LUMOTLARNI YUKLASH ─────────────────────────────────────────
