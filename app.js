@@ -151,7 +151,7 @@ const _LOGIN_CACHE = {
   'ADMIN':  {name:'Administrator',role:'admin',pass:'Falcon@2025',region:'Toshkent shahri',mgrId:'',district:'',group:''},
   'MGR01':  {name:'Murhamedova Zuhra',role:'manager',pass:'Zuhra#8842',region:'Toshkent shahri',mgrId:'',district:'',group:''},
   'MGR02':  {name:'Radjabova Fotima',role:'manager',pass:'Fotima#3317',region:'Toshkent shahri',mgrId:'',district:'',group:''},
-  'MGR03':  {name:'Abdullayeva Ra'no',role:'manager',pass:'Rano#5591',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+  'MGR03':  {name:'Abdullayeva Ra\'no',role:'manager',pass:'Rano#5591',region:'Toshkent shahri',mgrId:'',district:'',group:''},
   'MGR04':  {name:'Zuparova Umida',role:'manager',pass:'Umida#7763',region:'Toshkent shahri',mgrId:'',district:'',group:''},
   'MP01':   {name:'Mominova Diyora',role:'mp',pass:'Diyora#2284',region:'Toshkent shahri',mgrId:'MGR01',district:'',group:''},
   'MP02':   {name:'Xasanova Nodirabegim',role:'mp',pass:'Nodira#6615',region:'Toshkent viloyati',mgrId:'MGR01',district:'',group:''},
