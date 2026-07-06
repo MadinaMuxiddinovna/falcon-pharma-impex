@@ -328,11 +328,12 @@ async function renderPromoQueue(){
   const isAdmin=ST.user.role==='admin';
   el.innerHTML=ST.promoQueue.map(p=>{
     const status=p['Holati']||'';
-    const vrach=p['Vrach FISh']||p['Vrach F.I.Sh']||'Noma\'lum vrach';
-    const mp=p['Hodim Ismi']||'';
-    const joyi=p['Ish joyi']||'';
-    const sana=p['Sana']||'';
-    const summa=p["Proma summasi (so'm)"]||0;
+    // Server dan kelgan barcha mumkin bo'lgan ustun nomlarini tekshiramiz
+    const vrach=p['Vrach FISh']||p['Vrach F.I.Sh']||p.vrach||p['vrach']||'—';
+    const mp=p['Hodim Ismi']||p.empName||'';
+    const joyi=p['Ish joyi']||p.object||'';
+    const sana=p['Sana']||p.date||'';
+    const summa=Number(p["Proma summasi (so'm)"]||p.promaSumma||0);
     const closed=status==='Tasdiqlandi'||status==='Rad etildi';
     return `<div class="vcard">
       <div class="vcard-h">
@@ -340,8 +341,8 @@ async function renderPromoQueue(){
         <span class="bdg ${status==='Tasdiqlandi'?'bdg-g':status==='Rad etildi'?'bdg-r':'bdg-y'}">${status}</span>
       </div>
       <div class="vcard-meta">
-        Med Vakil: ${mp} · ${joyi} · ${sana}
-        ${summa?'<br>Summa: <b>'+fmtMoney(summa)+'</b>':''}
+        ${mp?'Med Vakil: '+mp+' · ':''}${joyi?joyi+' · ':''}${sana?sana:''}
+        ${summa>0?'<br><b style="color:var(--ok)">Proma summasi: '+fmtMoney(summa)+'</b>':''}
       </div>
       ${!closed&&!isAdmin?`<div class="btn-row" style="margin-top:8px">
         <button class="btn btn-r" style="padding:5px 12px;font-size:12px" onclick="promoDecide(${p._row},false)">Rad etish</button>
@@ -596,7 +597,10 @@ async function renderFeedbackInbox(){
         <span class="vcard-name">${f.empName||f['Hodim Ismi']||'Noma\'lum'}</span>
         <span class="bdg ${f.type==='Shikoyat'?'bdg-r':'bdg-b'}">${f.type||f['Turi']||'Taklif'}</span>
       </div>
-      <div class="vcard-meta">${f.date||f['Vaqt va sana']||''}</div>
-      <div style="font-size:13px;margin-top:6px;color:var(--text)">${f.message||f['Xabar matni']||''}</div>
+      <div class="vcard-meta">
+        ${(f['Vaqt va sana']||f.date||f['Vaqt']||'')}</div>
+      <div style="font-size:13px;margin-top:6px;color:var(--text);padding:8px;background:#f8fafd;border-radius:6px;border-left:3px solid var(--primary3)">
+        ${f.message||f['Xabar matni']||f['Xabar']||'—'}
+      </div>
     </div>`).join('');
 }
