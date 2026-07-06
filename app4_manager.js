@@ -44,7 +44,17 @@ async function renderMgrDashboard(){
       const el=document.getElementById('mgr-bal-qolgan');
       if(el) el.textContent=fmtMoney(bal.qolgan||0);
       const rInfo=document.getElementById('mgr-region-info');
-      if(rInfo) rInfo.textContent=(ST.user.region||'')+(ST.user.district?' · '+ST.user.district:'');
+      if(rInfo){
+        apiGet('getMgrInfo',{mgrId:ST.user.id},false).then(info=>{
+          if(info&&!info.error){
+            const reg=info.region||ST.user.region||'';
+            const dists=(info.districts&&info.districts.length)?info.districts.join(', '):(info.district||'');
+            rInfo.textContent=reg+(dists?' · '+dists:'');
+          } else {
+            rInfo.textContent=(ST.user.region||'')+(ST.user.district?' · '+ST.user.district:'');
+          }
+        }).catch(()=>{rInfo.textContent=ST.user.region||'';});
+      }
       const box=document.getElementById('mgr-bal-box');
       if(box) box.style.background=(bal.qolgan||0)<0
         ?'linear-gradient(135deg,#8b0000,#c0260a)'
@@ -342,9 +352,13 @@ async function renderPromoQueue(){
         <span class="bdg ${status==='Tasdiqlandi'?'bdg-g':status==='Rad etildi'?'bdg-r':'bdg-y'}">${status}</span>
       </div>
       <div class="vcard-meta">
-        ${mp?'Med Vakil: '+mp+' · ':''}${joyi?joyi+' · ':''}${sana?sana:''}
-        ${summa>0?'<br><b style="color:var(--ok)">Proma summasi: '+fmtMoney(summa)+'</b>':''}
+        ${mp?'Med Vakil: <b>'+mp+'</b><br>':''}
+        ${joyi?'Ish joyi: '+joyi+'<br>':''}
+        ${sana?'Sana: '+sana:''}
       </div>
+      ${summa>0?`<div style="font-size:14px;font-weight:700;color:var(--ok);margin-top:4px">
+        Proma summasi: ${fmtMoney(summa)}
+      </div>`:''}
       ${!closed&&!isAdmin?`<div class="btn-row" style="margin-top:8px">
         <button class="btn btn-r" style="padding:5px 12px;font-size:12px" onclick="promoDecide(${p._row},false)">Rad etish</button>
         <button class="btn btn-ok" style="padding:5px 12px;font-size:12px" onclick="promoDecide(${p._row},true)">Tasdiqlash</button>
