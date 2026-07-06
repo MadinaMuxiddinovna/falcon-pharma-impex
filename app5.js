@@ -124,6 +124,8 @@ async function vfFinishVisit() {
   localStorage.setItem('ff_vis_cache_'+ST.user.id, JSON.stringify(ST.todayVisits));
 
   if(btn){btn.disabled=false;btn.textContent='Vizitni saqlash ✅';}
+  // Bosh sahifani darhol yangilaymiz (KPI srazu ko'rinadi)
+  renderHome();
   vfShowStep(5);
   renderVfStep5(resp,isDoc,duration,!navigator.onLine);
 }
