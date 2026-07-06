@@ -45,15 +45,22 @@ async function renderMgrDashboard(){
       if(el) el.textContent=fmtMoney(bal.qolgan||0);
       const rInfo=document.getElementById('mgr-region-info');
       if(rInfo){
-        apiGet('getMgrInfo',{mgrId:ST.user.id},false).then(info=>{
-          if(info&&!info.error){
-            const reg=info.region||ST.user.region||'';
-            const dists=(info.districts&&info.districts.length)?info.districts.join(', '):(info.district||'');
-            rInfo.textContent=reg+(dists?' · '+dists:'');
-          } else {
-            rInfo.textContent=(ST.user.region||'')+(ST.user.district?' · '+ST.user.district:'');
-          }
-        }).catch(()=>{rInfo.textContent=ST.user.region||'';});
+        // Login paytida saqlangan districts dan olamiz (tez)
+        const reg = ST.user.region||'';
+        const dists = ST.user.districts && ST.user.districts.length
+          ? ST.user.districts.join(', ')
+          : (ST.user.district||'');
+        rInfo.textContent = reg + (dists&&dists!==reg?' · '+dists:'');
+        // Agar districts yo'q bo'lsa server dan olamiz
+        if(!ST.user.districts||!ST.user.districts.length){
+          apiGet('getMgrInfo',{mgrId:ST.user.id},false).then(info=>{
+            if(info&&!info.error){
+              const d=(info.districts&&info.districts.length)?info.districts.join(', '):(info.district||'');
+              rInfo.textContent=(info.region||reg)+(d&&d!==reg?' · '+d:'');
+              if(info.districts)ST.user.districts=info.districts;
+            }
+          }).catch(()=>{});
+        }
       }
       const box=document.getElementById('mgr-bal-box');
       if(box) box.style.background=(bal.qolgan||0)<0
@@ -230,8 +237,7 @@ async function pdConfirmPromaPay(){
   if(!ST.mgrPay.promoData){alert('Proma so\'rovini tanlang!');return;}
   const summa=Number(document.getElementById('pd-promo-summa')?.value)||0;
   if(!summa){alert('Summani kiriting!');return;}
-  const comment=(document.getElementById('pd-promo-comment')?.value||'').trim();
-  if(!comment){alert('Izoh kiriting!');return;}
+  const comment=(document.getElementById('pd-promo-comment')?.value||'Proma tolovi').trim();
   const p=ST.mgrPay.promoData;
   const bal=ST.mgrBalance||{qolgan:0};
   showModal('Tasdiqlash',
@@ -340,11 +346,18 @@ async function renderPromoQueue(){
     const status=p['Holati']||'';
     // Server dan kelgan barcha mumkin bo'lgan ustun nomlarini tekshiramiz
     // AppsScript HDR_PROMO: ['Proma ID','Hodim ID','Hodim Ismi','Menejer ID','Vrach FISh','Ish joyi','Sana','Proma summasi (so\'m)','Holati','Yaratilgan vaqt']
-    const vrach=p['Vrach FISh']||p['Vrach F.I.Sh']||p['Vrach FIO']||p.doctorName||'—';
-    const mp=p['Hodim Ismi']||p.empName||'';
-    const joyi=p['Ish joyi']||p['Ish joyi (obyekt)']||p.doctorObject||'';
-    const sana=String(p['Sana']||p.date||'').replace('T',' ').slice(0,16);
-    const summa=Number(p["Proma summasi (so'm)"]||p['Proma summasi']||p.promaSumma||0);
+    // HDR_PROMO: Proma ID|Hodim ID|Hodim Ismi|Menejer ID|Vrach F.I.Sh|Ish joyi|Sana|Proma summasi (so'm)|Holati|Yaratilgan vaqt
+    const vrach = p['Vrach F.I.Sh'] || p['Vrach FISh'] || p.doctorName || '—';
+    const mp    = p['Hodim Ismi']   || p.empName        || '';
+    const joyi  = p['Ish joyi']     || p.doctorObject   || '';
+    const sana  = String(p['Sana']  || p.date           || '').replace('T',' ').slice(0,16);
+    // "Proma summasi (so'm)" — apostrofli - ikki xil usulda tekshiramiz
+    let summa = 0;
+    for(const key of Object.keys(p)){
+      if(key.toLowerCase().includes('summa')||key.toLowerCase().includes('proma')){
+        const v=Number(p[key]);if(v>0){summa=v;break;}
+      }
+    }
     const closed=status==='Tasdiqlandi'||status==='Rad etildi';
     return `<div class="vcard">
       <div class="vcard-h">
