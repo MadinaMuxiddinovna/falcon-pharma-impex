@@ -171,7 +171,7 @@ function renderProductRows() {
       <input type="number" min="1" max="999" placeholder="Soni*" value="${p.qty||''}"
         style="width:72px;border-color:${!p.qty?'var(--accent)':'var(--border)'}"
         oninput="vfUpdateProduct(${i},'qty',this.value);this.style.borderColor=this.value>0?'var(--border)':'var(--accent)'" />
-      <button class="btn btn-r" style="padding:8px 11px" onclick="vfRemoveProduct(${i})">✕</button>
+      <button class="btn btn-o" style="padding:8px 11px;border-color:var(--border)" onclick="vfRemoveProduct(${i})">✕</button>
     </div>`).join('');
 }
 function vfUpdateProduct(i,key,val){
@@ -222,7 +222,7 @@ function vfGoToFoto() {
     return;
   }
   clearInterval(ST.visit.timerRef);
-  vfShowStep(4);
+  vfShowStep(4); // 4 = yakunlash (foto yo'q)
 }
 
 // ── DORIXONA: BRON + QOLDIQ ─────────────────────────
