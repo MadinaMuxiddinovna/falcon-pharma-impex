@@ -22,16 +22,25 @@ function buildAllPages(){
 // ── MP BOSH SAHIFA — Kun boshlash tugmasi shu yerda ──
 function pageHomeMP(){return `
   <div class="page active" id="page-home">
-    <!-- Kun boshlash — bosh sahifada -->
+    <!-- Kun boshlash / Yakunlangan xulosa -->
     <div class="card" id="home-worktime-card">
       <div class="card-b" style="padding:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-          <div>
-            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Ishlagan vaqt</div>
-            <div style="font-size:24px;font-weight:800;font-family:monospace;color:var(--primary)" id="home-wt-elapsed">--:--:--</div>
-            <div style="font-size:11px;color:var(--muted)" id="home-wt-range"></div>
+        <!-- Yakunlangan holat -->
+        <div id="home-wt-done" class="hide">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Kun yakunlandi</div>
+          <div style="font-size:15px;font-weight:700;color:var(--ok)" id="home-wt-summary"></div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px" id="home-wt-kpi-sum"></div>
+        </div>
+        <!-- Ishlayotgan holat -->
+        <div id="home-wt-running">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+            <div>
+              <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px">Ishlagan vaqt</div>
+              <div style="font-size:24px;font-weight:800;font-family:monospace;color:var(--primary)" id="home-wt-elapsed">--:--:--</div>
+              <div style="font-size:11px;color:var(--muted)" id="home-wt-range"></div>
+            </div>
+            <button class="btn btn-p" id="home-wt-btn" onclick="wtStart()">Ish kunini boshlash</button>
           </div>
-          <button class="btn btn-p" id="home-wt-btn" onclick="wtStart()">Ish kunini boshlash</button>
         </div>
       </div>
     </div>
@@ -133,21 +142,45 @@ function renderHome(){
   const dateEl=document.getElementById('home-date');if(!dateEl)return;
   dateEl.textContent=uzDate();
   document.getElementById('home-name').textContent=ST.user.name;
-  // Meta: Menejer FIO (stikersiz), region, rayon
+  // Meta: Menejer FIO + rayon + region
   const meta=[];
-  // Menejer FIO: mgrName bo'lsa u, yo'q bo'lsa ID (lekin ID ko'rsatmasdan)
-  if(ST.user.mgrId && ST.user.mgrName) {
-    meta.push('Menejer: '+ST.user.mgrName);
+  if(ST.user.mgrId){
+    const mgrDisplay=ST.user.mgrName||ST.user.mgrId;
+    meta.push('Menejer: '+mgrDisplay);
   }
+  if(ST.user.district)meta.push(ST.user.district);  // Rayon avval
   if(ST.user.region)meta.push(ST.user.region);
-  if(ST.user.district)meta.push(ST.user.district);
   const metaEl=document.getElementById('home-meta');if(metaEl)metaEl.textContent=meta.join(' · ');
-  // Ish vaqti tickerni tiklash
+  // Ish vaqti: yakunlangan yoki ishlayotgan
   const key='ff_wt_'+ST.user.id+'_'+todayStr();
-  if(localStorage.getItem(key))startWtTicker();
+  const endedToday=localStorage.getItem('ff_endday_'+ST.user.id)===todayStr();
+  const runningEl=document.getElementById('home-wt-running');
+  const doneEl=document.getElementById('home-wt-done');
+  if(endedToday){
+    // Yakunlangan: xulosa ko'rsatamiz
+    if(runningEl)runningEl.classList.add('hide');
+    if(doneEl){doneEl.classList.remove('hide');}
+    clearInterval(_wtInterval);_wtInterval=null;
+    // Ishlagan vaqt xulosasi
+    const startStr=localStorage.getItem(key);
+    if(startStr){
+      const durSec=Math.floor((new Date(localStorage.getItem('ff_endday_time_'+ST.user.id)||Date.now())-new Date(startStr))/1000);
+      const h=Math.floor(durSec/3600),m=Math.floor((durSec%3600)/60);
+      const sumEl=document.getElementById('home-wt-summary');
+      if(sumEl)sumEl.textContent='Ishlagan vaqt: '+h+' soat '+m+' daqiqa';
+    }
+    const kpiEl=document.getElementById('home-wt-kpi-sum');
+    const done2=ST.todayVisits.filter(v=>!v.date||v.date===todayStr()).length;
+    if(kpiEl)kpiEl.textContent='Bugungi vizitlar: '+done2+' ta';
+  } else {
+    // Ishlayotgan yoki boshlanmagan
+    if(runningEl)runningEl.classList.remove('hide');
+    if(doneEl)doneEl.classList.add('hide');
+    if(localStorage.getItem(key))startWtTicker();
+  }
   // Vizit soni
   const done=ST.todayVisits.filter(v=>v.date===todayStr()||!v.date).length;
-  const doneEl=document.getElementById('home-done');if(doneEl)doneEl.textContent=done;
+  const doneElHome=document.getElementById('home-done');if(doneElHome)doneElHome.textContent=done;
   if(ST.user.role==='mp'){
     const pl=ST.plans.filter(p=>(p['Vizit sanasi']||p.date||'')===todayStr()).length;
     const planEl=document.getElementById('home-plan');if(planEl)planEl.textContent=pl;
