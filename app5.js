@@ -134,9 +134,7 @@ function renderVfStep5(resp,isDoc,duration,isOffline){
       <div class="success-icon">${isOffline?'📴':'✅'}</div>
       <div class="success-title">Vizit muvaffaqiyatli saqlandi!</div>
       <div class="success-sub">
-        ${isOffline
-          ?"<b style='color:var(--warn)'>📴 Internet yo'q — vizit qurilmada saqlandi. Internet kelganda avtomatik yuboriladi.</b>"
-          :"Ma'lumotlar Google Sheets ga yuborildi"}
+        Ma'lumotlaringiz qabul qilindi!
       </div>
       <div class="alert alert-ok" style="text-align:left;margin-top:12px">
         Davomiylik: <b>${Math.floor(duration/60)} daqiqa ${duration%60} soniya</b><br>
