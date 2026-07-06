@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxPBH8ILNlnOHoAYNEEUMp_IY8QJpHwcxrNdaYw-9y25KSckeTq9DwCBeWyfdPeaMfhPg/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw7KVZksiKklcR6UoLPQrMeEr5vjJyKkRP0ETLDwypO15oLv_qqROGyRhiPNCzWe-IQ4g/exec',
 };
 
 const PREPS = [
