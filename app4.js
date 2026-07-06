@@ -67,12 +67,21 @@ function renderDoctorForm() {
   <div class="card">
     <div class="card-h">Probnik <span style="font-size:11px;opacity:.7">(1 tanlang)</span></div>
     <div class="card-b">
-      <!-- Probnik: radio - faqat biri tanlanadi -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="rg-sample">
-        <div class="ropt" id="prob-yes" onclick="vfPickProbnik(this,'Ha')"
-          style="justify-content:center;font-weight:600">So'raldi</div>
-        <div class="ropt" id="prob-no" onclick="vfPickProbnik(this,'Yo\'q')"
-          style="justify-content:center;font-weight:600">So'ralmadi</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+        <button type="button" id="prob-yes"
+          onclick="vfPickProbnik('Ha')"
+          style="padding:10px;border-radius:9px;border:1.5px solid var(--border);
+            background:#f8fafd;font-size:13px;font-weight:600;cursor:pointer;
+            transition:.15s;color:var(--text)">
+          So'raldi
+        </button>
+        <button type="button" id="prob-no"
+          onclick="vfPickProbnik('Yo\'q')"
+          style="padding:10px;border-radius:9px;border:1.5px solid var(--border);
+            background:#f8fafd;font-size:13px;font-weight:600;cursor:pointer;
+            transition:.15s;color:var(--text)">
+          So'ralmadi
+        </button>
       </div>
       <div id="vf-probnik-preps" class="hide" style="margin-top:10px;max-height:300px;overflow-y:auto">
         <div class="alert alert-i" style="font-size:12px">Qaysi preparatdan probnik so'raldi?</div>
@@ -148,14 +157,17 @@ function vfPickOne(el, containerId, key, val) {
 }
 
 // Probnik tanlash — So'raldi bosilganda 25 preparat chiqadi
-function vfPickProbnik(el, val) {
-  // Avval ikkalasini ham bekor qilamiz
+function vfPickProbnik(val) {
+  // Button style bilan belgilaymiz (class emas - bu muammoli edi)
   const yes = document.getElementById('prob-yes');
   const no  = document.getElementById('prob-no');
-  if(yes) yes.classList.remove('on');
-  if(no)  no.classList.remove('on');
-  // Faqat bosilgan tugmani belgilaymiz
-  el.classList.add('on');
+  const ACTIVE = 'background:#dce8f7;border-color:var(--primary3);color:var(--primary)';
+  const NORMAL = 'background:#f8fafd;border-color:var(--border);color:var(--text)';
+  if(yes) yes.style.cssText = yes.style.cssText.replace(/background:[^;]+;border-color:[^;]+;color:[^;]+/,
+    val==='Ha'?ACTIVE:NORMAL) || (yes.setAttribute('style',
+    'padding:10px;border-radius:9px;border:1.5px solid;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;'+(val==='Ha'?ACTIVE:NORMAL)));
+  if(no)  no.setAttribute('style',
+    'padding:10px;border-radius:9px;border:1.5px solid;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;'+(val==='Yo\'q'?ACTIVE:NORMAL));
   ST.visit.vals.sample = val;
   const block = document.getElementById('vf-probnik-preps');
   if (val === 'Ha') {
