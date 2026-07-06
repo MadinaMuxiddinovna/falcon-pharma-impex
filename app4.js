@@ -67,21 +67,19 @@ function renderDoctorForm() {
   <div class="card">
     <div class="card-h">Probnik <span style="font-size:11px;opacity:.7">(1 tanlang)</span></div>
     <div class="card-b">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
-        <button type="button" id="prob-yes"
-          onclick="vfPickProbnik('Ha')"
-          style="padding:10px;border-radius:9px;border:1.5px solid var(--border);
+      <div style="display:flex;gap:10px">
+        <div id="prob-yes" onclick="vfPickProbnik('Ha')"
+          style="flex:1;padding:11px;border-radius:9px;border:2px solid #dde3ef;
             background:#f8fafd;font-size:13px;font-weight:600;cursor:pointer;
-            transition:.15s;color:var(--text)">
+            text-align:center;user-select:none;transition:.15s">
           So'raldi
-        </button>
-        <button type="button" id="prob-no"
-          onclick="vfPickProbnik('Yo\'q')"
-          style="padding:10px;border-radius:9px;border:1.5px solid var(--border);
+        </div>
+        <div id="prob-no" onclick="vfPickProbnik('No')"
+          style="flex:1;padding:11px;border-radius:9px;border:2px solid #dde3ef;
             background:#f8fafd;font-size:13px;font-weight:600;cursor:pointer;
-            transition:.15s;color:var(--text)">
+            text-align:center;user-select:none;transition:.15s">
           So'ralmadi
-        </button>
+        </div>
       </div>
       <div id="vf-probnik-preps" class="hide" style="margin-top:10px;max-height:300px;overflow-y:auto">
         <div class="alert alert-i" style="font-size:12px">Qaysi preparatdan probnik so'raldi?</div>
@@ -158,25 +156,30 @@ function vfPickOne(el, containerId, key, val) {
 
 // Probnik tanlash — So'raldi bosilganda 25 preparat chiqadi
 function vfPickProbnik(val) {
-  // Button style bilan belgilaymiz (class emas - bu muammoli edi)
   const yes = document.getElementById('prob-yes');
   const no  = document.getElementById('prob-no');
-  const ACTIVE = 'background:#dce8f7;border-color:var(--primary3);color:var(--primary)';
-  const NORMAL = 'background:#f8fafd;border-color:var(--border);color:var(--text)';
-  if(yes) yes.style.cssText = yes.style.cssText.replace(/background:[^;]+;border-color:[^;]+;color:[^;]+/,
-    val==='Ha'?ACTIVE:NORMAL) || (yes.setAttribute('style',
-    'padding:10px;border-radius:9px;border:1.5px solid;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;'+(val==='Ha'?ACTIVE:NORMAL)));
-  if(no)  no.setAttribute('style',
-    'padding:10px;border-radius:9px;border:1.5px solid;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;'+(val==='Yo\'q'?ACTIVE:NORMAL));
-  ST.visit.vals.sample = val;
+  // Avval ikkalasini NORMAL holatga qaytaramiz
+  [yes, no].forEach(el => {
+    if(!el) return;
+    el.style.background = '#f8fafd';
+    el.style.border = '2px solid #dde3ef';
+    el.style.color = 'inherit';
+  });
+  // Tanlanganni ACTIVE qilamiz
+  const picked = val === 'Ha' ? yes : no;
+  if(picked) {
+    picked.style.background = '#dce8f7';
+    picked.style.border = '2px solid #2557a7';
+    picked.style.color = '#1a3a72';
+  }
+  ST.visit.vals.sample = (val === 'Ha') ? 'Ha' : "Yo'q";
   const block = document.getElementById('vf-probnik-preps');
   if (val === 'Ha') {
-    if (block) block.classList.remove('hide');
+    if(block) block.classList.remove('hide');
     renderProbnikList25();
   } else {
-    if (block) block.classList.add('hide');
+    if(block) block.classList.add('hide');
     ST.visit.vals.probnikPreps = [];
-    if(block) block.querySelectorAll('.ropt.on').forEach(r => r.classList.remove('on'));
   }
 }
 function renderProbnikList25() {
