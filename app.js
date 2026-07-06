@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbygLhX8PPlO8dl9NrwqgTkTAG70VU5D_0qjY4jjSFkTfPbDtG_Zd8i5DxGbLglx79Vpfg/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby8ckV-1kGUavJ8BwrHtcF9UbkolifltK2jr2KCmijX0A5EIQBVhyUDLQoeTXltl0yHRw/exec',
 };
 
 const PREPS = [
@@ -256,6 +256,18 @@ async function initData() {
         if(!already) ST.todayVisits.push({type:q.action==='addVisitMP'?'doctor':'pharmacy',target:q.doctorObject||q.pharmName||'',doctor:q.doctorName||'',result:q.result||'OK',time:q.visitStartTime||'',date:q.date,ref:q.ref,offline:true});
       });
       localStorage.setItem('ff_vis_cache_'+ST.user.id,JSON.stringify(ST.todayVisits));
+    }
+    // Menejer ismini topamiz (MGR02 → Radjabova Fotima) — async funksiyada
+    if (ST.user.mgrId && !ST.user.mgrName) {
+      apiGet('getMgrInfo',{mgrId:ST.user.mgrId},false).then(mgrInfo=>{
+        if (mgrInfo && mgrInfo.name) {
+          ST.user.mgrName = mgrInfo.name;
+          if (!ST.user.district) ST.user.district = mgrInfo.district||'';
+          localStorage.setItem('ff_user', JSON.stringify(ST.user));
+          // Bosh sahifani yangilaymiz
+          if(document.getElementById('page-home')?.classList.contains('active')) renderHome();
+        }
+      }).catch(()=>{});
     }
     if (document.getElementById('page-home')?.classList.contains('active')) renderHome();
     if (document.getElementById('page-endday')?.classList.contains('active')) renderEndDay();
