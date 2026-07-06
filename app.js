@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby8ckV-1kGUavJ8BwrHtcF9UbkolifltK2jr2KCmijX0A5EIQBVhyUDLQoeTXltl0yHRw/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwng9W3SPIjGMMlqlUzFt4QtI2keg4jYJ3qD3nIcG5LkwVf2YfdZHV3X61au0sLmkrRCw/exec',
 };
 
 const PREPS = [
@@ -85,7 +85,10 @@ async function doLogin() {
   localStorage.setItem('ff_user_cache_' + id, JSON.stringify(userInfo));
 
   ST.user = { id, ...userInfo };
-  delete ST.user.passHash; // sessiyada hash saqlanmaydi
+  // mgrName ni ham saqlaymiz (agar server qaytargan bo'lsa)
+  if(result.mgrName) ST.user.mgrName = result.mgrName;
+  if(result.district && !ST.user.district) ST.user.district = result.district;
+  delete ST.user.passHash;
   localStorage.setItem('ff_user', JSON.stringify(ST.user));
   _userInfoCache[id] = userInfo;
   enterApp();
