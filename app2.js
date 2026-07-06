@@ -142,14 +142,17 @@ function renderHome(){
   const dateEl=document.getElementById('home-date');if(!dateEl)return;
   dateEl.textContent=uzDate();
   document.getElementById('home-name').textContent=ST.user.name;
-  // Meta: Menejer FIO + rayon + region
+  // Meta: Menejer FIO + rayon (region faqat bir marta)
   const meta=[];
   if(ST.user.mgrId){
-    const mgrDisplay=ST.user.mgrName||ST.user.mgrId;
-    meta.push('Menejer: '+mgrDisplay);
+    const mgrDisplay=ST.user.mgrName||'';
+    if(mgrDisplay) meta.push('Menejer: '+mgrDisplay);
   }
-  if(ST.user.district)meta.push(ST.user.district);  // Rayon avval
-  if(ST.user.region)meta.push(ST.user.region);
+  // Rayon va region — ikki xil bo'lsa ikkalasini, bir xil bo'lsa faqat bittasini
+  const dist=(ST.user.district||'').trim();
+  const reg=(ST.user.region||'').trim();
+  if(dist && dist!==reg) meta.push(dist);
+  if(reg) meta.push(reg);
   const metaEl=document.getElementById('home-meta');if(metaEl)metaEl.textContent=meta.join(' · ');
   // Ish vaqti: yakunlangan yoki ishlayotgan
   const key='ff_wt_'+ST.user.id+'_'+todayStr();
