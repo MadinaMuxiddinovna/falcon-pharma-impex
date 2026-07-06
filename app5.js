@@ -139,9 +139,10 @@ function renderVfStep5(resp,isDoc,duration,isOffline){
         Ma'lumotlaringiz qabul qilindi!
       </div>
       <div class="alert alert-ok" style="text-align:left;margin-top:12px">
+        Boshlangan: <b>${nowTimeFromTs(ST.visit.timerStart||Date.now())}</b> →
+        Tugadi: <b>${new Date().toLocaleTimeString('uz-UZ')}</b><br>
         Davomiylik: <b>${Math.floor(duration/60)} daqiqa ${duration%60} soniya</b><br>
-        Vaqt: ${new Date().toLocaleTimeString('uz-UZ')}<br>
-        Bugungi vizitlar soni: <b>${ST.todayVisits.length}</b>
+        Bugungi vizitlar: <b>${ST.todayVisits.length} ta</b>
       </div>
       <div class="btn-row" style="justify-content:center;margin-top:16px">
         <button class="btn btn-p btn-lg" onclick="startVisitFlow('${ST.visit.type||'doctor'}')">
