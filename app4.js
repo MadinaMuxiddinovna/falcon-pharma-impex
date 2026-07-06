@@ -146,16 +146,22 @@ function vfPickOne(el, containerId, key, val) {
 
 // Probnik tanlash — So'raldi bosilganda 25 preparat chiqadi
 function vfPickProbnik(el, val) {
-  document.querySelectorAll('#rg-sample .ropt').forEach(r=>r.classList.remove('on'));
+  // Barcha ropt lardan 'on' olib tashlaymiz (bir vaqtda ikkalasi bo'lmasin)
+  const container = document.getElementById('rg-sample');
+  if(container) container.querySelectorAll('.ropt').forEach(r => r.classList.remove('on'));
   el.classList.add('on');
   ST.visit.vals.sample = val;
   const block = document.getElementById('vf-probnik-preps');
   if (val === 'Ha') {
+    // So'raldi: preparat ro'yxatini ochish
     if (block) block.classList.remove('hide');
     renderProbnikList25();
   } else {
+    // So'ralmadi: preparat ro'yxatini yopish + tozalash
     if (block) block.classList.add('hide');
     ST.visit.vals.probnikPreps = [];
+    // Barcha tanlangan preparatlarni bekor qilamiz
+    if(block) block.querySelectorAll('.ropt.on').forEach(r => r.classList.remove('on'));
   }
 }
 function renderProbnikList25() {
