@@ -85,7 +85,11 @@ function renderHome(){
     const pl=ST.plans.filter(p=>(p['Vizit sanasi']||p.date||'')===today).length;
     const planEl=document.getElementById('home-plan');if(planEl)planEl.textContent=pl;
   } else {
-    const pct=Math.min(Math.round(done/25*100),100);
+    // Agent: localStorage dan hisoblash (server sekin bo'lsa)
+    const cached=JSON.parse(localStorage.getItem('ff_vis_cache_'+ST.user.id)||'[]');
+    const actualDone=Math.max(done,cached.filter(v=>v.date===todayStr()).length);
+    const pct=Math.min(Math.round(actualDone/25*100),100);
+    const doneEl2=document.getElementById('home-done');if(doneEl2)doneEl2.textContent=actualDone;
     const pEl=document.getElementById('home-pct');if(pEl)pEl.textContent=pct+'%';
   }
 }
