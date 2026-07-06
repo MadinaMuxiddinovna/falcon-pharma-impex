@@ -1,156 +1,79 @@
-// ╔════════════════════════════════════════════════════════════════╗
-// ║  app5.js v7 — FOTO, YAKUNLASH, VIZIT OXIRI                     ║
-// ║  Tuzatishlar:                                                   ║
-// ║  - "saqlandi" → "tugatildi!" (muvaffaqiyat matni)              ║
-// ║  - O'tkazib yuborilgan promada bazaga "0" tushadi               ║
-// ║  - Yakunlash ekrani toza                                        ║
-// ╚════════════════════════════════════════════════════════════════╝
+// app5_map.js v9 — XARITA (Yandex Maps)
+// Bu fayl app4_manager.js dagi renderMapPage() ni qo'llab-quvvatlaydi
 
-// ── QADAM 4: FOTO (faqat kamera) ──────────────────────────────
-function renderVfStep4() {
-  document.getElementById('vfs4').innerHTML=`
-    <div class="alert alert-r">Faqat KAMERA orqali rasm oling! Galereyadan tanlash bloklangan.</div>
-    <div class="foto-box" onclick="vfTakeFoto()">
-      <div id="vf-foto-ph">
-        <div style="font-size:42px">📷</div>
-        <div style="margin-top:8px;font-weight:600">Kamerani ochish uchun bosing</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">
-          ${ST.visit.type==='doctor'?'Vrach xonasi':'Dorixona ichidan yoki tashqaridan'}
+function pageMap() {
+  return `
+  <div class="page" id="page-map">
+    <div class="card">
+      <div class="card-h">Vizit lokatsiyalari xaritasi</div>
+      <div class="card-b">
+        <div class="frow" style="margin-bottom:12px">
+          <div class="fg"><label>Hodim</label>
+            <select id="map-emp"><option value="">— Barchasi —</option></select>
+          </div>
+          <div class="fg"><label>Davr</label>
+            <select id="map-days" onchange="renderMapPage()">
+              <option value="1">Bugun</option>
+              <option value="7" selected>1 hafta</option>
+              <option value="30">1 oy</option>
+            </select>
+          </div>
         </div>
+        <div id="ymap-container" style="width:100%;height:480px;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:#e8f0fe;display:flex;align-items:center;justify-content:center">
+          <div style="text-align:center;color:var(--muted)">Yuklanmoqda...</div>
+        </div>
+        <div id="map-list" style="margin-top:14px"></div>
       </div>
-      <img id="vf-foto-img" class="hide" alt="vizit foto" />
     </div>
-    <input type="file" id="vf-foto-input" accept="image/*" capture="environment" class="hide" onchange="vfOnFoto(event)" />
-    <button class="btn btn-p btn-bl" style="margin-top:12px" onclick="vfTakeFoto()">📷 Kamera</button>
-    <div class="btn-row">
-      <button class="btn btn-o" onclick="vfShowStep(3)">← Orqaga</button>
-      <button class="btn btn-ok btn-lg" onclick="vfFinishVisit()">Vizitni yakunlash ✅</button>
-    </div>`;
+  </div>`;
 }
 
-function vfTakeFoto(){document.getElementById('vf-foto-input').click();}
+async function renderMapPage() {
+  const days = document.getElementById('map-days')?.value || '7';
+  const locs = await apiGet('getLocations',{empId:ST.user.id,role:ST.user.role,days}).catch(()=>[]);
+  const validLocs = (locs||[]).filter(l=>l.lat&&l.lng);
 
-function vfOnFoto(e) {
-  const file=e.target.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    const img=new Image();
-    img.onload=()=>{
-      const canvas=document.createElement('canvas');
-      const MAX=1280; let w=img.width,h=img.height;
-      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
-      if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
-      canvas.width=w;canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      ST.visit.fotoData=canvas.toDataURL('image/jpeg',0.72);
-      document.getElementById('vf-foto-img').src=ST.visit.fotoData;
-      document.getElementById('vf-foto-img').classList.remove('hide');
-      document.getElementById('vf-foto-ph').classList.add('hide');
-    };
-    img.src=ev.target.result;
-  };
-  reader.readAsDataURL(file);
-}
+  // Hodim filtri
+  const empSel = document.getElementById('map-emp');
+  if(empSel && !empSel.dataset.filled && validLocs.length) {
+    const uniq = [...new Map(validLocs.map(l=>[l.empId,l.empName])).entries()];
+    empSel.innerHTML = '<option value="">— Barchasi —</option>' +
+      uniq.map(([id,name])=>`<option value="${id}">${name}</option>`).join('');
+    empSel.dataset.filled = '1';
+    empSel.onchange = renderMapPage;
+  }
+  const filterEmp = empSel?.value || '';
+  const filtered = validLocs.filter(l=>!filterEmp||l.empId===filterEmp);
 
-// ── VIZITNI YAKUNLASH ─────────────────────────────────────────
-async function vfFinishVisit() {
-  if(!ST.visit.fotoData){alert('Rasm olish majburiy!');return;}
-
-  // End GPS (oflayn ham ishlaydi — telefon GPS dan)
-  await new Promise(resolve=>{
-    navigator.geolocation.getCurrentPosition(
-      pos=>{ST.visit.gpsEnd={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};resolve();},
-      ()=>resolve(),{enableHighAccuracy:true,timeout:10000});
-  });
-
-  await vfSaveBranchToBase();
-  showOv('Vizit saqlanmoqda...');
-  // Oflayn ekanligini tekshiramiz
-  const isOnline = navigator.onLine;
-
-  const duration=Math.floor((Date.now()-ST.visit.timerStart)/1000);
-  const ref='FF-'+Date.now();
-  const isDoc=ST.visit.type==='doctor';
-
-  let promoId='';
-  if(isDoc&&ST.visit.vals.promoRequested) {
-    const pr=await apiPost({action:'requestPromo',empId:ST.user.id,empName:ST.user.name,
-      mgrId:ST.user.mgrId||'',doctorName:ST.visit.target.name,
-      doctorObject:ST.visit.target.object,date:todayStr(),izoh:v('vf-promo-note')});
-    promoId=pr.promoId||'';
+  const container = document.getElementById('ymap-container');
+  if(!filtered.length) {
+    if(container) container.innerHTML = '<div class="alert alert-i" style="margin:16px">Bu davr uchun lokatsiya yo\'q</div>';
+    const ml = document.getElementById('map-list');
+    if(ml) ml.innerHTML = '';
+    return;
   }
 
-  let resp;
-  if(isDoc) {
-    resp=await apiPost({
-      action:'addVisitMP',ref,date:todayStr(),empId:ST.user.id,empName:ST.user.name,
-      region:ST.user.region,mgrId:ST.user.mgrId||'',
-      doctorName:ST.visit.target.name,doctorSpec:ST.visit.target.specialty,
-      doctorObject:ST.visit.target.object,doctorDistrict:ST.visit.target.district,
-      doctorCategory:ST.visit.target.category,doctorPhone:ST.visit.target.phone,
-      goal:ST.visit.vals.goal,goalOther:v('vf-goal-other'),
-      products:ST.visit.products.filter(p=>p.name),
-      sampleRequested:ST.visit.vals.sample==='Ha',
-      probnikPreps:ST.visit.vals.probnikPreps||[],
-      result:ST.visit.vals.result,resultOther:v('vf-result-other'),
-      // O'tkazib yuborilganda promoRequested=false, bazaga 0 tushadi
-      promoRequested:!!ST.visit.vals.promoRequested,
-      promoId,
-      nextVisitDate:v('vf-next-date'),comment:v('vf-comment'),
-      visitStartTime:nowTimeFromTs(ST.visit.timerStart),visitEndTime:nowTimeStr(),durationSec:duration,
-      gpsStart:ST.visit.gpsStart,gpsEnd:ST.visit.gpsEnd,
-      gpsAcc:ST.visit.gpsEnd?.acc||ST.visit.gpsStart?.acc||9999,
-      fotoBase64:ST.visit.fotoData,
-    });
-  } else {
-    const {bron,stock}=getBronAndStockData();
-    resp=await apiPost({
-      action:'addVisitTA',ref,date:todayStr(),empId:ST.user.id,empName:ST.user.name,
-      region:ST.visit.target.region,district:ST.visit.target.district,
-      pharmInn:ST.visit.target.inn,pharmName:ST.visit.target.legalName,
-      branchNo:ST.visit.vals.branchNo||'Yo\'q',isNewPharmacy:!!ST.visit.target._isNew,
-      bron,stock,comment:v('vf-comment'),
-      visitStartTime:nowTimeFromTs(ST.visit.timerStart),visitEndTime:nowTimeStr(),durationSec:duration,
-      gpsStart:ST.visit.gpsStart,gpsEnd:ST.visit.gpsEnd,
-      gpsAcc:ST.visit.gpsEnd?.acc||ST.visit.gpsStart?.acc||9999,
-      fotoBase64:ST.visit.fotoData,
-    });
+  // Yandex Maps iframe
+  const first = filtered[0];
+  const pts = filtered.slice(0,10)
+    .map((l,i)=>`pt=${l.lng},${l.lat},pm2${l.type==='Vrach viziti'?'rd':'gm'}m${i+1}`)
+    .join('~');
+  if(container) {
+    container.innerHTML = `<iframe
+      src="https://yandex.uz/map-widget/v1/?ll=${first.lng}%2C${first.lat}&z=13&lang=ru_RU&${pts}&l=map"
+      width="100%" height="480" frameborder="0" allowfullscreen style="display:block;border:none"></iframe>`;
   }
 
-  // Lokal navbatga saqlash (oflayn bo'lsa yoki yuborishda xato bo'lsa)
-  const visitData = isDoc ? visitPayloadMP : visitPayloadTA;
-  // Navbatdan muvaffaqiyatli yuborilganini belgilash
-  ST.todayVisits.push({ref,type:ST.visit.type,
-    target:isDoc?ST.visit.target.name:ST.visit.target.legalName,
-    result:ST.visit.vals.result||'OK',
-    time:nowTimeStr(),
-    offline:!isOnline});
-  hideOv();
-  vfShowStep(5);
-  renderVfStep5(resp,isDoc,duration,!isOnline);
+  // Ro'yxat
+  const ml = document.getElementById('map-list');
+  if(ml) {
+    ml.innerHTML = filtered.slice(0,30).map(l=>`
+      <div class="irow">
+        <span class="irow-l">${l.type==='Vrach viziti'?'🔴':'🟢'} ${l.empName} → ${l.target||''}</span>
+        <span class="irow-v">
+          <a href="https://yandex.uz/maps/?ll=${l.lng}%2C${l.lat}&z=16&pt=${l.lng},${l.lat},pm2rdm1"
+            target="_blank" class="bdg bdg-b" style="text-decoration:none">${l.date}</a>
+        </span>
+      </div>`).join('');
+  }
 }
-
-function renderVfStep5(resp,isDoc,duration) {
-  const fake=resp?.fake;
-  document.getElementById('vfs5').innerHTML=`
-    <div class="success-scr">
-      <div class="success-icon">${fake?'⚠️':'✅'}</div>
-      <!-- "saqlandi" → "tugatildi!" (to'g'irlandi) -->
-      <div class="success-title" style="${fake?'color:var(--danger)':''}">
-        Vizit muvaffaqiyatli tugatildi!
-      </div>
-      <div class="success-sub">
-        ${navigator.onLine?'Ma\'lumotlar bazaga yuborildi':'Oflayn saqlandi — internet kelganda yuboriladi'}
-      </div>
-      <div class="alert alert-ok" style="text-align:left">
-        Davomiylik: ${Math.floor(duration/60)} daqiqa ${duration%60} soniya<br>
-        Vaqt: ${new Date().toLocaleTimeString('uz-UZ')}
-      </div>
-      ${isDoc?'<div class="alert alert-i">Bu vrachga 1 haftadan keyin avtomatik reja tushirildi.</div>':''}
-      <div class="btn-row" style="justify-content:center;margin-top:16px">
-        <button class="btn btn-p btn-lg" onclick="vfNextVisit()">Keyingi vizit →</button>
-        <button class="btn btn-o" onclick="document.getElementById('visit-flow-container').innerHTML='';renderHome()">Bosh sahifa</button>
-      </div>
-    </div>`;
-}
-function vfNextVisit(){startVisitFlow(ST.visit.type);}
