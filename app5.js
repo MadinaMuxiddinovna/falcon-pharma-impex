@@ -150,10 +150,13 @@ function renderVfStep5(resp,isDoc,duration,isOffline){
         ${isDoc?'':('<br>Dorixona: <b>'+(ST.visit.target?.legalName||'')+'</b>'+'<br>INN: '+(ST.visit.target?.inn||''))}
         <br>Bugungi vizitlar: <b>${ST.todayVisits.length} ta</b>
       </div>
-      ${!isDoc&&window._lastPharmResult?`
-      <div class="alert alert-i" style="text-align:left;margin-top:8px;font-size:13px">
-        <b>Bron:</b> ${window._lastPharmResult.bronTotal||0} ta · ${fmtMoney(window._lastPharmResult.bronSum||0)}<br>
-        <b>Qoldiq:</b> ${window._lastPharmResult.stockTotal||0} ta · ${fmtMoney(window._lastPharmResult.stockSum||0)}
+      ${!isDoc?`
+      <div class="alert alert-ok" style="text-align:left;margin-top:8px;font-size:13px">
+        <div><b>Dorixona:</b> ${ST.visit.target?.legalName||''}</div>
+        ${window._lastPharmResult&&window._lastPharmResult.bronSum>0?
+          '<div>Bron: <b>'+window._lastPharmResult.bronTotal+' ta</b> · '+fmtMoney(window._lastPharmResult.bronSum)+'</div>':''}
+        ${window._lastPharmResult&&window._lastPharmResult.stockSum>0?
+          '<div>Qoldiq: <b>'+window._lastPharmResult.stockTotal+' ta</b> · '+fmtMoney(window._lastPharmResult.stockSum)+'</div>':''}
       </div>`:''}
       <div class="btn-row" style="justify-content:center;margin-top:16px">
         <button class="btn btn-p btn-lg" onclick="startVisitFlow('${ST.visit.type||'doctor'}')">
