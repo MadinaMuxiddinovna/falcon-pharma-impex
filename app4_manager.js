@@ -35,7 +35,7 @@ function pageManagerDashboard(){
 async function renderMgrDashboard(){
   try{
     const[kpi,promos,bal]=await Promise.all([
-      apiGet('getKPI',{role:ST.user.role,empId:ST.user.id,date:todayStr()}).catch(()=>({})),
+      apiGet('getKPI',{role:ST.user.role,empId:ST.user.id,date:todayStr()},false).catch(()=>({})),
       apiGet('getPromoQueue',{role:ST.user.role,empId:ST.user.id}).catch(()=>[]),
       ST.user.role==='manager'?apiGet('getMgrBalance',{mgrId:ST.user.id}).catch(()=>null):Promise.resolve(null),
     ]);
@@ -426,7 +426,10 @@ function pageTeamKPI(){
 }
 async function renderTeamKPI(){
   const date=v('kpi-date')||todayStr();
-  const kpi=await apiGet('getKPI',{role:ST.user.role,empId:ST.user.id,date},false).catch(()=>({}));
+  // Cache ishlatamiz - tezroq (fon rejimida yangilanadi)
+  const kpi=await apiGet('getKPI',{role:ST.user.role,empId:ST.user.id,date},true).catch(()=>({}));
+  // Cache ni tozalaymiz - keyingi chaqiruvda yangi ma'lumot olsinlar
+  delete _apiCache['getKPI'+JSON.stringify({role:ST.user.role,empId:ST.user.id,date})];
   const el=document.getElementById('kpi-team');if(!el)return;
   const entries=Object.entries(kpi);
   if(!entries.length){el.innerHTML='<div class="alert alert-i">Bu sana uchun ma\'lumot yo\'q</div>';el.className='';return;}
