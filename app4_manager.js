@@ -13,9 +13,14 @@ function pageManagerDashboard(){
   const isMgr=ST.user.role==='manager';
   return `
   <div class="page active" id="page-mgr">
-    ${isMgr?`<div class="balance-box" id="mgr-bal-box" onclick="showMgrJournal()" style="cursor:pointer">
+    ${isMgr?`
+    <div style="text-align:center;padding:8px 0 4px">
+      <div style="font-size:12px;color:var(--muted)">Menejer</div>
+      <div style="font-size:16px;font-weight:700;color:var(--primary)" id="mgr-region-info"></div>
+    </div>
+    <div class="balance-box" id="mgr-bal-box" onclick="showMgrJournal()" style="cursor:pointer">
       <div class="balance-num" id="mgr-bal-qolgan">— so'm</div>
-      <div class="balance-lbl">Sizning balansingiz — bosib batafsil ko'rish</div>
+      <div class="balance-lbl">Balansingiz — bosib batafsil ko'rish</div>
     </div>`:''}
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-num" id="mgr-vis">—</div><div class="kpi-lbl">Bugungi vizitlar</div></div>
@@ -38,6 +43,8 @@ async function renderMgrDashboard(){
       ST.mgrBalance=bal;
       const el=document.getElementById('mgr-bal-qolgan');
       if(el) el.textContent=fmtMoney(bal.qolgan||0);
+      const rInfo=document.getElementById('mgr-region-info');
+      if(rInfo) rInfo.textContent=(ST.user.region||'')+(ST.user.district?' · '+ST.user.district:'');
       const box=document.getElementById('mgr-bal-box');
       if(box) box.style.background=(bal.qolgan||0)<0
         ?'linear-gradient(135deg,#8b0000,#c0260a)'
