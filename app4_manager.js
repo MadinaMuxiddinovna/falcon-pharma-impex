@@ -329,11 +329,12 @@ async function renderPromoQueue(){
   el.innerHTML=ST.promoQueue.map(p=>{
     const status=p['Holati']||'';
     // Server dan kelgan barcha mumkin bo'lgan ustun nomlarini tekshiramiz
-    const vrach=p['Vrach FISh']||p['Vrach F.I.Sh']||p.vrach||p['vrach']||'—';
+    // AppsScript HDR_PROMO: ['Proma ID','Hodim ID','Hodim Ismi','Menejer ID','Vrach FISh','Ish joyi','Sana','Proma summasi (so\'m)','Holati','Yaratilgan vaqt']
+    const vrach=p['Vrach FISh']||p['Vrach F.I.Sh']||p['Vrach FIO']||p.doctorName||'—';
     const mp=p['Hodim Ismi']||p.empName||'';
-    const joyi=p['Ish joyi']||p.object||'';
-    const sana=p['Sana']||p.date||'';
-    const summa=Number(p["Proma summasi (so'm)"]||p.promaSumma||0);
+    const joyi=p['Ish joyi']||p['Ish joyi (obyekt)']||p.doctorObject||'';
+    const sana=String(p['Sana']||p.date||'').replace('T',' ').slice(0,16);
+    const summa=Number(p["Proma summasi (so'm)"]||p['Proma summasi']||p.promaSumma||0);
     const closed=status==='Tasdiqlandi'||status==='Rad etildi';
     return `<div class="vcard">
       <div class="vcard-h">
@@ -470,12 +471,10 @@ function pageAdminBalance(){
 }
 
 async function renderAdminBalance(){
-  const[emps,bals]=await Promise.all([
-    apiGet('getDoctors',{}).catch(()=>null), // Hodimlar uchun checkLogin ishlatamiz
-    apiGet('getAllBalances',{}).catch(()=>[]),
-  ]);
-  // Menejerlarni _USER_INFO dan olamiz
-  const mgrList=Object.entries(_LOGIN_CACHE||{}).filter(([id,u])=>u.role==='manager');
+  const bals=await apiGet('getAllBalances',{},false).catch(()=>[]);
+  // Menejerlarni server dan olamiz
+  const empData=await apiGet('getEmployees',{},false).catch(()=>({}));
+  const mgrList=Object.entries(empData||{}).filter(([id,u])=>u.role==='manager');
   const sel=document.getElementById('ab-mgr');
   if(sel) sel.innerHTML='<option value="">— Tanlang —</option>'+
     mgrList.map(([id,u])=>`<option value="${id}|${u.name}">${u.name} (${id})</option>`).join('');
