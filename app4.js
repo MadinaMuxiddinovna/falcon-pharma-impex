@@ -28,7 +28,7 @@ function renderVfStep3() {
     </div>
     <div class="btn-row">
       <button class="btn btn-o" onclick="vfBackToStep2()">← Orqaga</button>
-      <button class="btn btn-p btn-lg" onclick="vfGoToFoto()">Foto bosqichiga o'tish 📸</button>
+      <button class="btn btn-p btn-lg" onclick="vfGoToFoto()">Yakunlash qismiga o'tish ✅</button>
     </div>`;
 }
 
@@ -140,6 +140,39 @@ function vfPickOne(el, containerId, key, val) {
   if(key==='result') tgl('vf-result-other-block', val==='BOSHQA');
 }
 
+// Probnik tanlash — So'raldi bosilganda 25 preparat chiqadi
+function vfPickProbnik(el, val) {
+  document.querySelectorAll('#rg-sample .ropt').forEach(r=>r.classList.remove('on'));
+  el.classList.add('on');
+  ST.visit.vals.sample = val;
+  const block = document.getElementById('vf-probnik-preps');
+  if (val === 'Ha') {
+    if (block) block.classList.remove('hide');
+    renderProbnikList25();
+  } else {
+    if (block) block.classList.add('hide');
+    ST.visit.vals.probnikPreps = [];
+  }
+}
+function renderProbnikList25() {
+  const el = document.getElementById('vf-probnik-list'); if(!el) return;
+  // Barcha 25 preparat
+  el.innerHTML = PREPS.map((p,i) => `
+    <div class="ropt" style="margin-bottom:5px;font-size:12px;padding:7px 10px"
+      onclick="vfToggleProbnik25(this,'${p.replace(/'/g,"\'")}')">
+      ${p}
+    </div>`).join('');
+}
+function vfToggleProbnik25(el, prep) {
+  el.classList.toggle('on');
+  if (!ST.visit.vals.probnikPreps) ST.visit.vals.probnikPreps = [];
+  if (el.classList.contains('on')) {
+    ST.visit.vals.probnikPreps.push(prep);
+  } else {
+    ST.visit.vals.probnikPreps = ST.visit.vals.probnikPreps.filter(p=>p!==prep);
+  }
+}
+
 // Proma tanlash
 function vfPickProma(el, want) {
   document.querySelectorAll('#rg-promo .ropt').forEach(r=>r.classList.remove('on'));
@@ -179,7 +212,7 @@ function vfUpdateProduct(i,key,val){
 }
 function vfRemoveProduct(i){ST.visit.products.splice(i,1);renderProductRows();}
 
-// Foto bosqichiga o'tish — validatsiya
+// Yakunlash qismiga o'tish — validatsiya
 function vfGoToFoto() {
   const comment=(document.getElementById('vf-comment')?.value||'').trim();
   if(!comment){alert('Izoh qoldiring!');return;}
@@ -189,7 +222,10 @@ function vfGoToFoto() {
     if(ST.visit.vals.goal==='BOSHQA'&&!(document.getElementById('vf-goal-other')?.value||'').trim()){
       alert('Maqsadni yozing!');return;
     }
-    if(!ST.visit.vals.sample){alert('Probnik bo\'yicha tanlov qiling!');return;}
+    if(!ST.visit.vals.sample){alert('Probnik bo\'yicha tanlov qiling (So\'raldi / So\'ralmadi)!');return;}
+    if(ST.visit.vals.sample==='Ha'&&(!ST.visit.vals.probnikPreps||ST.visit.vals.probnikPreps.length===0)){
+      alert('Qaysi preparatdan probnik so\'ralganligi tanlang!');return;
+    }
     if(!ST.visit.vals.result){alert('Natijani tanlang!');return;}
     if(ST.visit.vals.result==='BOSHQA'&&!(document.getElementById('vf-result-other')?.value||'').trim()){
       alert('Natijani yozing!');return;
