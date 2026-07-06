@@ -110,6 +110,10 @@ function wtStart(){
 function startWtTicker(){
   const key='ff_wt_'+ST.user.id+'_'+todayStr();
   const startStr=localStorage.getItem(key);if(!startStr)return;
+  // Bugun yakunlangan bo'lsa ticker ishlamasin
+  if(localStorage.getItem('ff_endday_'+ST.user.id)===todayStr()){
+    clearInterval(_wtInterval);_wtInterval=null;return;
+  }
   const startTs=new Date(startStr).getTime();
   clearInterval(_wtInterval);
   const tick=()=>{
