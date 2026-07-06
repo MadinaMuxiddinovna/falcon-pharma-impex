@@ -68,8 +68,12 @@ function renderDoctorForm() {
     <div class="card-h">Probnik <span style="font-size:11px;opacity:.7">(1 tanlang)</span></div>
     <div class="card-b">
       <div class="rg" id="rg-sample">
-        <div class="ropt" onclick="vfPickOne(this,'rg-sample','sample','Ha')">Probnik berildi</div>
-        <div class="ropt" onclick="vfPickOne(this,'rg-sample','sample','Yo\\'q')">Berilmadi</div>
+        <div class="ropt" onclick="vfPickProbnik(this,'Ha')">So'raldi</div>
+        <div class="ropt" onclick="vfPickProbnik(this,'Yo\'q')">So'ralmadi</div>
+      </div>
+      <div id="vf-probnik-preps" class="hide" style="margin-top:10px">
+        <div class="alert alert-i" style="font-size:12px">Qaysi preparatdan probnik so'raldi? (bir yoki ko'p)</div>
+        <div id="vf-probnik-list"></div>
       </div>
     </div>
   </div>
