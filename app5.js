@@ -83,6 +83,11 @@ async function vfFinishVisit() {
     };
   } else {
     const{bron,stock}=getBronAndStockData();
+    // Bron va qoldiq soni/summalarini hisoblaymiz
+    let bronTotal=0,bronSum=0,stockTotal=0,stockSum=0;
+    bron.forEach(b=>{if(b.qty>0){bronTotal+=b.qty;bronSum+=b.qty*(PRICES[b.prep]||0);}});
+    stock.forEach(s=>{if(s.qty>0){stockTotal+=s.qty;stockSum+=s.qty*(PRICES[s.prep]||0);}});
+    window._lastPharmResult={bronTotal,bronSum,stockTotal,stockSum};
     payload={
       action:'addVisitTA', ref, date:todayStr(),
       empId:ST.user.id, empName:ST.user.name,
@@ -142,8 +147,14 @@ function renderVfStep5(resp,isDoc,duration,isOffline){
         Boshlangan: <b>${nowTimeFromTs(ST.visit.timerStart||Date.now())}</b> →
         Tugadi: <b>${new Date().toLocaleTimeString('uz-UZ')}</b><br>
         Davomiylik: <b>${Math.floor(duration/60)} daqiqa ${duration%60} soniya</b><br>
-        Bugungi vizitlar: <b>${ST.todayVisits.length} ta</b>
+        ${isDoc?'':('<br>Dorixona: <b>'+(ST.visit.target?.legalName||'')+'</b>'+'<br>INN: '+(ST.visit.target?.inn||''))}
+        <br>Bugungi vizitlar: <b>${ST.todayVisits.length} ta</b>
       </div>
+      ${!isDoc&&window._lastPharmResult?`
+      <div class="alert alert-i" style="text-align:left;margin-top:8px;font-size:13px">
+        <b>Bron:</b> ${window._lastPharmResult.bronTotal||0} ta · ${fmtMoney(window._lastPharmResult.bronSum||0)}<br>
+        <b>Qoldiq:</b> ${window._lastPharmResult.stockTotal||0} ta · ${fmtMoney(window._lastPharmResult.stockSum||0)}
+      </div>`:''}
       <div class="btn-row" style="justify-content:center;margin-top:16px">
         <button class="btn btn-p btn-lg" onclick="startVisitFlow('${ST.visit.type||'doctor'}')">
           Keyingi vizit →
