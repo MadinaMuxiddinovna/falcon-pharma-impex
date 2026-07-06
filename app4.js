@@ -180,6 +180,12 @@ function vfPickProbnik(val) {
   } else {
     if(block) block.classList.add('hide');
     ST.visit.vals.probnikPreps = [];
+    // So'ralmadi: natija qismiga avtomatik scroll
+    setTimeout(() => {
+      const natija = document.querySelector('[id="rg-result"]') ||
+                     document.querySelector('.card-h');
+      if(natija) natija.closest('.card')?.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }, 200);
   }
 }
 function renderProbnikList25() {
