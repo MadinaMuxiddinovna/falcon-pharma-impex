@@ -4,7 +4,7 @@
 // - initData: parallel, cache dan ishlaydi
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwuCqVTTYT8ZvLBa24p8l1lg1aOuTyvxH4N-vEP2sfNZ3oc-c2RU5kLpnAmpLKMJvEOlQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwQmrdnDNJNaxiTX4iZ2qpReeuWC6dYvlr_uRzeHY9LCZ9AD26dl3uxoNW9DD_e9fcb9w/exec',
 };
 
 const PREPS = [
@@ -34,38 +34,44 @@ let ST = {
 };
 
 // ═══ LOGIN CACHE ════════════════════════════════════
-const _LOGIN_CACHE = {
-  'ADMIN': {name:'Administrator',role:'admin',pass:'Falcon@2025',region:'Toshkent shahri',mgrId:'',district:'',group:''},
-  'MGR01': {name:'Murhamedova Zuhra',role:'manager',pass:'Zuhra#8842',region:'Toshkent viloyati',mgrId:'',district:'Toshkent viloyati',group:''},
-  'MGR02': {name:'Radjabova Fotima',role:'manager',pass:'Fotima#3317',region:'Toshkent shahri',mgrId:'',district:'Olmazor/Shayxontohur/Yunusobod',group:''},
-  'MGR03': {name:"Abdullayeva Ra'no",role:'manager',pass:'Rano#5591',region:'Toshkent shahri',mgrId:'',district:'Chilonzor/Yakkasaroy/Uchtepa',group:''},
-  'MGR04': {name:'Zuparova Umida',role:'manager',pass:'Umida#7763',region:'Toshkent shahri',mgrId:'',district:'Mirzo Ulugbek/Qibray/Yashnobod',group:''},
-  'MP01':  {name:'Mominova Diyora',role:'mp',pass:'Diyora#2284',region:'Toshkent shahri',mgrId:'MGR01',district:'Mirzo Ulugbek',group:'A'},
-  'MP02':  {name:'Xasanova Nodirabegim',role:'mp',pass:'Nodira#6615',region:'Toshkent viloyati',mgrId:'MGR01',district:'Angren',group:'A'},
-  'MP03':  {name:'Xabibullaxanova Ruxsoraxon',role:'mp',pass:'Ruxsora#4423',region:'Toshkent shahri',mgrId:'MGR02',district:'Olmazor',group:'B'},
-  'MP04':  {name:'Qunduzova Xadicha',role:'mp',pass:'Xadicha#8871',region:'Toshkent shahri',mgrId:'MGR02',district:'Shayxontohur',group:'B'},
-  'MP05':  {name:'Muminova Umida',role:'mp',pass:'Umida#3356',region:'Toshkent shahri',mgrId:'MGR02',district:'Yunusobod',group:'B'},
-  'MP06':  {name:'Abduraimova Durdona',role:'mp',pass:'Durdona#7712',region:'Toshkent shahri',mgrId:'MGR02',district:'Shayxontohur',group:'B'},
-  'MP07':  {name:'Tojiddinova Durdona',role:'mp',pass:'Tojiddin#5534',region:'Toshkent shahri',mgrId:'MGR02',district:'Olmazor',group:'B'},
-  'MP08':  {name:'Shukurova Xolida',role:'mp',pass:'Xolida#9923',region:'Toshkent shahri',mgrId:'MGR02',district:'Yunusobod',group:'B'},
-  'MP09':  {name:'Mirzayeva Zilola',role:'mp',pass:'Zilola#4478',region:'Toshkent shahri',mgrId:'MGR03',district:'Chilonzor',group:'C'},
-  'MP10':  {name:'Ismolova Madina',role:'mp',pass:'Madina#6641',region:'Toshkent shahri',mgrId:'MGR03',district:'Yakkasaroy',group:'C'},
-  'MP11':  {name:'Najmiddinova Ziyoda',role:'mp',pass:'Ziyoda#2267',region:'Toshkent shahri',mgrId:'MGR03',district:'Uchtepa',group:'C'},
-  'MP12':  {name:'Ilxomova Nodirabegim',role:'mp',pass:'Nodira2#8853',region:'Toshkent shahri',mgrId:'MGR03',district:'Chilonzor',group:'C'},
-  'MP13':  {name:'Xodjayeva Nigora',role:'mp',pass:'Nigora#3312',region:'Toshkent shahri',mgrId:'MGR03',district:'Yakkasaroy',group:'C'},
-  'MP14':  {name:'Adilova Madina',role:'mp',pass:'Adilova#7789',region:'Toshkent shahri',mgrId:'MGR03',district:'Uchtepa',group:'C'},
-  'MP15':  {name:'Abduganiyeva Saidaxon',role:'mp',pass:'Saidaxon#5545',region:'Toshkent shahri',mgrId:'MGR04',district:'Mirzo Ulugbek',group:'D'},
-  'MP16':  {name:'Shosalimova Zuhra',role:'mp',pass:'Zuhra2#1123',region:'Toshkent shahri',mgrId:'MGR04',district:'Yashnobod',group:'D'},
-  'MP17':  {name:'Sultonova Gulchexra',role:'mp',pass:'Gulchexra#6678',region:'Toshkent shahri',mgrId:'MGR04',district:'Mirobod',group:'D'},
-  'TA01':  {name:'Deryabin Ivan',role:'ta',pass:'Ivan#9934',region:'Toshkent shahri',mgrId:'',district:'',group:''},
-  'TA02':  {name:'Anvarxodjayev Akmal',role:'ta',pass:'Akmal#4456',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+// Xavfsizlik: parollar bu yerda SAQLANMAYDI
+// Parol tekshiruvi faqat server orqali (Hodimlar_Login Sheets)
+// Bu cache faqat ROL, NOM, REGION uchun (offline ham ko'rsatish uchun)
+const _USER_INFO = {
+  'ADMIN': {name:'Administrator',role:'admin',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+  'MGR01': {name:'Murhamedova Zuhra',role:'manager',region:'Toshkent viloyati',mgrId:'',district:'Toshkent viloyati',group:''},
+  'MGR02': {name:'Radjabova Fotima',role:'manager',region:'Toshkent shahri',mgrId:'',district:'Olmazor/Yunusobod',group:''},
+  'MGR03': {name:"Abdullayeva Ra'no",role:'manager',region:'Toshkent shahri',mgrId:'',district:'Chilonzor/Uchtepa',group:''},
+  'MGR04': {name:'Zuparova Umida',role:'manager',region:'Toshkent shahri',mgrId:'',district:'Mirzo Ulugbek/Yashnobod',group:''},
+  'MP01':  {name:'Mominova Diyora',role:'mp',region:'Toshkent shahri',mgrId:'MGR01',district:'Mirzo Ulugbek',group:'A'},
+  'MP02':  {name:'Xasanova Nodirabegim',role:'mp',region:'Toshkent viloyati',mgrId:'MGR01',district:'Angren',group:'A'},
+  'MP03':  {name:'Xabibullaxanova Ruxsoraxon',role:'mp',region:'Toshkent shahri',mgrId:'MGR02',district:'Olmazor',group:'B'},
+  'MP04':  {name:'Qunduzova Xadicha',role:'mp',region:'Toshkent shahri',mgrId:'MGR02',district:'Shayxontohur',group:'B'},
+  'MP05':  {name:'Muminova Umida',role:'mp',region:'Toshkent shahri',mgrId:'MGR02',district:'Yunusobod',group:'B'},
+  'MP06':  {name:'Abduraimova Durdona',role:'mp',region:'Toshkent shahri',mgrId:'MGR02',district:'Shayxontohur',group:'B'},
+  'MP07':  {name:'Tojiddinova Durdona',role:'mp',region:'Toshkent shahri',mgrId:'MGR02',district:'Olmazor',group:'B'},
+  'MP08':  {name:'Shukurova Xolida',role:'mp',region:'Toshkent shahri',mgrId:'MGR02',district:'Yunusobod',group:'B'},
+  'MP09':  {name:'Mirzayeva Zilola',role:'mp',region:'Toshkent shahri',mgrId:'MGR03',district:'Chilonzor',group:'C'},
+  'MP10':  {name:'Ismolova Madina',role:'mp',region:'Toshkent shahri',mgrId:'MGR03',district:'Yakkasaroy',group:'C'},
+  'MP11':  {name:'Najmiddinova Ziyoda',role:'mp',region:'Toshkent shahri',mgrId:'MGR03',district:'Uchtepa',group:'C'},
+  'MP12':  {name:'Ilxomova Nodirabegim',role:'mp',region:'Toshkent shahri',mgrId:'MGR03',district:'Chilonzor',group:'C'},
+  'MP13':  {name:'Xodjayeva Nigora',role:'mp',region:'Toshkent shahri',mgrId:'MGR03',district:'Yakkasaroy',group:'C'},
+  'MP14':  {name:'Adilova Madina',role:'mp',region:'Toshkent shahri',mgrId:'MGR03',district:'Uchtepa',group:'C'},
+  'MP15':  {name:'Abduganiyeva Saidaxon',role:'mp',region:'Toshkent shahri',mgrId:'MGR04',district:'Mirzo Ulugbek',group:'D'},
+  'MP16':  {name:'Shosalimova Zuhra',role:'mp',region:'Toshkent shahri',mgrId:'MGR04',district:'Yashnobod',group:'D'},
+  'MP17':  {name:'Sultonova Gulchexra',role:'mp',region:'Toshkent shahri',mgrId:'MGR04',district:'Mirobod',group:'D'},
+  'TA01':  {name:'Deryabin Ivan',role:'ta',region:'Toshkent shahri',mgrId:'',district:'',group:''},
+  'TA02':  {name:'Anvarxodjayev Akmal',role:'ta',region:'Toshkent shahri',mgrId:'',district:'',group:''},
 };
+// Eski nom — boshqa fayllar ishlatadi
+const _LOGIN_CACHE = _USER_INFO;
 
-function cacheLogin(id,pass){
-  const u=_LOGIN_CACHE[id];
-  if(!u||u.pass!==pass) return null;
-  return{status:'ok',name:u.name,role:u.role,region:u.region,mgrId:u.mgrId,district:u.district,group:u.group};
-}
+
+
+// cacheLogin — parolsiz versiya (xavfsizlik)
+// Parol tekshiruvi faqat server orqali
+function cacheLogin(id,pass){return null;}
+
 
 // ═══ OFLAYN NAVBAT ══════════════════════════════════
 function queueSave(d){
@@ -212,10 +218,7 @@ function showPage(p){
   if(p==='paydoctor')    renderPayDoctorPage();
   if(p==='adminbalance') renderAdminBalance();
   if(p==='map')          renderMapPage();
-  if(p==='feedbackbox'){
-    const el=document.getElementById('fb-inbox');
-    if(el) el.innerHTML='<div class="alert alert-i">Barcha murojaatlar Google Sheets → Murojaatlar sahifasida saqlanadi.</div>';
-  }
+  if(p==='feedbackbox') renderFeedbackInbox();
 }
 
 // ═══ MA'LUMOT YUKLASH — TEZLASHTIRILGAN ═════════════
