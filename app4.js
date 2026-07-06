@@ -67,12 +67,15 @@ function renderDoctorForm() {
   <div class="card">
     <div class="card-h">Probnik <span style="font-size:11px;opacity:.7">(1 tanlang)</span></div>
     <div class="card-b">
-      <div class="rg" id="rg-sample">
-        <div class="ropt" onclick="vfPickProbnik(this,'Ha')">So'raldi</div>
-        <div class="ropt" onclick="vfPickProbnik(this,'Yo\'q')">So'ralmadi</div>
+      <!-- Probnik: radio - faqat biri tanlanadi -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px" id="rg-sample">
+        <div class="ropt" id="prob-yes" onclick="vfPickProbnik(this,'Ha')"
+          style="justify-content:center;font-weight:600">So'raldi</div>
+        <div class="ropt" id="prob-no" onclick="vfPickProbnik(this,'Yo\'q')"
+          style="justify-content:center;font-weight:600">So'ralmadi</div>
       </div>
-      <div id="vf-probnik-preps" class="hide" style="margin-top:10px">
-        <div class="alert alert-i" style="font-size:12px">Qaysi preparatdan probnik so'raldi? (bir yoki ko'p)</div>
+      <div id="vf-probnik-preps" class="hide" style="margin-top:10px;max-height:300px;overflow-y:auto">
+        <div class="alert alert-i" style="font-size:12px">Qaysi preparatdan probnik so'raldi?</div>
         <div id="vf-probnik-list"></div>
       </div>
     </div>
@@ -146,21 +149,21 @@ function vfPickOne(el, containerId, key, val) {
 
 // Probnik tanlash — So'raldi bosilganda 25 preparat chiqadi
 function vfPickProbnik(el, val) {
-  // Barcha ropt lardan 'on' olib tashlaymiz (bir vaqtda ikkalasi bo'lmasin)
-  const container = document.getElementById('rg-sample');
-  if(container) container.querySelectorAll('.ropt').forEach(r => r.classList.remove('on'));
+  // Avval ikkalasini ham bekor qilamiz
+  const yes = document.getElementById('prob-yes');
+  const no  = document.getElementById('prob-no');
+  if(yes) yes.classList.remove('on');
+  if(no)  no.classList.remove('on');
+  // Faqat bosilgan tugmani belgilaymiz
   el.classList.add('on');
   ST.visit.vals.sample = val;
   const block = document.getElementById('vf-probnik-preps');
   if (val === 'Ha') {
-    // So'raldi: preparat ro'yxatini ochish
     if (block) block.classList.remove('hide');
     renderProbnikList25();
   } else {
-    // So'ralmadi: preparat ro'yxatini yopish + tozalash
     if (block) block.classList.add('hide');
     ST.visit.vals.probnikPreps = [];
-    // Barcha tanlangan preparatlarni bekor qilamiz
     if(block) block.querySelectorAll('.ropt.on').forEach(r => r.classList.remove('on'));
   }
 }
