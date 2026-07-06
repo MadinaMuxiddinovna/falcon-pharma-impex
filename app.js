@@ -4,7 +4,7 @@
 // - initData: parallel, cache dan ishlaydi
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwQmrdnDNJNaxiTX4iZ2qpReeuWC6dYvlr_uRzeHY9LCZ9AD26dl3uxoNW9DD_e9fcb9w/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxVCVoe5UGFiTjJc_U1aa0y4PMG1EPiGb8RhiAXSxUEMuTZjZN5HA0zmHPUmupowRRqUQ/exec',
 };
 
 const PREPS = [
