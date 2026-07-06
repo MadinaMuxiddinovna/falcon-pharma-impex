@@ -98,6 +98,10 @@ function warnPharmacyForMP(){
 let _wtInterval=null;
 function wtStart(){
   const key='ff_wt_'+ST.user.id+'_'+todayStr();
+  // Bugun allaqachon yakunlangan bo'lsa - qayta boshlay olmaydi
+  if(localStorage.getItem('ff_endday_'+ST.user.id)===todayStr()){
+    alert('Bugungi kun allaqachon yakunlangan!');return;
+  }
   if(!localStorage.getItem(key)) localStorage.setItem(key,new Date().toISOString());
   startWtTicker();
   const btn=document.getElementById('home-wt-btn');
@@ -125,9 +129,12 @@ function renderHome(){
   const dateEl=document.getElementById('home-date');if(!dateEl)return;
   dateEl.textContent=uzDate();
   document.getElementById('home-name').textContent=ST.user.name;
-  // Meta: Menejer (stikersiz), region, rayon
+  // Meta: Menejer FIO (stikersiz), region, rayon
   const meta=[];
-  if(ST.user.mgrId){meta.push('Menejer: '+(ST.user.mgrName||ST.user.mgrId));}
+  // Menejer FIO: mgrName bo'lsa u, yo'q bo'lsa ID (lekin ID ko'rsatmasdan)
+  if(ST.user.mgrId && ST.user.mgrName) {
+    meta.push('Menejer: '+ST.user.mgrName);
+  }
   if(ST.user.region)meta.push(ST.user.region);
   if(ST.user.district)meta.push(ST.user.district);
   const metaEl=document.getElementById('home-meta');if(metaEl)metaEl.textContent=meta.join(' · ');
@@ -416,6 +423,7 @@ async function renderEndDay(){
   // 1 kunda 1 marta
   const lastEnd=localStorage.getItem('ff_endday_'+ST.user.id);
   const alreadyDone=lastEnd===todayStr();
+  if(alreadyDone){ clearInterval(_wtInterval); _wtInterval=null; }
   const btn=document.getElementById('ed-btn');
   const alreadyEl=document.getElementById('ed-already-done');
   if(alreadyDone){
@@ -441,8 +449,13 @@ async function renderEndDay(){
 }
 
 function confirmEndDay(){
-  if(localStorage.getItem('ff_endday_'+ST.user.id)===todayStr()){alert('Bugun kun allaqachon yakunlangan!');return;}
-  showModal('Kunni yakunlash','<p>Kunni yakunlaysizmi?</p>',
+  if(localStorage.getItem('ff_endday_'+ST.user.id)===todayStr()){
+    alert('Bugungi kun allaqachon yakunlangan!');return;
+  }
+  showModal('Kunni yakunlash',
+    '<p>Kunni yakunlaysizmi?</p>'+
+    '<div class="fg" style="margin-top:10px"><label>Qaysi sanani yakunlaysiz?</label>'+
+    '<input type="date" id="ed-end-date" value="'+todayStr()+'" style="margin-top:4px" /></div>',
     '<button class="btn btn-p" onclick="closeModal()">Davom etish</button> <button class="btn btn-ok" onclick="closeModal();doEndDay()">Ha, yakunlash</button>');
 }
 async function doEndDay(){
@@ -459,9 +472,13 @@ async function doEndDay(){
   const h=Math.floor(durationSec/3600),m=Math.floor((durationSec%3600)/60);
   clearInterval(_wtInterval);
   await apiPost({action:'endDay',empId:ST.user.id,empName:ST.user.name,
-    role:ST.user.role,date:todayStr(),startTime,endTime,durationSec,
+    role:ST.user.role,date:document.getElementById('ed-end-date')?.value||todayStr(),startTime,endTime,durationSec,
     visitCount:ST.todayVisits.filter(v=>!v.date||v.date===todayStr()).length});
-  localStorage.setItem('ff_endday_'+ST.user.id,todayStr());
+  // Yakunlangan sana va vaqtni saqlaymiz
+  const endTs = new Date().toISOString();
+  localStorage.setItem('ff_endday_'+ST.user.id, todayStr());
+  localStorage.setItem('ff_endday_time_'+ST.user.id, endTs);
+  clearInterval(_wtInterval); _wtInterval = null;
   showModal('Kun yakunlandi',
     `<p>Ish kuni yakunlandi!<br>
     Ishlangan vaqt: <b>${h} soat ${m} daqiqa</b><br>
