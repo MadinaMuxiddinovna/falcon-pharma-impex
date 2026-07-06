@@ -395,7 +395,7 @@ function pageAdminBalance() {
       <div class="card-h">Menejerlarga mablag' ajratish</div>
       <div class="card-b">
         <div class="fg"><label>Menejer</label>
-          <select id="ab-mgr"><option value="">— Tanlang —</option></select>
+          <select id="ab-mgr" onchange="abResetForm()"><option value="">— Tanlang —</option></select>
         </div>
         <div class="fg"><label>Ajratiladigan summa (so'm) <span class="req">*</span></label>
           <input id="ab-summa" type="number" min="1" placeholder="Masalan: 5000000" /></div>
@@ -449,6 +449,12 @@ async function showMgrJournalAdmin(mgrId) {
       </div>`).join('')
     : '<div class="alert alert-i">Jurnal bo\'sh</div>',
     '<button class="btn btn-p" onclick="closeModal()">Yopish</button>');
+}
+function abResetForm(){
+  const sumEl=document.getElementById('ab-summa');
+  const comEl=document.getElementById('ab-comment');
+  if(sumEl) sumEl.value='';
+  if(comEl) comEl.value='';
 }
 async function abSave() {
   const sel=v('ab-mgr');if(!sel){alert('Menejerni tanlang!');return;}
@@ -563,7 +569,9 @@ function pageFeedbackInbox() {
   <div class="page" id="page-feedbackbox">
     <div class="card">
       <div class="card-h">Hodimlar murojaatlari</div>
-      <div class="card-b" id="fb-inbox"><div class="alert alert-i">Yuklanmoqda...</div></div>
+      <div class="card-b" id="fb-inbox">
+        <div class="alert alert-i">Barcha murojaatlar "Murojaatlar" sahifasida saqlanadi.</div>
+      </div>
     </div>
   </div>`;
 }
