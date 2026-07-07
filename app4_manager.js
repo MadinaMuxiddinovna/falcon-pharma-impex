@@ -29,8 +29,8 @@ async function renderAdminHistory(){
   const today=todayStr();
   const from=new Date();from.setDate(from.getDate()-Number(days));
   const fromStr=from.getFullYear()+'-'+String(from.getMonth()+1).padStart(2,'0')+'-'+String(from.getDate()).padStart(2,'0');
-  // Barcha hodimlar vizitlarini olamiz
-  const visits=await apiGet('getMyVisits',{empId:ST.user.id,from:fromStr,to:today},false).catch(()=>[]);
+  // Barcha hodimlar vizitlarini olamiz (admin uchun role='admin' — barchasi ko'rinadi)
+  const visits=await apiGet('getMyVisits',{empId:ST.user.id,from:fromStr,to:today,role:ST.user.role},false).catch(()=>[]);
   // Hodimlar ro'yxatini to'ldirish
   const empSel=document.getElementById('hist-emp-sel');
   if(empSel&&!empSel.dataset.filled&&visits.length){
@@ -60,6 +60,7 @@ async function renderAdminHistory(){
           </div>
           <div class="vcard-meta">
             ${v.empName?'👤 '+v.empName+' · ':''}
+            ${v.mgrName?'👔 '+v.mgrName+' · ':''}
             ${v.type==='doctor'&&v.target?'🏢 '+v.target+' · ':''}
             ${v.specialty?v.specialty+' · ':''}
             ${v.startTime?'⏰ '+v.startTime+(v.endTime?' → '+v.endTime:''):''}
@@ -106,8 +107,8 @@ async function renderMgrDashboard(){
   try{
     const[kpi,promos,bal]=await Promise.all([
       apiGet('getKPI',{role:ST.user.role,empId:ST.user.id,date:todayStr()},false).catch(()=>({})),
-      apiGet('getPromoQueue',{role:ST.user.role,empId:ST.user.id}).catch(()=>[]),
-      ST.user.role==='manager'?apiGet('getMgrBalance',{mgrId:ST.user.id}).catch(()=>null):Promise.resolve(null),
+      apiGet('getPromoQueue',{role:ST.user.role,empId:ST.user.id},false).catch(()=>[]),
+      ST.user.role==='manager'?apiGet('getMgrBalance',{mgrId:ST.user.id},false).catch(()=>null):Promise.resolve(null),
     ]);
     if(bal){
       ST.mgrBalance=bal;
@@ -158,7 +159,7 @@ async function renderMgrDashboard(){
 }
 
 async function showMgrJournal(){
-  const journal=await apiGet('getMgrJournal',{mgrId:ST.user.id}).catch(()=>[]);
+  const journal=await apiGet('getMgrJournal',{mgrId:ST.user.id},false).catch(()=>[]);
   const list=(journal||[]).reverse().slice(0,50);
   const bal=ST.mgrBalance||{jami:0,sarflangan:0,qolgan:0};
   showModal('Balans jurnali',
@@ -210,7 +211,7 @@ function pagePayDoctor(){
 }
 
 async function renderPayDoctorPage(){
-  const bal=await apiGet('getMgrBalance',{mgrId:ST.user.id}).catch(()=>({jami:0,sarflangan:0,qolgan:0}));
+  const bal=await apiGet('getMgrBalance',{mgrId:ST.user.id},false).catch(()=>({jami:0,sarflangan:0,qolgan:0}));
   ST.mgrBalance=bal;
   const el=document.getElementById('pd-bal');
   const box=document.getElementById('pd-bal-box');
@@ -254,7 +255,7 @@ function pdShowDoctorFlow(){
 
 // PROMA puli — MP yuborgan so'rovlar ro'yxatidan
 async function pdShowPromaFlow(){
-  const promos=await apiGet('getPromoQueue',{role:'manager',empId:ST.user.id}).catch(()=>[]);
+  const promos=await apiGet('getPromoQueue',{role:'manager',empId:ST.user.id},false).catch(()=>[]);
   const pending=(promos||[]).filter(p=>(p['Holati']||'')==='Kutilmoqda');
   document.getElementById('pd-flow').innerHTML=`
     <div class="card" style="border:2px solid #7a3ca0">
@@ -322,25 +323,25 @@ async function pdConfirmPromaPay(){
 
 async function pdFinalizePromaPay(summa,comment){
   const p=ST.mgrPay.promoData;
-  showOv('Amalga oshirilmoqda...');
+  // Optimistik balans — darhol ko'rsatamiz (#14)
+  const optimisticBal=(ST.mgrBalance?.qolgan||0)-summa;
+  updateBalanceUI(optimisticBal);
+  showModal("To'lov amalga oshirildi",
+    `<p>${p['Vrach FISh']||''} ga <b>${fmtMoney(summa)}</b> berildi.<br>Yangi balans: <b id="pd-modal-bal" style="color:${optimisticBal<0?'var(--danger)':'var(--ok)'}">${fmtMoney(optimisticBal)}</b></p>`,
+    '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'pd-flow\').innerHTML=\'\'">OK</button>');
   const resp=await apiPost({action:'mgrPayDoctor',mgrId:ST.user.id,mgrName:ST.user.name,
     type:'PROMA',date:todayStr(),doctorName:p['Vrach FISh']||'',
     doctorSpec:'',doctorObject:p['Ish joyi']||'',doctorDistrict:'',doctorPhone:'',
     mpId:p['Hodim ID']||'',mpName:p['Hodim Ismi']||'',summa,comment});
-  // Promo holati yangilash
-  if(p._row) await apiPost({action:'decidePromo',row:p._row,approved:true});
-  hideOv();
+  // Promo holati yangilash (fon rejimida)
+  if(p._row) apiPost({action:'decidePromo',row:p._row,approved:true}).catch(()=>{});
   if(resp.error){alert('Xato: '+resp.error);return;}
   const newBal=resp.newBalance;
   if(newBal!==undefined){
-    ST.mgrBalance.qolgan=newBal;
-    const el=document.getElementById('pd-bal');if(el)el.textContent=fmtMoney(newBal);
-    const box=document.getElementById('pd-bal-box');
-    if(box)box.style.background=newBal<0?'linear-gradient(135deg,#8b0000,#c0260a)':'linear-gradient(135deg,#7a3ca0,#9b59d8)';
+    updateBalanceUI(newBal);
+    const modalBal=document.getElementById('pd-modal-bal');
+    if(modalBal){modalBal.textContent=fmtMoney(newBal);modalBal.style.color=newBal<0?'var(--danger)':'var(--ok)';}
   }
-  showModal("To'lov amalga oshirildi",
-    `<p>${p['Vrach FISh']||''} ga <b>${fmtMoney(summa)}</b> berildi.<br>Yangi balans: <b style="color:${(newBal||0)<0?'var(--danger)':'var(--ok)'}">${fmtMoney(newBal||0)}</b></p>`,
-    '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'pd-flow\').innerHTML=\'\'">OK</button>');
 }
 
 function pdSearchDoc(q){
@@ -376,24 +377,33 @@ async function pdConfirmPay(){
      <button class="btn btn-pu" onclick="closeModal();pdFinalizePay(${summa},'${comment}')">Tasdiqlash</button>`);
 }
 async function pdFinalizePay(summa,comment){
-  showOv('Amalga oshirilmoqda...');
   const t=ST.mgrPay.target;
+  // Optimistik balans — darhol hisoblab ko'rsatamiz (#14), server javobi kelganda aniqlashtiramiz
+  const optimisticBal=(ST.mgrBalance?.qolgan||0)-summa;
+  updateBalanceUI(optimisticBal);
+  showModal("To'lov amalga oshirildi",
+    `<p>${t.name} ga <b>${fmtMoney(summa)}</b> berildi.<br>Yangi balans: <b id="pd-modal-bal" style="color:${optimisticBal<0?'var(--danger)':'var(--ok)'}">${fmtMoney(optimisticBal)}</b></p>`,
+    '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'pd-flow\').innerHTML=\'\'">OK</button>');
   const resp=await apiPost({action:'mgrPayDoctor',mgrId:ST.user.id,mgrName:ST.user.name,
     type:'DOKTOR',date:todayStr(),doctorName:t.name,doctorSpec:t.specialty||'',
     doctorObject:t.object||'',doctorDistrict:t.district||'',doctorPhone:t.phone||'',
     mpId:'',mpName:'',summa,comment});
-  hideOv();
   if(resp.error){alert('Xato: '+resp.error);return;}
   const newBal=resp.newBalance;
   if(newBal!==undefined){
-    ST.mgrBalance.qolgan=newBal;
-    const el=document.getElementById('pd-bal');if(el)el.textContent=fmtMoney(newBal);
-    const box=document.getElementById('pd-bal-box');
-    if(box)box.style.background=newBal<0?'linear-gradient(135deg,#8b0000,#c0260a)':'linear-gradient(135deg,#7a3ca0,#9b59d8)';
+    updateBalanceUI(newBal);
+    const modalBal=document.getElementById('pd-modal-bal');
+    if(modalBal){modalBal.textContent=fmtMoney(newBal);modalBal.style.color=newBal<0?'var(--danger)':'var(--ok)';}
   }
-  showModal("To'lov amalga oshirildi",
-    `<p>${t.name} ga <b>${fmtMoney(summa)}</b> berildi.<br>Yangi balans: <b style="color:${(newBal||0)<0?'var(--danger)':'var(--ok)'}">${fmtMoney(newBal||0)}</b></p>`,
-    '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'pd-flow\').innerHTML=\'\'">OK</button>');
+}
+function updateBalanceUI(newBal){
+  ST.mgrBalance=ST.mgrBalance||{};ST.mgrBalance.qolgan=newBal;
+  const el=document.getElementById('pd-bal');if(el)el.textContent=fmtMoney(newBal);
+  const box=document.getElementById('pd-bal-box');
+  if(box)box.style.background=newBal<0?'linear-gradient(135deg,#8b0000,#c0260a)':'linear-gradient(135deg,#7a3ca0,#9b59d8)';
+  const el2=document.getElementById('mgr-bal-qolgan');if(el2)el2.textContent=fmtMoney(newBal);
+  const box2=document.getElementById('mgr-bal-box');
+  if(box2)box2.style.background=newBal<0?'linear-gradient(135deg,#8b0000,#c0260a)':'linear-gradient(135deg,#7a3ca0,#9b59d8)';
 }
 
 // ─── PROMO — MENEJER uchun rad/tasdiqlash, ADMIN faqat ko'radi ───
@@ -407,7 +417,7 @@ function pagePromoQueue(){
   </div>`;
 }
 async function renderPromoQueue(){
-  const promos=await apiGet('getPromoQueue',{role:ST.user.role,empId:ST.user.id}).catch(()=>[]);
+  const promos=await apiGet('getPromoQueue',{role:ST.user.role,empId:ST.user.id},false).catch(()=>[]);
   ST.promoQueue=promos||[];
   const el=document.getElementById('promo-list');if(!el)return;
   if(!ST.promoQueue.length){el.innerHTML='<div class="alert alert-i">Proma so\'rovlar yo\'q</div>';return;}
@@ -442,15 +452,26 @@ async function renderPromoQueue(){
       ${summa>0?`<div style="font-size:14px;font-weight:700;color:var(--ok);margin-top:4px">
         Proma summasi: ${fmtMoney(summa)}
       </div>`:''}
-      ${!closed&&!isAdmin?`<div class="btn-row" style="margin-top:8px">
+      ${!closed&&!isAdmin?`<div class="btn-row" style="margin-top:8px" data-promo-row="${p._row}">
         <button class="btn btn-r" style="padding:5px 12px;font-size:12px" onclick="promoDecide(${p._row},false)">Rad etish</button>
         <button class="btn btn-ok" style="padding:5px 12px;font-size:12px" onclick="promoDecide(${p._row},true)">Tasdiqlash</button>
       </div>`:''}
     </div>`;
   }).join('');
 }
-async function promoDecide(row,approved){
-  await apiPost({action:'decidePromo',row,approved});renderPromoQueue();
+function promoDecide(row,approved){
+  const status=approved?'Tasdiqlandi':'Rad etildi';
+  // Optimistik UI — darhol ko'rsatamiz, server fonda yozadi (#12,#13)
+  const btnRow=document.querySelector('[data-promo-row="'+row+'"]');
+  const card=btnRow?btnRow.closest('.vcard'):null;
+  if(card){
+    const bdg=card.querySelector('.bdg');
+    if(bdg){bdg.textContent=status;bdg.className='bdg '+(approved?'bdg-g':'bdg-r');}
+    if(btnRow)btnRow.innerHTML='<span style="font-size:11px;color:var(--muted)">Saqlandi</span>';
+  }
+  const p=ST.promoQueue.find(x=>x._row===row);
+  if(p){p['Holati']=status;}
+  apiPost({action:'decidePromo',row,approved}).catch(()=>{});
 }
 
 // ─── REJALAR — ADMIN ko'radi, MENEJER tasdiqlaydi ───
@@ -465,7 +486,7 @@ function pagePlanManager(){
   </div>`;
 }
 async function renderPlansManagerView(){
-  const plans=await apiGet('getPlans',{empId:ST.user.id,role:ST.user.role}).catch(()=>[]);
+  const plans=await apiGet('getPlans',{empId:ST.user.id,role:ST.user.role},false).catch(()=>[]);
   ST.plans=plans||[];
   const el=document.getElementById('plan-mgr-list');if(!el)return;
   const validPlans=ST.plans.filter(p=>{
@@ -536,10 +557,8 @@ function pageTeamKPI(){
 }
 async function renderTeamKPI(){
   const date=v('kpi-date')||todayStr();
-  // Cache ishlatamiz - tezroq (fon rejimida yangilanadi)
-  const kpi=await apiGet('getKPI',{role:ST.user.role,empId:ST.user.id,date},true).catch(()=>({}));
-  // Cache ni tozalaymiz - keyingi chaqiruvda yangi ma'lumot olsinlar
-  delete _apiCache['getKPI'+JSON.stringify({role:ST.user.role,empId:ST.user.id,date})];
+  // Har doim yangi ma'lumot — KPI srazu ko'rinishi kerak (#10)
+  const kpi=await apiGet('getKPI',{role:ST.user.role,empId:ST.user.id,date},false).catch(()=>({}));
   const el=document.getElementById('kpi-team');if(!el)return;
   const entries=Object.entries(kpi);
   if(!entries.length){el.innerHTML='<div class="alert alert-i">Bu sana uchun ma\'lumot yo\'q</div>';el.className='';return;}
@@ -701,7 +720,7 @@ async function renderMapPage(){
   if(ml)ml.innerHTML=filtered.slice(0,30).map(l=>`
     <div class="irow">
       <span class="irow-l">${l.type==='Vrach viziti'?'🔴':'🟢'} ${l.empName} → ${l.target||''}</span>
-      <span class="irow-v"><a href="https://yandex.uz/maps/?ll=${l.lng}%2C${l.lat}&z=16&pt=${l.lng},${l.lat},pm2rdm1" target="_blank" class="bdg bdg-b" style="text-decoration:none">${l.date}</a></span>
+      <span class="irow-v"><a href="https://yandex.uz/maps/?ll=${l.lng}%2C${l.lat}&z=16&pt=${l.lng},${l.lat},pm2rdm1" target="_blank" class="bdg bdg-b" style="text-decoration:none">${l.date}${l.time?' · '+l.time:''}</a></span>
     </div>`).join('');
 }
 
