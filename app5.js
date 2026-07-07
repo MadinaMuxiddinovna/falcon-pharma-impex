@@ -27,12 +27,17 @@ function renderVfStep4() {
         <div class="irow"><span class="irow-l">Filial raqami</span><span class="irow-v">${ST.visit.vals.branchNo!==undefined&&ST.visit.vals.branchNo!==''?ST.visit.vals.branchNo:0}</span></div>
         ${(()=>{
           try{
-            const {bron,stock}=getBronAndStockData();
+            // ST.visit._pharmData da saqlanagan (step 3 dan)
+            const pd=ST.visit._pharmData||getBronAndStockData();
+            const {bron,stock}=pd;
             let stockSum=0,stockCnt=0,bronSum=0,bronCnt=0;
-            stock.forEach(s=>{if(s.qty>0){stockCnt+=s.qty;stockSum+=s.qty*(PRICES[s.prep]||0);}});
-            bron.forEach(b=>{if(b.qty>0){bronCnt+=b.qty;bronSum+=b.qty*(PRICES[b.prep]||0);}});
-            return `<div class="irow"><span class="irow-l">Qoldiq</span><span class="irow-v">${stockCnt} ta · ${fmtMoney(stockSum)}</span></div>
-              <div class="irow"><span class="irow-l">Bron</span><span class="irow-v">${bronCnt} ta · ${fmtMoney(bronSum)}</span></div>`;
+            (stock||[]).forEach(s=>{if(Number(s.qty)>0){stockCnt+=Number(s.qty);stockSum+=Number(s.qty)*(PRICES[s.prep]||0);}});
+            (bron||[]).forEach(b=>{if(Number(b.qty)>0){bronCnt+=Number(b.qty);bronSum+=Number(b.qty)*(PRICES[b.prep]||0);}});
+            let html='';
+            html+='<div class="irow"><span class="irow-l">Qoldiq</span><span class="irow-v"><b>'+stockCnt+' ta</b> · '+fmtMoney(stockSum)+'</span></div>';
+            html+='<div class="irow"><span class="irow-l">Bron</span><span class="irow-v"><b>'+bronCnt+' ta</b> · '+fmtMoney(bronSum)+'</span></div>';
+            html+='<div class="irow"><span class="irow-l"><b>Jami</b></span><span class="irow-v" style="font-weight:800;color:var(--ok)">'+fmtMoney(stockSum+bronSum)+'</span></div>';
+            return html;
           }catch(e){ return ''; }
         })()}
         `}
