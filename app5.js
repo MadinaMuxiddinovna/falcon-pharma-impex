@@ -22,7 +22,21 @@ function renderVfStep4() {
           <span class="irow-v"><span class="bdg ${ST.visit.vals.result==='ISHLAYDI'?'bdg-g':'bdg-y'}">${ST.visit.vals.result||'—'}</span></span></div>
         <div class="irow"><span class="irow-l">Proma</span>
           <span class="irow-v">${ST.visit.vals.promoRequested?fmtMoney(ST.visit.vals.promaSumma||0):'Yo\'q'}</span></div>
-        `:''}
+        `:`
+        <div class="irow"><span class="irow-l">INN</span><span class="irow-v">${ST.visit.target?.inn||''}</span></div>
+        <div class="irow"><span class="irow-l">Filial raqami</span><span class="irow-v">${ST.visit.vals.branchNo!==undefined&&ST.visit.vals.branchNo!==''?ST.visit.vals.branchNo:0}</span></div>
+        ${(()=>{
+          try{
+            const {bron,stock}=getBronAndStockData();
+            let stockSum=0,stockCnt=0,bronSum=0,bronCnt=0;
+            stock.forEach(s=>{if(s.qty>0){stockCnt+=s.qty;stockSum+=s.qty*(PRICES[s.prep]||0);}});
+            bron.forEach(b=>{if(b.qty>0){bronCnt+=b.qty;bronSum+=b.qty*(PRICES[b.prep]||0);}});
+            return `<div class="irow"><span class="irow-l">Qoldiq</span><span class="irow-v">${stockCnt} ta · ${fmtMoney(stockSum)}</span></div>
+              <div class="irow"><span class="irow-l">Bron</span><span class="irow-v">${bronCnt} ta · ${fmtMoney(bronSum)}</span></div>`;
+          }catch(e){ return ''; }
+        })()}
+        `}
+        <div class="irow"><span class="irow-l">Sana</span><span class="irow-v">${uzDate(todayStr())}</span></div>
         <div class="irow"><span class="irow-l">Vaqt</span>
           <span class="irow-v" id="vf-cur-time">${nowTimeStr()}</span></div>
       </div>
@@ -94,7 +108,7 @@ async function vfFinishVisit() {
       region:ST.visit.target.region||ST.user.region||'',
       district:ST.visit.target.district||ST.user.district||'',
       pharmInn:ST.visit.target.inn, pharmName:ST.visit.target.legalName,
-      branchNo:ST.visit.vals.branchNo||"Yo'q",
+      branchNo:(ST.visit.vals.branchNo!==undefined&&ST.visit.vals.branchNo!==null&&ST.visit.vals.branchNo!=='')?ST.visit.vals.branchNo:0,
       isNewPharmacy:!!ST.visit.target._isNew,
       bron, stock,
       comment:(document.getElementById('vf-comment')?.value||''),
