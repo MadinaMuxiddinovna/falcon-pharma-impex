@@ -142,6 +142,8 @@ async function renderMgrDashboard(){
     const el1=document.getElementById('mgr-vis');if(el1)el1.textContent=total;
     const el2=document.getElementById('mgr-promo');
     if(el2)el2.textContent=(promos||[]).filter(p=>(p['Holati']||p.status||'')==='Kutilmoqda').length;
+    // Cache tozalaymiz - yangi KPI uchun
+    delete _apiCache['getKPI'+JSON.stringify({role:ST.user.role,empId:ST.user.id,date:todayStr()})];
     const teamEl=document.getElementById('mgr-team');
     if(teamEl){
       const entries=Object.entries(kpi);
