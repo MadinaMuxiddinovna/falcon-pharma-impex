@@ -349,10 +349,10 @@ function vfPharmGoStage2(){
   PREPS.forEach((p,i)=>{bronData[p]=Number(document.getElementById('vf-bron-'+i)?.value)||0;});
   const card=document.getElementById('pharm-stage-card');
   card.innerHTML=`
-    <div class="card-h"><span>Bosqich 2: Qoldiq kiritish</span>
+    <div class="card-h"><span>Bosqich 2: Bron kiritish</span>
       <span class="bdg bdg-g" style="margin-left:auto">2 / 2</span></div>
     <div class="card-b">
-      <div class="alert alert-i">Aptekada hozirgi <b>qoldiq</b> sonini kiriting.</div>
+      <div class="alert alert-i">Aptekaga <b>bron</b> qilingan (buyurtma berilgan) preparat sonini kiriting.</div>
       <table class="stbl">
         <thead><tr><th>#</th><th>Preparat</th><th>Qoldiq</th><th>Narxi</th><th>Summa</th></tr></thead>
         <tbody id="vf-stock-tbody"></tbody>
@@ -370,10 +370,10 @@ function vfPharmGoStage2(){
 function vfPharmBackStage(){
   const card=document.getElementById('pharm-stage-card');
   card.innerHTML=`
-    <div class="card-h"><span id="pharm-stage-title">Bosqich 1: Preparat BRON</span>
+    <div class="card-h"><span id="pharm-stage-title">Bosqich 1: Qoldiq kiritish</span>
       <span class="bdg bdg-y" style="margin-left:auto">1 / 2</span></div>
     <div class="card-b">
-      <div class="alert alert-i">Bron sonini kiriting. 0 qoldirish mumkin.</div>
+      <div class="alert alert-i">Aptekadagi hozirgi qoldiq sonini kiriting. 0 bo'lsa ham yozing.</div>
       <table class="stbl">
         <thead><tr><th>#</th><th>Preparat</th><th>Qoldiq</th><th>Narxi</th><th>Summa</th></tr></thead>
         <tbody id="vf-bron-tbody"></tbody>
