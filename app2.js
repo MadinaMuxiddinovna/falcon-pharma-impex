@@ -106,15 +106,25 @@ function pageHomeTA(){return `
   </div>`;}
 
 function homeStartVisitFromPlan(objName) {
-  // Rejadagi obyektga mos vrach topamiz va vizit boshlaymiz
-  const doc = ST.doctors.find(d => (d.object||'')=== objName);
+  // Rejadagi obyekt bo'yicha nechta vrach borligini tekshiramiz
+  const matches = ST.doctors.filter(d => (d.object||'')===objName);
   startVisitFlow('doctor');
-  // Vrach topilsa Step 2 da avtomatik tanlaymiz
-  if(doc){
-    setTimeout(()=>{
-      vfSelectDoc(doc);
-    },1200);
-  }
+  setTimeout(()=>{
+    const inp=document.getElementById('vf-doc-q');
+    if(!inp) return;
+    if(matches.length===1){
+      // Faqat 1 ta vrach shu obyektda — to'g'ridan-to'g'ri tanlaymiz
+      vfSelectDoc(matches[0]);
+    } else if(matches.length>1){
+      // Bir nechta vrach bor — obyekt nomi bo'yicha qidiruvni ko'rsatamiz,
+      // MP o'zi kerakli vrach FIOsini tanlaydi
+      inp.value = objName;
+      vfSearchDoc(objName);
+    } else if(objName){
+      inp.value = objName;
+      vfSearchDoc(objName);
+    }
+  },300);
 }
 function warnPharmacyForMP(){
   showModal('Diqqat!','<p>Med. Vakil odatda vrach vizit qiladi. Dorixona vizitini boshlashni xohlaysizmi?</p>',
@@ -266,13 +276,15 @@ async function renderHistory(){
   if(histFilter==='month'){const m=new Date();m.setMonth(m.getMonth()-1);from=m.toISOString().split('T')[0];}
   let visits=[];
   try{
+    // useCache=false — har safar server dan yangi ma'lumot (#2: "1 marta korinib qolmasin")
     const res=await apiGet('getMyVisits',{empId:ST.user.id,from,to:today},false).catch(()=>null);
     if(res&&!res.error&&Array.isArray(res))visits=res;
   }catch(e){}
-  // Lokal (oflayn) vizitlarni ham qo'shamiz
+  // Faqat HALI serverga yetib bormagan (navbatda turgan) vizitlarni "Oflayn" deb belgilaymiz
+  const stillQueuedRefs=new Set(JSON.parse(localStorage.getItem('ff_q')||'[]').map(q=>q.ref).filter(Boolean));
   const localVis=JSON.parse(localStorage.getItem('ff_vis_cache_'+ST.user.id)||'[]');
   localVis.filter(v=>(v.date||today)>=from).forEach(v=>{
-    if(!visits.some(x=>x.ref===v.ref))visits.push({...v,_local:true});
+    if(!visits.some(x=>x.ref===v.ref))visits.push({...v,_local:stillQueuedRefs.has(v.ref)});
   });
   if(!visits.length){el.innerHTML='<div class="alert alert-i">Bu davr uchun vizit yo\'q</div>';return;}
   // Sanaga qarab guruhlash
@@ -288,20 +300,23 @@ async function renderHistory(){
       ${vs.map((v,i)=>{
         const doc=v.doctor||v['Vrach F.I.Sh']||'';
         const target=v.target||v['Ish joyi (obyekt)']||v['Dorixona Yuridik Nomi']||'';
+        const spec=v.specialty||v['Mutaxassisligi']||'';
+        const district=v.district||v['Tumani']||'';
         const res=v.result||v['Natija']||'';
         const t1=v.time||v.startTime||v['Vizit boshlandi (vaqt)']||'';
         const t2=v.endTime||v['Vizit tugadi (vaqt)']||'';
         const dur=v.durationSec||v.durationMin||0;
         const durStr=dur?(typeof dur==='number'&&dur>200?Math.round(dur/60)+' min':Math.round(dur)+' min'):'';
+        // #2: to'liq ma'lumot (FIO, ish joyi, sana, vaqt) darhol ko'rinadi — bosish shart emas
         return `<div class="vcard" onclick="showHistDetail('${date}',${i})" style="cursor:pointer">
           <div class="vcard-h">
             <span>${v.type==='doctor'||v['Med Vakili ID']?'🏥':'💊'} <b>${doc||target}</b></span>
             <span class="bdg ${res==='ISHLAYDI'?'bdg-g':res==='QABUL QILMADI'?'bdg-r':'bdg-y'}">${res||'OK'}</span>
           </div>
           <div class="vcard-meta">
-            ${doc&&target?'🏢 '+target+' · ':''}
-            ${t1?'⏰ '+t1:''} ${t2?'→'+t2:''} ${durStr?'⌛'+durStr:''}
-            ${v._local?'<span class="bdg bdg-y" style="margin-left:4px">Oflayn</span>':''}
+            ${doc&&target?'🏢 '+target+' · ':''}${spec?spec+' · ':''}${district?district+' · ':''}
+            📅 ${uzDateShort(date)} ${t1?'⏰ '+t1:''}${t2?'→'+t2:''} ${durStr?'⌛'+durStr:''}
+            ${v._local?'<span class="bdg bdg-y" style="margin-left:4px">Navbatda (oflayn)</span>':''}
           </div>
         </div>`;
       }).join('')}
@@ -400,8 +415,15 @@ function apSelectObject(obj){
   document.getElementById('ap-selected').innerHTML='✅ '+obj.object+(obj.district?' · '+obj.district:'');
   showEl('ap-selected');
 }
-function renderPlans(){
+async function renderPlans(){
   const el=document.getElementById('plan-list');if(!el)return;
+  el.innerHTML='<div class="alert alert-i">Yuklanmoqda...</div>';
+  // Har safar server dan yangi ma'lumot olamiz — reja tasdiqlangani/avtomatik
+  // qo'shilgani darhol ko'rinishi uchun (#1, #8)
+  try{
+    const fresh=await apiGet('getPlans',{empId:ST.user.id,role:ST.user.role},false).catch(()=>null);
+    if(fresh&&!fresh.error&&Array.isArray(fresh))ST.plans=fresh;
+  }catch(e){}
   const today=todayStr();let from=today,to=today;
   if(planFilter==='week'){const w=new Date();w.setDate(w.getDate()+7);to=w.toISOString().split('T')[0];}
   if(planFilter==='month'){const m=new Date();m.setMonth(m.getMonth()+1);to=m.toISOString().split('T')[0];}
