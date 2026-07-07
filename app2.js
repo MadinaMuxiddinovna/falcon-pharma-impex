@@ -15,7 +15,7 @@ function buildAllPages(){
   if(role==='mp'){html+=pageHomeMP();html+=pageHistory();html+=pagePlan();html+=pageEndDay('mp');html+=pageFeedback();}
   if(role==='ta'){html+=pageHomeTA();html+=pageHistory();html+=pageEndDay('ta');html+=pageFeedback();}
   if(role==='manager'){html+=pageManagerDashboard();html+=pagePayDoctor();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();}
-  if(role==='admin'){html+=pageManagerDashboard();html+=pageAdminBalance();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();html+=pageFeedbackInbox();}
+  if(role==='admin'){html+=pageManagerDashboard();html+=pageAdminBalance();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();html+=pageFeedbackInbox();html+=pageHistoryAdmin();}
   c.innerHTML=html;
 }
 
@@ -53,6 +53,13 @@ function pageHomeMP(){return `
         <div class="kpi-card"><div class="kpi-num" id="home-plan">0</div><div class="kpi-lbl">Bugungi reja</div></div>
       </div>
     </div></div>
+    <!-- Bugungi rejalar -->
+    <div class="card" id="home-plans-card">
+      <div class="card-h">Bugungi rejalar</div>
+      <div class="card-b" id="home-plans-list">
+        <div class="alert alert-i" style="font-size:12px">Rejalar yuklanmoqda...</div>
+      </div>
+    </div>
     <div class="card"><div class="card-h">Yangi vizit boshlash</div>
       <div class="card-b">
         <div class="rg">
@@ -98,6 +105,17 @@ function pageHomeTA(){return `
     <div id="visit-flow-container"></div>
   </div>`;}
 
+function homeStartVisitFromPlan(objName) {
+  // Rejadagi obyektga mos vrach topamiz va vizit boshlaymiz
+  const doc = ST.doctors.find(d => (d.object||'')=== objName);
+  startVisitFlow('doctor');
+  // Vrach topilsa Step 2 da avtomatik tanlaymiz
+  if(doc){
+    setTimeout(()=>{
+      vfSelectDoc(doc);
+    },1200);
+  }
+}
 function warnPharmacyForMP(){
   showModal('Diqqat!','<p>Med. Vakil odatda vrach vizit qiladi. Dorixona vizitini boshlashni xohlaysizmi?</p>',
     '<button class="btn btn-o" onclick="closeModal()">Bekor</button> <button class="btn btn-p" onclick="closeModal();startVisitFlow(\'pharmacy\')">Ha</button>');
@@ -185,8 +203,34 @@ function renderHome(){
   const done=ST.todayVisits.filter(v=>v.date===todayStr()||!v.date).length;
   const doneElHome=document.getElementById('home-done');if(doneElHome)doneElHome.textContent=done;
   if(ST.user.role==='mp'){
-    const pl=ST.plans.filter(p=>(p['Vizit sanasi']||p.date||'')===todayStr()).length;
-    const planEl=document.getElementById('home-plan');if(planEl)planEl.textContent=pl;
+    const todayPlans=ST.plans.filter(p=>{
+      const d=(p['Vizit sanasi']||p.date||'').toString().slice(0,10);
+      return d===todayStr();
+    });
+    const planEl=document.getElementById('home-plan');if(planEl)planEl.textContent=todayPlans.length;
+    // Bugungi rejalarni ko'rsatamiz
+    const plList=document.getElementById('home-plans-list');
+    if(plList){
+      if(!todayPlans.length){
+        plList.innerHTML="<div class='alert alert-i' style='font-size:12px'>Bugungi reja yoq</div>";
+      } else {
+        plList.innerHTML=todayPlans.map(function(p){
+          var obj=p['Obyekt nomi']||p.targetName||'';
+          var status=p['Holati']||p.status||'';
+          if(!obj||obj==='undefined') return '';
+          var safeObj=obj.replace(/'/g,'').replace(/"/g,'');
+          var bdg=status==='Tasdiqlangan'?'bdg-g':'bdg-y';
+          return '<div class="vcard" style="cursor:pointer;margin-bottom:6px"'+
+            ' onclick="homeStartVisitFromPlan(\''+safeObj+'\')">'+
+            '<div class="vcard-h">'+
+            '<span class="vcard-name">🏥 '+obj+'</span>'+
+            '<span class="bdg '+bdg+'">'+status+'</span>'+
+            '</div>'+
+            '<div style="font-size:11px;color:var(--primary);margin-top:4px">Bosib vizit boshlang →</div>'+
+            '</div>';
+        }).join('');
+      }
+    }
   } else {
     const pct=Math.min(Math.round(done/25*100),100);
     const pEl=document.getElementById('home-pct');if(pEl)pEl.textContent=pct+'%';
@@ -362,9 +406,17 @@ function renderPlans(){
   if(planFilter==='week'){const w=new Date();w.setDate(w.getDate()+7);to=w.toISOString().split('T')[0];}
   if(planFilter==='month'){const m=new Date();m.setMonth(m.getMonth()+1);to=m.toISOString().split('T')[0];}
   const list=ST.plans.filter(p=>{
-    const d=p['Vizit sanasi']||p.date||'';
-    return d&&d!=='undefined'&&d>=from&&d<=to;
+    const d=(p['Vizit sanasi']||p.date||'').toString().slice(0,10);
+    if(!d||d==='undefined'||d==='NaN') return false;
+    // Kunlik: bugungi rejalar
+    // Haftalik/oylik: from dan to gacha
+    return d>=from && d<=to;
   });
+  // Debug: agar bo'sh bo'lsa barcha rejalarni ko'rsatamiz
+  if(!list.length && ST.plans.length) {
+    // Sana formatini tekshiramiz
+    console.log('Plans:', ST.plans.slice(0,3).map(p=>p['Vizit sanasi']||p.date));
+  }
   if(!list.length){el.innerHTML='<div class="alert alert-i">Bu davr uchun reja yo\'q</div>';return;}
   const byDate={};list.forEach(p=>{const d=p['Vizit sanasi']||p.date||'';if(!byDate[d])byDate[d]=[];byDate[d].push(p);});
   el.innerHTML=Object.entries(byDate).sort().map(([date,plans])=>`
@@ -390,7 +442,17 @@ async function savePlan(){
   await apiPost({action:'addPlan',empId:ST.user.id,empName:ST.user.name,mgrId:ST.user.mgrId||'',
     type:'doctor',targetName:apTarget.object,targetObject:apTarget.object,
     date,goal:'Vizit',status:'Kutilmoqda',createdAt:new Date().toISOString()});
-  ST.plans.push({'Vizit sanasi':date,'Obyekt nomi':apTarget.object,'Holati':'Kutilmoqda'});
+  // Lokal plans ga ham to'g'ri sana bilan qo'shamiz (filter uchun)
+  ST.plans.push({
+    'Vizit sanasi': date,
+    'Obyekt nomi': apTarget.object,
+    'Hodim ID': ST.user.id,
+    'Hodim Ismi': ST.user.name,
+    'Holati': 'Kutilmoqda',
+    date: date,
+    targetName: apTarget.object,
+    status: 'Kutilmoqda'
+  });
   toggleAddPlanForm();renderPlans();
   showModal('Yuborildi','<p>Rejangiiz menejeringizga yuborildi.</p>','<button class="btn btn-p" onclick="closeModal()">OK</button>');
 }
