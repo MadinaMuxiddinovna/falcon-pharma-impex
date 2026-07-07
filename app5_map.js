@@ -30,7 +30,7 @@ function pageMap() {
 
 async function renderMapPage() {
   const days = document.getElementById('map-days')?.value || '7';
-  const locs = await apiGet('getLocations',{empId:ST.user.id,role:ST.user.role,days}).catch(()=>[]);
+  const locs = await apiGet('getLocations',{empId:ST.user.id,role:ST.user.role,days},false).catch(()=>[]);
   const validLocs = (locs||[]).filter(l=>l.lat&&l.lng);
 
   // Hodim filtri
@@ -72,7 +72,7 @@ async function renderMapPage() {
         <span class="irow-l">${l.type==='Vrach viziti'?'🔴':'🟢'} ${l.empName} → ${l.target||''}</span>
         <span class="irow-v">
           <a href="https://yandex.uz/maps/?ll=${l.lng}%2C${l.lat}&z=16&pt=${l.lng},${l.lat},pm2rdm1"
-            target="_blank" class="bdg bdg-b" style="text-decoration:none">${l.date}</a>
+            target="_blank" class="bdg bdg-b" style="text-decoration:none">${l.date}${l.time?' · '+l.time:''}</a>
         </span>
       </div>`).join('');
   }
