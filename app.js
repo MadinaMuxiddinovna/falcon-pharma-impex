@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbz7An0JxLvA0eR2wZfDLOO21fjvnyVhGzhEI7gQ_sC8aUboS3cqZtpiFh2rJVtnUgAdNA/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzRwcCozS-DweL0Ig5d8ucPrzu6SOF2hDUuEwMolIVx-bQfC33siSVZBiXUxOF-bv_x8w/exec',
 };
 
 const PREPS = [
@@ -183,7 +183,7 @@ const NAV_BY_ROLE = {
   mp:      [['home','Bosh sahifa'],['history','Tarix'],['plan','Reja'],['endday','Kun yakuni'],['feedback','Murojaat']],
   ta:      [['home','Bosh sahifa'],['history','Tarix'],['endday','Kun yakuni'],['feedback','Murojaat']],
   manager: [['mgr','Boshqaruv'],['paydoctor','Pul berish'],['promo','Proma'],['planmgr','MP rejalari'],['kpi','Jamoa KPI'],['map','Xarita']],
-  admin:   [['mgr','Boshqaruv'],['adminbalance','Menejer balans'],['promo','Proma'],['planmgr','Rejalar'],['kpi','Jamoa KPI'],['map','Xarita'],['feedbackbox','Murojaatlar']],
+  admin:   [['mgr','Boshqaruv'],['adminbalance','Menejer balans'],['promo','Proma'],['planmgr','Rejalar'],['histadmin','Tarix'],['kpi','Jamoa KPI'],['map','Xarita'],['feedbackbox','Murojaatlar']],
 };
 
 function enterApp() {
@@ -292,7 +292,14 @@ function showModal(title, body, btns) {
 }
 function closeModal() { document.getElementById('modal-bg')?.classList.add('hide'); }
 function fmtMoney(n) { return Math.round(n||0).toLocaleString('uz-UZ')+" so'm"; }
-function todayStr() { return new Date().toISOString().split('T')[0]; }
+function todayStr() {
+  // Lokal sana (timezone muammosini hal qiladi)
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
 function nowTimeStr() { return new Date().toTimeString().slice(0,8); }
 function nowTimeFromTs(ts) { return new Date(ts).toTimeString().slice(0,8); }
 
