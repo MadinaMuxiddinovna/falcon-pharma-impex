@@ -96,6 +96,21 @@ function renderVfStep2Doctor() {
       <button class="btn btn-o" onclick="vfShowStep(1)">← Orqaga</button>
       <button class="btn btn-p" id="vf-next2" onclick="vfStartTimer()" disabled>Vizitni boshlash ▶</button>
     </div>`;
+  // Reja obyektidan kelingan bo'lsa — endi (vf-doc-q haqiqatan mavjud bo'lganda) qo'llaymiz
+  if(window._pendingPlanObj){
+    const objName=window._pendingPlanObj;
+    window._pendingPlanObj=null;
+    const matches=ST.doctors.filter(d=>(d.object||'')===objName);
+    const inp=document.getElementById('vf-doc-q');
+    if(inp){
+      if(matches.length===1){
+        vfSelectDoc(matches[0]);
+      } else if(objName){
+        inp.value=objName;
+        vfSearchDoc(objName);
+      }
+    }
+  }
 }
 
 function vfSearchDoc(q) {
