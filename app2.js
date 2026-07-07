@@ -323,6 +323,57 @@ async function renderHistory(){
     </div>`).join('');
 }
 
+
+function renderHistList(visits,from,today,el){
+  if(!el)el=document.getElementById('hist-list');
+  if(!el)return;
+  const filtered=visits.filter(function(v){
+    return String(v.date||today).slice(0,10)>=from;
+  });
+  if(!filtered.length){
+    el.innerHTML='<div class="alert alert-i">Bu davr uchun vizit yoq</div>';return;
+  }
+  const byDate={};
+  filtered.forEach(function(v){
+    const d=String(v.date||today).slice(0,10);
+    if(!byDate[d])byDate[d]=[];byDate[d].push(v);
+  });
+  window._histData=byDate;
+  let html='';
+  Object.entries(byDate).sort(function(a,b){return b[0].localeCompare(a[0]);}).forEach(function(entry){
+    const date=entry[0],vs=entry[1];
+    html+='<div style="margin-bottom:16px">';
+    html+='<div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--primary3)">';
+    html+=uzDate(date)+' — '+vs.length+' ta vizit</div>';
+    vs.forEach(function(v,i){
+      const isDoc=v.type==='doctor'||!!v['Med Vakili ID'];
+      const doc=v.doctor||v['Vrach F.I.Sh']||'';
+      const target=v.target||v['Ish joyi (obyekt)']||v['Dorixona Yuridik Nomi']||'';
+      const res=v.result||v['Natija']||'';
+      const t1=v.time||v.startTime||v['Vizit boshlandi (vaqt)']||'';
+      const t2=v.endTime||v['Vizit tugadi (vaqt)']||'';
+      const dur=v.durationSec||v.durationMin||0;
+      const durStr=dur?(typeof dur==='number'&&dur>200?Math.round(dur/60):Math.round(dur))+' min':'';
+      const displayName=doc||(isDoc?target:target)||'';
+      const displayPlace=doc&&target?target:'';
+      const bdgClass=res==='ISHLAYDI'?'bdg-g':res==='QABUL QILMADI'?'bdg-r':'bdg-y';
+      const showRes=(res&&res!=='OK'&&res!=='Vizit')?('<span class="bdg '+bdgClass+'">'+res+'</span>'):'';
+      html+='<div class="vcard" data-hdate="'+date+'" data-hidx="'+i+'" onclick="showHistDetail(this.dataset.hdate,this.dataset.hidx)" style="cursor:pointer">';
+      html+='<div class="vcard-h">';
+      html+='<span>'+(isDoc?'🏥':'💊')+' <b>'+(displayName||'—')+'</b></span>'+showRes;
+      html+='</div>';
+      html+='<div class="vcard-meta">';
+      if(displayPlace)html+='🏢 '+displayPlace+' &middot; ';
+      if(t1)html+='⏰ '+t1;
+      if(t2)html+=' → '+t2;
+      if(durStr)html+=' ⌛'+durStr;
+      if(v._local)html+='<span class="bdg bdg-y" style="margin-left:4px">Oflayn</span>';
+      html+='</div></div>';
+    });
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
 function showHistDetail(date,idx){
   const v=window._histData?.[date]?.[idx];if(!v)return;
   const doc=v.doctor||v['Vrach F.I.Sh']||'';
