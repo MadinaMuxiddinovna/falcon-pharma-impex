@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzRwcCozS-DweL0Ig5d8ucPrzu6SOF2hDUuEwMolIVx-bQfC33siSVZBiXUxOF-bv_x8w/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxeI28eQ1x_BzTPxSzEcuRqKQhHzhOCJUMMb26t2ROrXVWRapDpS52W4C0fMJPRIcfF/exec',
 };
 
 const PREPS = [
@@ -164,16 +164,38 @@ async function apiGet(action, params, useCache=true) {
 async function apiPost(d) {
   if (!navigator.onLine) { queueSave(d); return { status:'queued', offline:true }; }
   try {
-    await fetch(CFG.SCRIPT_URL, {
-      method:'POST', mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
+    // MUHIM TUZATISH: avvalgi kod mode:'no-cors' ishlatgani uchun server javobi
+    // umuman o'qilmas edi (opaque response) — shuning uchun newBalance, fake, ref kabi
+    // maydonlar doim "undefined" bo'lgan (#14 — balans yangilanmasligi shundan edi).
+    // text/plain Content-Type + standart 'cors' rejimi — bu "simple request" hisoblanadi,
+    // Apps Script preflight (OPTIONS) so'ramaydi VA javobni o'qish mumkin bo'ladi.
+    const r = await fetch(CFG.SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(d)
     });
-    return { status:'sent' };
+    let resp = { status:'sent' };
+    try { const j = await r.json(); if (j && typeof j==='object') resp = { status:'sent', ...j }; } catch(e2) {}
+    invalidateApiCache(d.action);
+    return resp;
   } catch(e) {
     queueSave(d);
     return { status:'queued', error:e.message };
   }
+}
+// Amal bajarilgandan keyin tegishli GET keshlarini tozalaymiz — tez yangilanish uchun (#9,#12,#13)
+function invalidateApiCache(action) {
+  const map = {
+    addPlan:['getPlans'], updatePlan:['getPlans'],
+    requestPromo:['getPromoQueue'], decidePromo:['getPromoQueue'],
+    addMgrBalance:['getMgrBalance','getAllBalances','getMgrJournal'],
+    mgrPayDoctor:['getMgrBalance','getAllBalances','getMgrJournal','getPromoQueue'],
+    addVisitMP:['getKPI','getDayVisits','getMyVisits','getPlans'],
+    addVisitTA:['getKPI','getDayVisits','getMyVisits'],
+    endDay:['getKPI'],
+  };
+  const keys = map[action]||[];
+  Object.keys(_apiCache).forEach(k=>{ if(keys.some(p=>k.startsWith(p))) delete _apiCache[k]; });
 }
 
 // ═══ MENYU ══════════════════════════════════════════
@@ -213,8 +235,10 @@ function showPage(p) {
   document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
   document.getElementById('page-'+p)?.classList.add('active');
   document.querySelector(`.nav-tab[data-p="${p}"]`)?.classList.add('active');
+  if (p==='home')         refreshHomeLive();
   if (p==='plan')         renderPlans();
   if (p==='history')      renderHistory();
+  if (p==='histadmin')    renderAdminHistory();
   if (p==='endday')       renderEndDay();
   if (p==='mgr')          renderMgrDashboard();
   if (p==='promo')        renderPromoQueue();
@@ -224,6 +248,24 @@ function showPage(p) {
   if (p==='adminbalance') renderAdminBalance();
   if (p==='map')          renderMapPage();
   if (p==='feedbackbox')  renderFeedbackInbox();
+}
+
+// Bosh sahifa ochilganda — rejalar, bugungi vizitlar va KPI ni serverdan yangilaymiz
+// (foydalanuvchi saytga necha marta kirsa ham eng oxirgi holat ko'rinishi uchun — #1,#3,#10)
+async function refreshHomeLive() {
+  renderHome();
+  try {
+    const [plans, dayVisits] = await Promise.all([
+      apiGet('getPlans',{empId:ST.user.id,role:ST.user.role},false).catch(()=>null),
+      apiGet('getDayVisits',{empId:ST.user.id,date:todayStr()},false).catch(()=>null),
+    ]);
+    if (plans && !plans.error && Array.isArray(plans)) ST.plans = plans;
+    if (dayVisits && !dayVisits.error) {
+      ST.todayVisits = dayVisits;
+      localStorage.setItem('ff_vis_cache_'+ST.user.id, JSON.stringify(dayVisits));
+    }
+  } catch(e) {}
+  if (document.getElementById('page-home')?.classList.contains('active')) renderHome();
 }
 
 // ═══ MA'LUMOT YUKLASH ═══════════════════════════════
