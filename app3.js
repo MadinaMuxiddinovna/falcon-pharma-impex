@@ -311,9 +311,9 @@ function vfSetBranchMode(hasOne) {
   event.currentTarget.classList.add('on');
   tgl('vf-branch-input', hasOne);
   if (!hasOne) {
-    ST.visit.vals.branchNo = "Yo'q";
+    ST.visit.vals.branchNo = 0;
     document.getElementById('vf-next2').disabled = false;
-    if (ST.visit.target.rowNum) apiPost({action:'saveBranchNo', rowNum:ST.visit.target.rowNum, branchNo:"Yo'q"});
+    if (ST.visit.target.rowNum) apiPost({action:'saveBranchNo', rowNum:ST.visit.target.rowNum, branchNo:0});
   } else {
     document.getElementById('vf-branch-no').oninput = function() {
       ST.visit.vals.branchNo = this.value;
@@ -346,7 +346,20 @@ async function vfFinalizeNewPharm(newP) {
   ST.pharmacies.push(newP); ST.visit.target = newP; ST.visit.newObjData = newP;
   document.getElementById('vf-pharm-sel').innerHTML =
     `<div class="alert alert-ok">✅ <b>${newP.legalName}</b> (yangi) · ${newP.district}</div>`;
-  showEl('vf-pharm-sel'); showEl('vf-branch-block'); showEl('vf-branch-ask');
+  showEl('vf-pharm-sel'); showEl('vf-branch-block');
+  const branchVal = (newP.branch||'').toString().trim();
+  if (branchVal) {
+    // Filial raqami dorixona qo'shish shaklida allaqachon kiritilgan — qayta so'ramaymiz
+    ST.visit.vals.branchNo = branchVal;
+    document.getElementById('vf-branch-known').innerHTML = `✅ Filial raqami: <b>${branchVal}</b>`;
+    showEl('vf-branch-known'); hideEl('vf-branch-ask');
+    document.getElementById('vf-next2').disabled = false;
+  } else {
+    // Bo'sh qoldirilgan — filial yo'q deb hisoblab, bazaga 0 sifatida yozamiz, qayta so'ramaymiz
+    ST.visit.vals.branchNo = 0;
+    hideEl('vf-branch-known'); hideEl('vf-branch-ask');
+    document.getElementById('vf-next2').disabled = false;
+  }
   // Bazaga yuborish (INN + Yuridik Nomi)
   await apiPost({ action:'addNewPharmacy', ...newP, empName:ST.user.name });
 }
