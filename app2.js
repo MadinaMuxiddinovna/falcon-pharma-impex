@@ -106,25 +106,11 @@ function pageHomeTA(){return `
   </div>`;}
 
 function homeStartVisitFromPlan(objName) {
-  // Rejadagi obyekt bo'yicha nechta vrach borligini tekshiramiz
-  const matches = ST.doctors.filter(d => (d.object||'')===objName);
+  // Reja obyektini saqlaymiz — GPS bosqichi tugab, vrach qidiruv ekrani
+  // haqiqatan chizilganda qo'llanadi (oldingi qattiq belgilangan 300ms
+  // GPS tugashidan oldin ishga tushib, deyarli hech qachon ishlamas edi)
+  window._pendingPlanObj = objName || '';
   startVisitFlow('doctor');
-  setTimeout(()=>{
-    const inp=document.getElementById('vf-doc-q');
-    if(!inp) return;
-    if(matches.length===1){
-      // Faqat 1 ta vrach shu obyektda — to'g'ridan-to'g'ri tanlaymiz
-      vfSelectDoc(matches[0]);
-    } else if(matches.length>1){
-      // Bir nechta vrach bor — obyekt nomi bo'yicha qidiruvni ko'rsatamiz,
-      // MP o'zi kerakli vrach FIOsini tanlaydi
-      inp.value = objName;
-      vfSearchDoc(objName);
-    } else if(objName){
-      inp.value = objName;
-      vfSearchDoc(objName);
-    }
-  },300);
 }
 function warnPharmacyForMP(){
   showModal('Diqqat!','<p>Med. Vakil odatda vrach vizit qiladi. Dorixona vizitini boshlashni xohlaysizmi?</p>',
@@ -308,15 +294,15 @@ async function renderHistory(){
         const dur=v.durationSec||v.durationMin||0;
         const durStr=dur?(typeof dur==='number'&&dur>200?Math.round(dur/60)+' min':Math.round(dur)+' min'):'';
         // #2: to'liq ma'lumot (FIO, ish joyi, sana, vaqt) darhol ko'rinadi — bosish shart emas
+        const isDocV=v.type==='doctor'||!!v['Med Vakili ID'];
         return `<div class="vcard" onclick="showHistDetail('${date}',${i})" style="cursor:pointer">
           <div class="vcard-h">
-            <span>${v.type==='doctor'||v['Med Vakili ID']?'🏥':'💊'} <b>${doc||target}</b></span>
-            <span class="bdg ${res==='ISHLAYDI'?'bdg-g':res==='QABUL QILMADI'?'bdg-r':'bdg-y'}">${res||'OK'}</span>
+            <span>${isDocV?'🏥':'💊'} <b>${doc||target}</b></span>
+            ${isDocV&&res?`<span class="bdg ${res==='ISHLAYDI'?'bdg-g':res==='QABUL QILMADI'?'bdg-r':'bdg-y'}">${res}</span>`:''}
           </div>
           <div class="vcard-meta">
             ${doc&&target?'🏢 '+target+' · ':''}${spec?spec+' · ':''}${district?district+' · ':''}
             📅 ${uzDateShort(date)} ${t1?'⏰ '+t1:''}${t2?'→'+t2:''} ${durStr?'⌛'+durStr:''}
-            ${v._local?'<span class="bdg bdg-y" style="margin-left:4px">Navbatda (oflayn)</span>':''}
           </div>
         </div>`;
       }).join('')}
@@ -567,7 +553,7 @@ async function renderEndDay(){
     if(dv&&!dv.error){
       // Lokal navbatdagi vizitlarni ham qo'shamiz
       const localQ=JSON.parse(localStorage.getItem('ff_q')||'[]');
-      const combined=[...dv];
+      const combined=mergeTodayVisits(dv);
       localQ.filter(q=>q.action==='addVisitMP'||q.action==='addVisitTA').forEach(q=>{
         if(!combined.some(v=>v.ref===q.ref))
           combined.push({type:q.action==='addVisitMP'?'doctor':'pharmacy',target:q.doctorObject||q.pharmName||'',doctor:q.doctorName||'',result:q.result||'OK',time:q.visitStartTime||'',date:q.date,ref:q.ref,offline:true});
