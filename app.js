@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwvDnkZ5ODlzfdBCKn9wrMOanBQ-W53_PJNtxoinVTARKRfw6Tiwn5br-lJ9_0NJzuNRQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwcNlOeyULxVYPL7V_A_nm1WhHaWPW6s_z_5XSkrSenlZaIeE5WvUgBjAAj_U7s8Zqt/exec',
 };
 
 const PREPS = [
@@ -190,8 +190,8 @@ function invalidateApiCache(action) {
     requestPromo:['getPromoQueue'], decidePromo:['getPromoQueue'],
     addMgrBalance:['getMgrBalance','getAllBalances','getMgrJournal'],
     mgrPayDoctor:['getMgrBalance','getAllBalances','getMgrJournal','getPromoQueue'],
-    addVisitMP:['getKPI','getDayVisits','getMyVisits','getPlans'],
-    addVisitTA:['getKPI','getDayVisits','getMyVisits'],
+    addVisitMP:['getKPI','getDayVisits','getMyVisits','getPlans','getLocations'],
+    addVisitTA:['getKPI','getDayVisits','getMyVisits','getLocations'],
     endDay:['getKPI'],
   };
   const keys = map[action]||[];
@@ -238,6 +238,7 @@ function showPage(p) {
   if (p==='home')         refreshHomeLive();
   if (p==='plan')         renderPlans();
   if (p==='history')      renderHistory();
+  if (p==='histadmin')    { if(typeof renderAdminHistory==='function') renderAdminHistory(); }
   if (p==='histadmin')    renderAdminHistory();
   if (p==='endday')       renderEndDay();
   if (p==='mgr')          renderMgrDashboard();
@@ -277,7 +278,14 @@ async function initData() {
   const cv = JSON.parse(localStorage.getItem('ff_vis_cache_'+ST.user.id)||'[]');
   if (cd.length) ST.doctors = cd;
   if (cp.length) ST.pharmacies = cp;
-  if (cv.length) ST.todayVisits = cv.filter(v => v.date===todayStr());
+  if (cv.length) {
+    // date maydoni turli formatlarda bo'lishi mumkin - shuning uchun slice(0,10) bilan tekshiramiz
+    const today = todayStr();
+    ST.todayVisits = cv.filter(v => {
+      const d = String(v.date||'').slice(0,10);
+      return d === today;
+    });
+  }
 
   // Bosh sahifani cache dan ko'rsatamiz
   if (document.getElementById('page-home')) renderHome();
@@ -317,6 +325,10 @@ async function initData() {
     }
     if (document.getElementById('page-home')?.classList.contains('active')) renderHome();
     if (document.getElementById('page-endday')?.classList.contains('active')) renderEndDay();
+    // Admin/menejer uchun KPI ham yangilansin
+    if (document.getElementById('page-kpi')?.classList.contains('active')) {
+      if(typeof renderTeamKPI==='function') renderTeamKPI();
+    }
     flushQueue();
   });
 }
