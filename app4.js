@@ -303,20 +303,20 @@ function renderPharmacyFormStage1(){
   return `
   <div class="card" id="pharm-stage-card">
     <div class="card-h">
-      <span id="pharm-stage-title">Bosqich 1: Preparat BRON</span>
+      <span id="pharm-stage-title">Bosqich 1: Qoldiq kiritish</span>
       <span class="bdg bdg-y" style="margin-left:auto">1 / 2</span>
     </div>
     <div class="card-b">
-      <div class="alert alert-i">Aptekaga bron qilingan (kelishilgan) preparatlar sonini kiriting. 0 qoldirishingiz mumkin.</div>
+      <div class="alert alert-i">Aptekadagi hozirgi qoldiq sonini kiriting. 0 bo'lsa ham yozing.</div>
       <table class="stbl">
-        <thead><tr><th>#</th><th>Preparat</th><th>Bron</th><th>Narxi</th><th>Summa</th></tr></thead>
+        <thead><tr><th>#</th><th>Preparat</th><th>Qoldiq</th><th>Narxi</th><th>Summa</th></tr></thead>
         <tbody id="vf-bron-tbody"></tbody>
       </table>
       <div style="text-align:right;margin-top:10px;font-weight:800;font-size:15px;color:var(--ok)">
         Jami bron: <span id="vf-bron-total">0 so'm</span>
       </div>
       <div class="btn-row">
-        <button class="btn btn-p" onclick="vfPharmGoStage2()">Qoldiqni kiritish →</button>
+        <button class="btn btn-p" onclick="vfPharmGoStage2()">Bron bosqichiga →</button>
       </div>
     </div>
   </div>`;
@@ -375,14 +375,14 @@ function vfPharmBackStage(){
     <div class="card-b">
       <div class="alert alert-i">Bron sonini kiriting. 0 qoldirish mumkin.</div>
       <table class="stbl">
-        <thead><tr><th>#</th><th>Preparat</th><th>Bron</th><th>Narxi</th><th>Summa</th></tr></thead>
+        <thead><tr><th>#</th><th>Preparat</th><th>Qoldiq</th><th>Narxi</th><th>Summa</th></tr></thead>
         <tbody id="vf-bron-tbody"></tbody>
       </table>
       <div style="text-align:right;margin-top:10px;font-weight:800;font-size:15px;color:var(--ok)">
         Jami bron: <span id="vf-bron-total">0 so'm</span>
       </div>
       <div class="btn-row">
-        <button class="btn btn-p" onclick="vfPharmGoStage2()">Qoldiqni kiritish →</button>
+        <button class="btn btn-p" onclick="vfPharmGoStage2()">Bron bosqichiga →</button>
       </div>
     </div>`;
   buildBronTable();
@@ -414,7 +414,8 @@ function vfUpdateStockSum(){
 }
 
 function getBronAndStockData(){
-  const bron=PREPS.map((p,i)=>({prep:p,qty:Number(document.getElementById('vf-bron-'+i)?.value)||0}));
-  const stock=PREPS.map((p,i)=>({prep:p,qty:Number(document.getElementById('vf-st-'+i)?.value)||0}));
+  // Stage 1 = Qoldiq (vf-bron- ID larda), Stage 2 = Bron (vf-st- ID larda)
+  const stock=PREPS.map((p,i)=>({prep:p,qty:Number(document.getElementById('vf-bron-'+i)?.value)||0}));
+  const bron=PREPS.map((p,i)=>({prep:p,qty:Number(document.getElementById('vf-st-'+i)?.value)||0}));
   return{bron,stock};
 }
