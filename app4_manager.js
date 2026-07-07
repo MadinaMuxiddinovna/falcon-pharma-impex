@@ -1,3 +1,73 @@
+// ─── ADMIN VISIT TARIXI ──────────────────────────
+function pageHistoryAdmin(){
+  return `
+  <div class="page" id="page-histadmin">
+    <div class="card"><div class="card-h">Barcha vizitlar tarixi</div>
+      <div class="card-b">
+        <div class="frow" style="margin-bottom:12px">
+          <div class="fg"><label>Hodim</label>
+            <select id="hist-emp-sel">
+              <option value="">— Barchasi —</option>
+            </select>
+          </div>
+          <div class="fg"><label>Davr</label>
+            <select id="hist-days-sel" onchange="renderAdminHistory()">
+              <option value="1">Bugun</option>
+              <option value="7" selected>1 hafta</option>
+              <option value="30">1 oy</option>
+            </select>
+          </div>
+        </div>
+        <div id="admin-hist-list"><div class="alert alert-i">Yuklanmoqda...</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function renderAdminHistory(){
+  const days=document.getElementById('hist-days-sel')?.value||'7';
+  const today=todayStr();
+  const from=new Date();from.setDate(from.getDate()-Number(days));
+  const fromStr=from.getFullYear()+'-'+String(from.getMonth()+1).padStart(2,'0')+'-'+String(from.getDate()).padStart(2,'0');
+  // Barcha hodimlar vizitlarini olamiz
+  const visits=await apiGet('getMyVisits',{empId:ST.user.id,from:fromStr,to:today},false).catch(()=>[]);
+  // Hodimlar ro'yxatini to'ldirish
+  const empSel=document.getElementById('hist-emp-sel');
+  if(empSel&&!empSel.dataset.filled&&visits.length){
+    const uniq=[...new Map(visits.map(v=>[v.empId||'',v.empName||'']).filter(([id])=>id)).entries()];
+    empSel.innerHTML='<option value="">— Barchasi —</option>'+
+      uniq.map(([id,name])=>`<option value="${id}">${name}</option>`).join('');
+    empSel.dataset.filled='1';empSel.onchange=renderAdminHistory;
+  }
+  const filterEmp=empSel?.value||'';
+  const filtered=(visits||[]).filter(v=>!filterEmp||v.empId===filterEmp);
+  const el=document.getElementById('admin-hist-list');if(!el)return;
+  if(!filtered.length){el.innerHTML="<div class='alert alert-i'>Bu davr uchun vizit yoq</div>";return;}
+  // Sanaga qarab guruhlash
+  const byDate={};
+  filtered.forEach(v=>{const d=v.date||today;if(!byDate[d])byDate[d]=[];byDate[d].push(v);});
+  el.innerHTML=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,vs])=>`
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--primary);
+        margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--primary3)">
+        ${date} — ${vs.length} ta vizit
+      </div>
+      ${vs.map(v=>`
+        <div class="vcard" style="margin-bottom:6px">
+          <div class="vcard-h">
+            <span>${v.type==='doctor'?'🏥':'💊'} <b>${v.doctor||v.target||''}</b></span>
+            <span class="bdg ${v.result==='ISHLAYDI'?'bdg-g':v.result==='QABUL QILMADI'?'bdg-r':'bdg-y'}">${v.result||'OK'}</span>
+          </div>
+          <div class="vcard-meta">
+            ${v.empName?'👤 '+v.empName+' · ':''}
+            ${v.type==='doctor'&&v.target?'🏢 '+v.target+' · ':''}
+            ${v.specialty?v.specialty+' · ':''}
+            ${v.startTime?'⏰ '+v.startTime+(v.endTime?' → '+v.endTime:''):''}
+            ${v.durationMin?'· '+v.durationMin+' min':''}
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
 // app4_manager.js FINAL
 // Tuzatishlar:
 // - Rejalar/Promo: matn chiqadi (server ustun nomlari bilan mos)
@@ -422,7 +492,7 @@ async function renderPlansManagerView(){
         const obj=p['Obyekt nomi']||p.targetName||'';
         const date=p['Vizit sanasi']||p.date||'';
         const maqsad=p['Maqsad']||p.goal||'';
-        return `<div class="vcard">
+        return `<div class="vcard" data-plan-row="${p._row}">
           <div class="vcard-h"><span class="vcard-name">${obj}</span>
             <span class="bdg ${status==='Tasdiqlangan'?'bdg-g':status==='Rad etildi'?'bdg-r':'bdg-y'}">${status}</span>
           </div>
@@ -436,8 +506,19 @@ async function renderPlansManagerView(){
     </div>`).join('');
 }
 async function planMgrDecide(row,approved){
-  await apiPost({action:'updatePlan',row,status:approved?'Tasdiqlangan':'Rad etildi'});
-  renderPlansManagerView();
+  const status=approved?'Tasdiqlangan':'Rad etildi';
+  // Optimistik UI: darhol ko'rsatamiz, server fonda yuklanadi
+  const card=document.querySelector('[data-plan-row="'+row+'"]');
+  if(card){
+    const bdg=card.querySelector('.bdg');
+    if(bdg){bdg.textContent=status;bdg.className='bdg '+(approved?'bdg-g':'bdg-r');}
+    const btns=card.querySelector('.plan-btns');
+    if(btns)btns.innerHTML='<span style="font-size:11px;color:var(--muted)">Saqlandi</span>';
+  }
+  // ST.plans da ham yangilaymiz
+  const p=ST.plans.find(x=>x._row===row);
+  if(p){p['Holati']=status;p.status=status;}
+  apiPost({action:'updatePlan',row,status}).catch(()=>{});
 }
 
 // ─── JAMOA KPI ───────────────────────────────────────
@@ -568,6 +649,13 @@ function pageMap(){
               <option value="30">1 oy</option>
             </select></div>
         </div>
+        <!-- Rang legenda -->
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:12px">
+          <span>🔴 MP - vrach</span>
+          <span>🟢 MP - dorixona</span>
+          <span>🔵 Agent - dorixona</span>
+          <span>🟠 Menejer</span>
+        </div>
         <div id="ymap-container" style="width:100%;height:480px;border-radius:12px;overflow:hidden;border:1px solid var(--border)">
           <div class="alert alert-i">Yuklanmoqda...</div>
         </div>
@@ -591,7 +679,23 @@ async function renderMapPage(){
   const container=document.getElementById('ymap-container');
   if(!filtered.length){if(container)container.innerHTML='<div class="alert alert-i" style="margin:16px">Bu davr uchun lokatsiya yo\'q</div>';return;}
   const first=filtered[0];
-  const pts=filtered.slice(0,10).map((l,i)=>`pt=${l.lng},${l.lat},pm2${l.type==='Vrach viziti'?'rd':'gm'}m${i+1}`).join('~');
+  // Markerlar: doktor=qizil(rd), apteka=moviy(bl), rangni rolga qarab
+  // Yandex marker: pm2[color][style][size]
+  // rd=qizil, gm=yashil, bl=ko'k, yw=sariq
+  const pts=filtered.slice(0,10).map((l,i)=>{
+    let color;
+    if(l.type==='Vrach viziti'||l.type==='doctor'){
+      // Doktor: rol bo'yicha rang
+      if(l.role==='mp'||l.role==='med'||l.role==='') color='rd';      // MP - qizil
+      else if(l.role==='manager') color='or';  // Menejer - to'q sariq
+      else color='rd';
+    } else {
+      // Apteka/dorixona
+      if(l.role==='ta'||l.role==='agent') color='bl';  // Agent - ko'k
+      else color='gm';                                   // MP - yashil
+    }
+    return 'pt='+l.lng+','+l.lat+',pm2'+color+'m'+(i+1);
+  }).join('~');
   if(container)container.innerHTML=`<iframe src="https://yandex.uz/map-widget/v1/?ll=${first.lng}%2C${first.lat}&z=13&lang=ru_RU&${pts}&l=map" width="100%" height="480" frameborder="0" allowfullscreen style="display:block;border:none"></iframe>`;
   const ml=document.getElementById('map-list');
   if(ml)ml.innerHTML=filtered.slice(0,30).map(l=>`
