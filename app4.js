@@ -317,7 +317,7 @@ function renderPharmacyFormStage1(){
         <tbody id="vf-bron-tbody"></tbody>
       </table>
       <div style="text-align:right;margin-top:10px;font-weight:800;font-size:15px;color:var(--ok)">
-        Jami bron: <span id="vf-bron-total">0 so'm</span>
+        Jami qoldiq: <span id="vf-bron-total">0 so'm</span>
       </div>
       <div class="btn-row">
         <button class="btn btn-p" onclick="vfPharmGoStage2()">Bron bosqichiga →</button>
@@ -358,14 +358,14 @@ function vfPharmGoStage2(){
     <div class="card-b">
       <div class="alert alert-i">Aptekaga <b>bron</b> qilingan (buyurtma berilgan) preparat sonini kiriting.</div>
       <table class="stbl">
-        <thead><tr><th>#</th><th>Preparat</th><th>Qoldiq</th><th>Narxi</th><th>Summa</th></tr></thead>
+        <thead><tr><th>#</th><th>Preparat</th><th>Bron</th><th>Narxi</th><th>Summa</th></tr></thead>
         <tbody id="vf-stock-tbody"></tbody>
       </table>
       <div style="text-align:right;margin-top:10px;font-weight:800;font-size:15px;color:var(--ok)">
-        Jami qoldiq: <span id="vf-stock-total">0 so'm</span>
+        Jami bron: <span id="vf-stock-total">0 so'm</span>
       </div>
       <div class="btn-row">
-        <button class="btn btn-o" onclick="vfPharmBackStage()">← Bron bosqichiga qaytish</button>
+        <button class="btn btn-o" onclick="vfPharmBackStage()">← Qoldiq bosqichiga qaytish</button>
       </div>
     </div>`;
   buildStockTableRows();
@@ -383,7 +383,7 @@ function vfPharmBackStage(){
         <tbody id="vf-bron-tbody"></tbody>
       </table>
       <div style="text-align:right;margin-top:10px;font-weight:800;font-size:15px;color:var(--ok)">
-        Jami bron: <span id="vf-bron-total">0 so'm</span>
+        Jami qoldiq: <span id="vf-bron-total">0 so'm</span>
       </div>
       <div class="btn-row">
         <button class="btn btn-p" onclick="vfPharmGoStage2()">Bron bosqichiga →</button>
@@ -419,7 +419,14 @@ function vfUpdateStockSum(){
 
 function getBronAndStockData(){
   // Stage 1 = Qoldiq (vf-bron- ID larda), Stage 2 = Bron (vf-st- ID larda)
-  const stock=PREPS.map((p,i)=>({prep:p,qty:Number(document.getElementById('vf-bron-'+i)?.value)||0}));
+  // Yakunlash bosqichiga kelgach foydalanuvchi HAR DOIM Stage 2 da bo'ladi va
+  // vf-bron-N elementlari DOMdan allaqachon o'chirilgan bo'ladi — shuning uchun
+  // Stage 1 qiymatlarini bronData snapshot'idan (xotiradan) olamiz, DOM'dan emas.
+  const stock=PREPS.map((p,i)=>{
+    const el=document.getElementById('vf-bron-'+i);
+    const qty=el?(Number(el.value)||0):(Number(bronData[p])||0);
+    return {prep:p,qty};
+  });
   const bron=PREPS.map((p,i)=>({prep:p,qty:Number(document.getElementById('vf-st-'+i)?.value)||0}));
   return{bron,stock};
 }
