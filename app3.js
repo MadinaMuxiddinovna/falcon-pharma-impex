@@ -18,7 +18,7 @@ function renderVfStep2Doctor() {
     <div class="fg">
       <label>Vrachni qidirish (2-3 harf) <span class="req">*</span></label>
       <div class="search-wrap">
-        <input id="vf-doc-q" placeholder="Familiya yoki klinika..." oninput="vfSearchDoc(this.value)" />
+        <input id="vf-doc-q" placeholder="Familiya yoki klinika..." oninput="vfSearchDoc(this.value)" onfocus="vfSearchDoc(this.value,true)" />
       </div>
       <div id="vf-doc-res" class="slist hide"></div>
     </div>
@@ -113,14 +113,29 @@ function renderVfStep2Doctor() {
   }
 }
 
-function vfSearchDoc(q) {
-  q = q.trim(); if (q.length < 2) { hideEl('vf-doc-res'); return; }
-  const ql = q.toLowerCase();
-  const res = ST.doctors.filter(r =>
-    (r.name||'').toLowerCase().includes(ql) ||
-    (r.object||'').toLowerCase().includes(ql) ||
-    (r.specialty||'').toLowerCase().includes(ql)
-  ).slice(0, 10);
+function vfSearchDoc(q, isFocus) {
+  q = (q||'').trim();
+  const dist=(ST.user.district||'').toLowerCase();
+  let res;
+  if (q.length < 2) {
+    if (!isFocus) { hideEl('vf-doc-res'); return; }
+    // Fokus qilinganda, hali hech narsa yozilmagan bo'lsa — o'z rayoni vrachlarini ko'rsatamiz
+    res = dist ? ST.doctors.filter(r => (r.district||'').toLowerCase()===dist) : ST.doctors.slice();
+  } else {
+    const ql = q.toLowerCase();
+    res = ST.doctors.filter(r =>
+      (r.name||'').toLowerCase().includes(ql) ||
+      (r.object||'').toLowerCase().includes(ql) ||
+      (r.specialty||'').toLowerCase().includes(ql)
+    );
+  }
+  // O'z rayoni natijalari birinchi chiqadi
+  res = res.slice().sort((a,b)=>{
+    const ad=(a.district||'').toLowerCase()===dist?0:1;
+    const bd=(b.district||'').toLowerCase()===dist?0:1;
+    return ad-bd;
+  }).slice(0, 10);
+  window._docSearchRes = res;
   const box = document.getElementById('vf-doc-res');
   if (!res.length) {
     box.innerHTML = '<div class="sitem"><span class="sitem-meta">Topilmadi — pastda yangi vrach qo\'shing</span></div>';
@@ -128,8 +143,8 @@ function vfSearchDoc(q) {
   } else {
     hideEl('vf-new-doc-block');
     // To'liq ma'lumot: rayon, tel ko'rinadi
-    box.innerHTML = res.map(r => `
-      <div class="sitem" onclick='vfSelectDoc(${JSON.stringify(r)})'>
+    box.innerHTML = res.map((r,i) => `
+      <div class="sitem" onclick="vfSelectDocByIdx(${i})">
         <span class="sitem-name">${r.name}</span>
         <span class="sitem-meta">
           ${r.specialty||''} · ${r.object||''} · ${r.district||''}
@@ -142,6 +157,10 @@ function vfSearchDoc(q) {
   showEl('vf-doc-res');
 }
 
+function vfSelectDocByIdx(i) {
+  const r = (window._docSearchRes||[])[i];
+  if (r) vfSelectDoc(r);
+}
 function vfSelectDoc(r) {
   ST.visit.target = r;
   hideEl('vf-doc-res'); hideEl('vf-new-doc-block');
@@ -213,7 +232,7 @@ function renderVfStep2Pharmacy() {
     <div class="fg">
       <label>Dorixona qidirish — INN yoki nom <span class="req">*</span></label>
       <div class="search-wrap">
-        <input id="vf-pharm-q" placeholder="INN raqam yoki dorixona nomi..." oninput="vfSearchPharm(this.value)" />
+        <input id="vf-pharm-q" placeholder="INN raqam yoki dorixona nomi..." oninput="vfSearchPharm(this.value)" onfocus="vfSearchPharm(this.value,true)" />
       </div>
       <div id="vf-pharm-res" class="slist hide"></div>
     </div>
@@ -281,20 +300,33 @@ function vfValidateINN(input) {
   if (err) err.classList.toggle('hide', val.length===0||val.length===9);
 }
 
-function vfSearchPharm(q) {
-  q = q.trim(); if (q.length < 2) { hideEl('vf-pharm-res'); return; }
-  const ql = q.toLowerCase();
-  const res = ST.pharmacies.filter(r =>
-    (r.inn||'').includes(q) || (r.legalName||'').toLowerCase().includes(ql)
-  ).slice(0, 10);
+function vfSearchPharm(q, isFocus) {
+  q = (q||'').trim();
+  const dist=(ST.user.district||'').toLowerCase();
+  let res;
+  if (q.length < 2) {
+    if (!isFocus) { hideEl('vf-pharm-res'); return; }
+    res = dist ? ST.pharmacies.filter(r => (r.district||'').toLowerCase()===dist) : ST.pharmacies.slice();
+  } else {
+    const ql = q.toLowerCase();
+    res = ST.pharmacies.filter(r =>
+      (r.inn||'').includes(q) || (r.legalName||'').toLowerCase().includes(ql)
+    );
+  }
+  res = res.slice().sort((a,b)=>{
+    const ad=(a.district||'').toLowerCase()===dist?0:1;
+    const bd=(b.district||'').toLowerCase()===dist?0:1;
+    return ad-bd;
+  }).slice(0, 10);
+  window._pharmSearchRes = res;
   const box = document.getElementById('vf-pharm-res');
   if (!res.length) {
     box.innerHTML = '<div class="sitem"><span class="sitem-meta">Topilmadi — pastda yangi dorixona qo\'shing</span></div>';
     showEl('vf-new-pharm-block');
   } else {
     hideEl('vf-new-pharm-block');
-    box.innerHTML = res.map(r => `
-      <div class="sitem" onclick='vfSelectPharm(${JSON.stringify(r)})'>
+    box.innerHTML = res.map((r,i) => `
+      <div class="sitem" onclick="vfSelectPharmByIdx(${i})">
         <span class="sitem-name">${r.legalName}</span>
         <span class="sitem-meta">INN: ${r.inn} · ${r.district||''} ${r.branch?'· Filial: '+r.branch:''}</span>
       </div>`).join('');
@@ -302,6 +334,10 @@ function vfSearchPharm(q) {
   showEl('vf-pharm-res');
 }
 
+function vfSelectPharmByIdx(i) {
+  const r = (window._pharmSearchRes||[])[i];
+  if (r) vfSelectPharm(r);
+}
 function vfSelectPharm(r) {
   ST.visit.target = r;
   hideEl('vf-pharm-res'); hideEl('vf-new-pharm-block');
