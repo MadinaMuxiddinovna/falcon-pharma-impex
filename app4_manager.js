@@ -719,11 +719,34 @@ async function renderMapPage(){
   }).join('~');
   if(container)container.innerHTML=`<iframe src="https://yandex.uz/map-widget/v1/?ll=${first.lng}%2C${first.lat}&z=13&lang=ru_RU&${pts}&l=map" width="100%" height="480" frameborder="0" allowfullscreen style="display:block;border:none"></iframe>`;
   const ml=document.getElementById('map-list');
-  if(ml)ml.innerHTML=filtered.slice(0,30).map(l=>`
+  if(ml)ml.innerHTML=filtered.slice(0,30).map(l=>{
+    let color;
+    if(l.type==='Vrach viziti'||l.type==='doctor'){
+      color=(l.role==='manager')?'or':'rd';
+    } else {
+      color=(l.role==='ta'||l.role==='agent')?'bl':'gm';
+    }
+    return `
     <div class="irow">
       <span class="irow-l">${l.type==='Vrach viziti'?'🔴':'🟢'} ${l.empName} → ${l.target||''}</span>
-      <span class="irow-v"><a href="https://yandex.uz/maps/?ll=${l.lng}%2C${l.lat}&z=16&pt=${l.lng},${l.lat},pm2rdm1" target="_blank" class="bdg bdg-b" style="text-decoration:none">${l.date}${l.time?' · '+l.time:''}</a></span>
-    </div>`).join('');
+      <span class="irow-v"><a href="https://yandex.uz/maps/?ll=${l.lng}%2C${l.lat}&z=16&pt=${l.lng},${l.lat},pm2${color}m1" target="_blank" class="bdg bdg-b" style="text-decoration:none">${fmtLocDateTime(l.date,l.time)}</a></span>
+    </div>`;
+  }).join('');
+}
+
+// Backend'dan sana/vaqt turli formatda kelishi mumkin (masalan xom ISO: 2026-07-05T19:00:00.000Z) —
+// bu yerda ularni Toshkent vaqtida o'qilishi oson formatga keltiramiz
+function fmtLocDateTime(dateVal,timeVal){
+  const raw=String(dateVal||'');
+  if(raw.includes('T')){
+    const d=new Date(raw);
+    if(!isNaN(d.getTime())){
+      const dateStr=d.toLocaleDateString('uz-UZ',{timeZone:'Asia/Tashkent'});
+      const timeStr=timeVal||d.toLocaleTimeString('uz-UZ',{timeZone:'Asia/Tashkent',hour:'2-digit',minute:'2-digit'});
+      return dateStr+' · '+timeStr;
+    }
+  }
+  return raw+(timeVal?' · '+timeVal:'');
 }
 
 // ─── MUROJAATLAR (ADMIN) — xabarlar ro'yxati ────────
