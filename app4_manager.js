@@ -535,7 +535,7 @@ async function planMgrDecide(row,approved){
   if(card){
     const bdg=card.querySelector('.bdg');
     if(bdg){bdg.textContent=status;bdg.className='bdg '+(approved?'bdg-g':'bdg-r');}
-    const btns=card.querySelector('.plan-btns');
+    const btns=card.querySelector('.btn-row');
     if(btns)btns.innerHTML='<span style="font-size:11px;color:var(--muted)">Saqlandi</span>';
   }
   // ST.plans da ham yangilaymiz
@@ -659,7 +659,7 @@ async function showMgrJournalAdmin(mgrId){
 function pageMap(){
   return `
   <div class="page" id="page-map">
-    <div class="card"><div class="card-h">Vizit lokatsiyalari xaritasi</div>
+    <div class="card"><div class="card-h">Vizit lokatsiyalari va tuman qamrovi xaritasi</div>
       <div class="card-b">
         <div class="frow" style="margin-bottom:12px">
           <div class="fg"><label>Hodim</label>
@@ -670,24 +670,38 @@ function pageMap(){
               <option value="30">1 oy</option>
             </select></div>
         </div>
-        <!-- Rang legenda -->
-        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:12px">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:12px;align-items:center">
           <span>🔴 MP - vrach</span>
           <span>🟢 MP - dorixona</span>
           <span>🔵 Agent - dorixona</span>
           <span>🟠 Menejer</span>
+          <span style="margin-left:auto">Tuman qamrovi:
+            <span style="background:#c0260a33;border:1px solid #c0260a;padding:1px 7px;border-radius:4px">kam</span>
+            <span style="background:#b56f0033;border:1px solid #b56f00;padding:1px 7px;border-radius:4px">o'rtacha</span>
+            <span style="background:#0f6e5633;border:1px solid #0f6e56;padding:1px 7px;border-radius:4px">yaxshi</span>
+          </span>
         </div>
-        <div id="ymap-container" style="width:100%;height:480px;border-radius:12px;overflow:hidden;border:1px solid var(--border)">
-          <div class="alert alert-i">Yuklanmoqda...</div>
-        </div>
+        <div id="leaflet-map" style="width:100%;height:480px;border-radius:12px;overflow:hidden;border:1px solid var(--border)"></div>
         <div id="map-list" style="margin-top:14px"></div>
       </div>
     </div>
   </div>`;
 }
+
+let _leafletMap=null,_leafletGeoLayer=null,_leafletMarkers=null;
+function normDistrictJS(s){
+  return String(s||'').toLowerCase()
+    .replace(/tumani|tuman|district|rayoni|rayon/g,'')
+    .replace(/['''ʼ`]/g,'')
+    .replace(/\s+/g,'')
+    .trim();
+}
 async function renderMapPage(){
   const days=document.getElementById('map-days')?.value||'7';
-  const locs=await apiGet('getLocations',{empId:ST.user.id,role:ST.user.role,days},false).catch(()=>[]);
+  const [locs,coverage]=await Promise.all([
+    apiGet('getLocations',{empId:ST.user.id,role:ST.user.role,days},false).catch(()=>[]),
+    apiGet('getDistrictCoverage',{days},false).catch(()=>({}))
+  ]);
   const validLocs=(locs||[]).filter(l=>l.lat&&l.lng);
   const empSel=document.getElementById('map-emp');
   if(empSel&&!empSel.dataset.filled&&validLocs.length){
@@ -697,27 +711,60 @@ async function renderMapPage(){
   }
   const filterEmp=empSel?.value||'';
   const filtered=validLocs.filter(l=>!filterEmp||l.empId===filterEmp);
-  const container=document.getElementById('ymap-container');
-  if(!filtered.length){if(container)container.innerHTML='<div class="alert alert-i" style="margin:16px">Bu davr uchun lokatsiya yo\'q</div>';return;}
-  const first=filtered[0];
-  // Markerlar: doktor=qizil(rd), apteka=moviy(bl), rangni rolga qarab
-  // Yandex marker: pm2[color][style][size]
-  // rd=qizil, gm=yashil, bl=ko'k, yw=sariq
-  const pts=filtered.slice(0,10).map((l,i)=>{
+
+  if(typeof L==='undefined'){
+    const c=document.getElementById('leaflet-map');
+    if(c)c.innerHTML='<div class="alert alert-r" style="margin:16px">Leaflet kutubxonasi yuklanmadi (index.html tekshiring)</div>';
+    return;
+  }
+  if(!_leafletMap){
+    _leafletMap=L.map('leaflet-map').setView([41.31,69.28],11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      attribution:'© OpenStreetMap',maxZoom:18
+    }).addTo(_leafletMap);
+    _leafletGeoLayer=L.layerGroup().addTo(_leafletMap);
+    _leafletMarkers=L.layerGroup().addTo(_leafletMap);
+  }
+
+  // Tuman poligonlari — qamrov foiziga qarab ranglanadi
+  _leafletGeoLayer.clearLayers();
+  try{
+    if(!window._tashkentGeoJSON){
+      window._tashkentGeoJSON=await fetch('./tashkent_tumanlar.geojson').then(r=>r.json());
+    }
+    L.geoJSON(window._tashkentGeoJSON,{
+      style:(feature)=>{
+        const key=normDistrictJS(feature.properties.ADM2_UZ);
+        const cov=coverage[key];
+        const pct=cov?cov.pct:0;
+        const color=!cov?'#8899aa':pct>=70?'#0f6e56':pct>=30?'#b56f00':'#c0260a';
+        return {color:color,weight:2,fillColor:color,fillOpacity:cov?0.28:0.06};
+      },
+      onEachFeature:(feature,layer)=>{
+        const name=feature.properties.ADM2_UZ;
+        const key=normDistrictJS(name);
+        const cov=coverage[key];
+        const info=cov?(cov.visited+' / '+cov.total+' ta obyekt qamrab olingan ('+cov.pct+'%)'):"Ma'lumot yo'q";
+        layer.bindPopup('<b>'+name+'</b><br>'+info);
+      }
+    }).addTo(_leafletGeoLayer);
+  }catch(e){ console.error('GeoJSON yuklashda xato:',e); }
+
+  // Individual vizit nuqtalari
+  _leafletMarkers.clearLayers();
+  filtered.slice(0,200).forEach(l=>{
     let color;
     if(l.type==='Vrach viziti'||l.type==='doctor'){
-      // Doktor: rol bo'yicha rang
-      if(l.role==='mp'||l.role==='med'||l.role==='') color='rd';      // MP - qizil
-      else if(l.role==='manager') color='or';  // Menejer - to'q sariq
-      else color='rd';
+      color=(l.role==='manager')?'#e67e22':'#e74c3c';
     } else {
-      // Apteka/dorixona
-      if(l.role==='ta'||l.role==='agent') color='bl';  // Agent - ko'k
-      else color='gm';                                   // MP - yashil
+      color=(l.role==='ta'||l.role==='agent')?'#2980b9':'#27ae60';
     }
-    return 'pt='+l.lng+','+l.lat+',pm2'+color+'m'+(i+1);
-  }).join('~');
-  if(container)container.innerHTML=`<iframe src="https://yandex.uz/map-widget/v1/?ll=${first.lng}%2C${first.lat}&z=13&lang=ru_RU&${pts}&l=map" width="100%" height="480" frameborder="0" allowfullscreen style="display:block;border:none"></iframe>`;
+    const m=L.circleMarker([l.lat,l.lng],{radius:7,color:'#fff',weight:1,fillColor:color,fillOpacity:0.9});
+    m.bindPopup('<b>'+l.empName+'</b><br>'+(l.target||'')+'<br>'+fmtLocDateTime(l.date,l.time));
+    m.addTo(_leafletMarkers);
+  });
+  if(filtered.length) _leafletMap.setView([filtered[0].lat,filtered[0].lng],12);
+
   const ml=document.getElementById('map-list');
   if(ml)ml.innerHTML=filtered.slice(0,30).map(l=>{
     let color;
