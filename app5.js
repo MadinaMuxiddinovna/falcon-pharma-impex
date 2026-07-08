@@ -140,6 +140,11 @@ async function vfFinishVisit() {
   }
 
   const resp=await apiPost(payload);
+  if(resp&&resp.error){
+    if(btn){btn.disabled=false;btn.textContent='Vizitni saqlash ✅';}
+    alert(resp.error);
+    return;
+  }
 
   // Proma so'rov
   if(isDoc&&ST.visit.vals.promoRequested&&ST.visit.vals.promaSumma>0){
