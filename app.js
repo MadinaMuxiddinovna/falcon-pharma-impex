@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx_80QO5JarN6JAaAsr7Ld7UujqAZs8YC9MA2Brl1U-E2B88aMZ09haPhzwaz8YuLr0nA/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwcNlOeyULxVYPL7V_A_nm1WhHaWPW6s_z_5XSkrSenlZaIeE5WvUgBjAAj_U7s8Zqt/exec',
 };
 
 const PREPS = [
@@ -262,8 +262,9 @@ async function refreshHomeLive() {
     ]);
     if (plans && !plans.error && Array.isArray(plans)) ST.plans = plans;
     if (dayVisits && !dayVisits.error) {
-      ST.todayVisits = dayVisits;
-      localStorage.setItem('ff_vis_cache_'+ST.user.id, JSON.stringify(dayVisits));
+      const merged = mergeTodayVisits(dayVisits);
+      ST.todayVisits = merged;
+      localStorage.setItem('ff_vis_cache_'+ST.user.id, JSON.stringify(merged));
     }
   } catch(e) {}
   if (document.getElementById('page-home')?.classList.contains('active')) renderHome();
@@ -302,7 +303,7 @@ async function initData() {
     if (pharma&&!pharma.error) { ST.pharmacies=pharma; localStorage.setItem('ff_pharm_cache',JSON.stringify(pharma)); }
     if (plans&&!plans.error)   { ST.plans=plans; }
     if (vis&&!vis.error)  {
-      ST.todayVisits=vis;
+      ST.todayVisits=mergeTodayVisits(vis);
       // Lokal navbatdagi vizitlarni ham qo'shamiz
       const localQ=JSON.parse(localStorage.getItem('ff_q')||'[]');
       localQ.filter(q=>q.action==='addVisitMP'||q.action==='addVisitTA').forEach(q=>{
@@ -356,6 +357,18 @@ function todayStr() {
 }
 function nowTimeStr() { return new Date().toTimeString().slice(0,8); }
 function nowTimeFromTs(ts) { return new Date(ts).toTimeString().slice(0,8); }
+
+// Server dan yangi ro'yxat kelganda, shu sessiyada saqlangan (lekin serverda hali
+// "ko'rinmagan" — Sheets yozuvi kechikkan) vizitlarni yo'qotmaslik uchun birlashtiramiz (#9,#12)
+function mergeTodayVisits(serverList) {
+  const server = Array.isArray(serverList) ? serverList : [];
+  const local = ST.todayVisits || [];
+  const merged = [...server];
+  local.forEach(v => {
+    if (v && v.ref && !merged.some(x => x.ref === v.ref)) merged.push(v);
+  });
+  return merged;
+}
 
 // ═══ VIZIT OQIMI ════════════════════════════════════
 function startVisitFlow(type) {
