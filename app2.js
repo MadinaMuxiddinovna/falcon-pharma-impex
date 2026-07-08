@@ -105,6 +105,12 @@ function pageHomeTA(){return `
     <div id="visit-flow-container"></div>
   </div>`;}
 
+function homeStartVisitFromPlanIdx(idx) {
+  const p=(window._todayPlansArr||[])[idx];
+  if(!p) return;
+  const obj=p['Obyekt nomi']||p.targetName||'';
+  homeStartVisitFromPlan(obj);
+}
 function homeStartVisitFromPlan(objName) {
   // Reja obyektini saqlaymiz — GPS bosqichi tugab, vrach qidiruv ekrani
   // haqiqatan chizilganda qo'llanadi (oldingi qattiq belgilangan 300ms
@@ -125,7 +131,11 @@ function wtStart(){
   if(localStorage.getItem('ff_endday_'+ST.user.id)===todayStr()){
     alert('Bugungi kun allaqachon yakunlangan!');return;
   }
-  if(!localStorage.getItem(key)) localStorage.setItem(key,new Date().toISOString());
+  if(!localStorage.getItem(key)){
+    localStorage.setItem(key,new Date().toISOString());
+    apiPost({action:'startDay',empId:ST.user.id,empName:ST.user.name,role:ST.user.role,
+      date:todayStr(),startTime:nowTimeStr()}).catch(()=>{});
+  }
   startWtTicker();
   const btn=document.getElementById('home-wt-btn');
   if(btn){btn.textContent='Ishlayabdi...';btn.disabled=true;}
@@ -207,17 +217,19 @@ function renderHome(){
     // Bugungi rejalarni ko'rsatamiz
     const plList=document.getElementById('home-plans-list');
     if(plList){
-      if(!todayPlans.length){
+      // Rad etilgan rejalar MP ga umuman ko'rsatilmaydi (#13)
+      const visiblePlans=todayPlans.filter(p=>(p['Holati']||p.status||'')!=='Rad etildi');
+      window._todayPlansArr=visiblePlans;
+      if(!visiblePlans.length){
         plList.innerHTML="<div class='alert alert-i' style='font-size:12px'>Bugungi reja yoq</div>";
       } else {
-        plList.innerHTML=todayPlans.map(function(p){
+        plList.innerHTML=visiblePlans.map(function(p,idx){
           var obj=p['Obyekt nomi']||p.targetName||'';
           var status=p['Holati']||p.status||'';
           if(!obj||obj==='undefined') return '';
-          var safeObj=obj.replace(/'/g,'').replace(/"/g,'');
           var bdg=status==='Tasdiqlangan'?'bdg-g':'bdg-y';
           return '<div class="vcard" style="cursor:pointer;margin-bottom:6px"'+
-            ' onclick="homeStartVisitFromPlan(\''+safeObj+'\')">'+
+            ' onclick="homeStartVisitFromPlanIdx('+idx+')">'+
             '<div class="vcard-h">'+
             '<span class="vcard-name">🏥 '+obj+'</span>'+
             '<span class="bdg '+bdg+'">'+status+'</span>'+
@@ -228,7 +240,7 @@ function renderHome(){
       }
     }
   } else {
-    const pct=Math.min(Math.round(done/25*100),100);
+    const pct=Math.round(done/25*100);
     const pEl=document.getElementById('home-pct');if(pEl)pEl.textContent=pct+'%';
   }
 }
@@ -380,6 +392,17 @@ function showHistDetail(date,idx){
     ${t2?`<div class="irow"><span class="irow-l">Tugadi</span><span class="irow-v">${t2}</span></div>`:''}
     ${durStr?`<div class="irow"><span class="irow-l">Davomiylik</span><span class="irow-v">${durStr}</span></div>`:''}
     ${(v.promoSumma||v["Proma summasi (so'm)"])>0?`<div class="irow"><span class="irow-l">Proma</span><span class="irow-v">${fmtMoney(v.promoSumma||v["Proma summasi (so'm)"]||0)}</span></div>`:''}
+    ${(()=>{
+      if(!v.products||!v.products.length) return '';
+      let html='<div style="margin:10px 0 4px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Preparatlar</div>';
+      let qoldiqSum=0,bronSum=0;
+      v.products.forEach(p=>{
+        html+='<div class="irow" style="font-size:12.5px"><span class="irow-l">'+p.prep+'</span>'
+          +'<span class="irow-v">Qoldiq: '+p.qoldiq+' · Bron: '+p.bron+' · '+fmtMoney(p.summa)+'</span></div>';
+      });
+      html+='<div class="irow" style="margin-top:6px"><span class="irow-l"><b>Jami</b></span><span class="irow-v" style="font-weight:800;color:var(--ok)">'+fmtMoney(v.jamiSumma||0)+'</span></div>';
+      return html;
+    })()}
   `,'<button class="btn btn-p" onclick="closeModal()">Yopish</button>');
 }
 
@@ -563,8 +586,8 @@ async function renderEndDay(){
     }
   }catch(e){}
   const done=ST.todayVisits.filter(v=>!v.date||v.date===todayStr()).length;
-  const norm=ST.user.role==='ta'?25:12;
-  const pct=norm>0?Math.min(Math.round(done/norm*100),999):0;
+  const norm=ST.user.role==='ta'?25:20;
+  const pct=norm>0?Math.round(done/norm*100):0;
   const doneEl=document.getElementById('ed-done');if(doneEl)doneEl.textContent=done;
   const pctEl=document.getElementById('ed-pct');if(pctEl)pctEl.textContent=pct+'%';
   // Vizitlar ro'yxati
