@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby1bsEWEdXpjgd1m64y-L3nVLHvLDEx_ks6Vq1rWUNBUx0xZ4AlCIfFNnU1_cv7-YOXnw/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx_euS8O_gyPg2miakC6hRkTtD4hzLSzNnDwBDHrX1CN2AJC-jKoDzq33UgRZbVwJRgPQ/exec',
 };
 
 const PREPS = [
@@ -202,10 +202,10 @@ function invalidateApiCache(action) {
 // "Menejer" (bo'lim boshlig'i emas)
 const ROLE_LABELS = { admin:'Administrator', manager:'Menejer', mp:'Med. Vakil', ta:'Torgovoy Agent' };
 const NAV_BY_ROLE = {
-  mp:      [['home','Bosh sahifa'],['history','Tarix'],['plan','Reja'],['endday','Kun yakuni'],['feedback','Murojaat']],
-  ta:      [['home','Bosh sahifa'],['history','Tarix'],['endday','Kun yakuni'],['feedback','Murojaat']],
-  manager: [['mgr','Boshqaruv'],['paydoctor','Pul berish'],['promo','Proma'],['planmgr','MP rejalari'],['kpi','Jamoa KPI'],['map','Xarita']],
-  admin:   [['mgr','Boshqaruv'],['adminbalance','Menejer balans'],['promo','Proma'],['planmgr','Rejalar'],['histadmin','Tarix'],['kpi','Jamoa KPI'],['map','Xarita'],['feedbackbox','Murojaatlar']],
+  mp:      [['home','Bosh sahifa'],['history','Tarix'],['plan','Reja'],['endday','Kun yakuni'],['report','Hisobot'],['feedback','Murojaat']],
+  ta:      [['home','Bosh sahifa'],['history','Tarix'],['endday','Kun yakuni'],['report','Hisobot'],['feedback','Murojaat']],
+  manager: [['mgr','Boshqaruv'],['paydoctor','Pul berish'],['promo','FCOIN'],['planmgr','MP rejalari'],['kpi','Jamoa KPI'],['map','Xarita']],
+  admin:   [['mgr','Boshqaruv'],['adminbalance','Menejer balans'],['adminjournal','Admin jurnali'],['promo','FCOIN'],['planmgr','Rejalar'],['histadmin','Tarix'],['kpi','Jamoa KPI'],['map','Xarita'],['feedbackbox','Murojaatlar']],
 };
 
 function enterApp() {
@@ -220,6 +220,7 @@ function enterApp() {
   }
   document.getElementById('hdr-role').textContent = roleLabel;
   buildNav(); buildAllPages(); initData();
+  if(ST.user.role==='mp'||ST.user.role==='ta') setTimeout(checkResumeActiveVisit,600);
 }
 
 function buildNav() {
@@ -241,12 +242,14 @@ function showPage(p) {
   if (p==='histadmin')    { if(typeof renderAdminHistory==='function') renderAdminHistory(); }
   if (p==='histadmin')    renderAdminHistory();
   if (p==='endday')       renderEndDay();
+  if (p==='report')       renderReportPage();
   if (p==='mgr')          renderMgrDashboard();
   if (p==='promo')        renderPromoQueue();
   if (p==='kpi')          renderTeamKPI();
   if (p==='planmgr')      renderPlansManagerView();
   if (p==='paydoctor')    renderPayDoctorPage();
   if (p==='adminbalance') renderAdminBalance();
+  if (p==='adminjournal') renderAdminJournal();
   if (p==='map')          renderMapPage();
   if (p==='feedbackbox')  renderFeedbackInbox();
 }
@@ -347,6 +350,7 @@ function showModal(title, body, btns) {
 }
 function closeModal() { document.getElementById('modal-bg')?.classList.add('hide'); }
 function fmtMoney(n) { return Math.round(n||0).toLocaleString('uz-UZ')+" so'm"; }
+function fmtCoin(n) { return Math.round(n||0).toLocaleString('uz-UZ')+" FCOIN"; }
 function todayStr() {
   // Lokal sana (timezone muammosini hal qiladi)
   const d = new Date();
@@ -372,6 +376,13 @@ function mergeTodayVisits(serverList) {
 
 // ═══ VIZIT OQIMI ════════════════════════════════════
 function startVisitFlow(type) {
+  if(localStorage.getItem('ff_endday_'+ST.user.id)===todayStr()){
+    alert('Bugungi kun yakunlangan — endi vizit qilib bo\'lmaydi!');
+    return;
+  }
+  // Vrach/dorixona bazasini fonda yangilaymiz — kun davomida bazaga yangi qo'shilgan/o'chirilganlar ko'rinsin (#14)
+  apiGet('getDoctors',{},false).then(docs=>{if(docs&&!docs.error){ST.doctors=docs;localStorage.setItem('ff_doc_cache',JSON.stringify(docs));}}).catch(()=>{});
+  apiGet('getPharmacies',{},false).then(ph=>{if(ph&&!ph.error){ST.pharmacies=ph;localStorage.setItem('ff_pharm_cache',JSON.stringify(ph));}}).catch(()=>{});
   ST.visit = { type, target:null, gpsStart:null, gpsEnd:null, timerStart:null, timerRef:null,
     vals:{promoRequested:false,promaSumma:0}, products:[], fotoData:null };
   const c = document.getElementById('visit-flow-container');
@@ -407,6 +418,7 @@ function visitFlowHTML(type) {
 function cancelVisitFlow() {
   if (!confirm('Vizitni bekor qilasizmi?')) return;
   clearInterval(ST.visit.timerRef);
+  clearActiveVisitProgress();
   document.getElementById('visit-flow-container').innerHTML = '';
 }
 
