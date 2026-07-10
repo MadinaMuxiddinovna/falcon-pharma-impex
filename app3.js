@@ -269,6 +269,20 @@ function renderVfStep2Pharmacy() {
           <label>Filial raqami (yo'q bo'lsa bo'sh qoldiring)</label>
           <input id="np-branch" type="number" min="1" placeholder="Masalan: 1, 2, 5..." />
         </div>
+        <div class="fg">
+          <label>ЛПР F.I.Sh (mas'ul shaxs)</label>
+          <input id="np-lpr-name" placeholder="Familiya Ismi Sharifi" />
+        </div>
+        <div class="fg">
+          <label>ЛПР Telefon raqami</label>
+          <div style="display:flex;align-items:center;gap:0">
+            <span style="background:#eef2fb;border:1.5px solid var(--border);border-right:none;
+              padding:10px 12px;border-radius:8px 0 0 8px;font-size:14px;color:var(--muted);white-space:nowrap">+998</span>
+            <input id="np-lpr-phone" type="tel" maxlength="9" placeholder="901234567"
+              style="border-radius:0 8px 8px 0;border-left:none"
+              oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9)" />
+          </div>
+        </div>
         <button class="btn btn-ok btn-bl" onclick="vfConfirmNewPharm()">Ma'lumotni tasdiqlash</button>
       </div>
     </div>
@@ -277,13 +291,8 @@ function renderVfStep2Pharmacy() {
       <label>Filial raqami <span class="req">*</span></label>
       <div id="vf-branch-known" class="alert alert-ok hide"></div>
       <div id="vf-branch-ask" class="hide">
-        <div class="rg">
-          <div class="ropt" onclick="vfSetBranchMode(true)">Filial raqami bor</div>
-          <div class="ropt" onclick="vfSetBranchMode(false)">Filial yo'q</div>
-        </div>
-        <div id="vf-branch-input" class="hide" style="margin-top:8px">
-          <input id="vf-branch-no" type="number" min="1" placeholder="Filial raqami..." />
-        </div>
+        <input id="vf-branch-no" type="number" min="1" placeholder="Masalan: 2 yoki 45..."
+          oninput="ST.visit.vals.branchNo=this.value;document.getElementById('vf-next2').disabled=!this.value;" />
       </div>
     </div>
 
@@ -357,37 +366,28 @@ function vfSelectPharm(r) {
   }
 }
 
-function vfSetBranchMode(hasOne) {
-  document.querySelectorAll('#vf-branch-ask .ropt').forEach(e=>e.classList.remove('on'));
-  event.currentTarget.classList.add('on');
-  tgl('vf-branch-input', hasOne);
-  if (!hasOne) {
-    ST.visit.vals.branchNo = 0;
-    document.getElementById('vf-next2').disabled = false;
-    if (ST.visit.target.rowNum) apiPost({action:'saveBranchNo', rowNum:ST.visit.target.rowNum, branchNo:0});
-  } else {
-    document.getElementById('vf-branch-no').oninput = function() {
-      ST.visit.vals.branchNo = this.value;
-      document.getElementById('vf-next2').disabled = !this.value;
-    };
-  }
-}
 
 function vfConfirmNewPharm() {
   const inn = (document.getElementById('np-inn')?.value||'').replace(/\D/g,'');
   const name = (document.getElementById('np-name')?.value||'').trim();
   const dist = (document.getElementById('np-dist')?.value||'').trim();
+  const lprName = (document.getElementById('np-lpr-name')?.value||'').trim();
+  const lprPhoneRaw = (document.getElementById('np-lpr-phone')?.value||'').replace(/\D/g,'');
   if (inn.length !== 9) { alert('INN aynan 9 ta raqam bo\'lishi kerak!'); return; }
   if (!name) { alert('Dorixona Yuridik Nomini kiriting!'); return; }
+  if (lprPhoneRaw && lprPhoneRaw.length !== 9) { alert('ЛПР telefon aynan 9 ta raqamdan iborat bo\'lishi kerak!'); return; }
+  const lprPhone = lprPhoneRaw ? '+998'+lprPhoneRaw : '';
 
   const region = (document.getElementById('np-region')?.value||ST.user.region||'').trim();
-  const newP = { id:'NEW-'+Date.now(), region, district:dist, inn, legalName:name, branch:document.getElementById('np-branch')?.value||'', _isNew:true };
+  const newP = { id:'NEW-'+Date.now(), region, district:dist, inn, legalName:name, branch:document.getElementById('np-branch')?.value||'', lprName, lprPhone, _isNew:true };
 
   showModal('Ma\'lumotni tekshiring',
     `<div class="irow"><span class="irow-l">Mintaqa</span><span class="irow-v">${region}</span></div>
      <div class="irow"><span class="irow-l">Tuman</span><span class="irow-v">${dist}</span></div>
      <div class="irow"><span class="irow-l">INN</span><span class="irow-v">${inn}</span></div>
      <div class="irow"><span class="irow-l">Yuridik Nomi</span><span class="irow-v">${name}</span></div>
+     ${lprName?`<div class="irow"><span class="irow-l">ЛПР</span><span class="irow-v">${lprName}</span></div>`:''}
+     ${lprPhone?`<div class="irow"><span class="irow-l">ЛПР tel</span><span class="irow-v">${lprPhone}</span></div>`:''}
      <p style="margin-top:10px;font-size:13px;color:var(--ok)">To'g'rimi?</p>`,
     `<button class="btn btn-o" onclick="closeModal()">← Tahrirlash</button>
      <button class="btn btn-ok" onclick='closeModal();vfFinalizeNewPharm(${JSON.stringify(newP).replace(/'/g,"&apos;")})'>Ha, to'g'ri</button>`);
@@ -421,6 +421,37 @@ function vfStartTimer() {
   ST.visit.timerStart = Date.now();
   vfShowStep(3);
   ST.visit.timerRef = setInterval(vfUpdateTimer, 1000);
+  saveActiveVisitProgress();
+}
+// Tugallanmagan vizitni saqlaymiz — ilova yopilib qolsa ham vaqt to'g'ri hisoblanishi uchun (#15)
+function saveActiveVisitProgress(){
+  try{
+    localStorage.setItem('ff_active_visit_'+ST.user.id, JSON.stringify({
+      type:ST.visit.type, target:ST.visit.target, timerStart:ST.visit.timerStart,
+      gpsStart:ST.visit.gpsStart, date:todayStr()
+    }));
+  }catch(e){}
+}
+function clearActiveVisitProgress(){
+  try{ localStorage.removeItem('ff_active_visit_'+ST.user.id); }catch(e){}
+}
+function checkResumeActiveVisit(){
+  try{
+    const raw=localStorage.getItem('ff_active_visit_'+ST.user.id);
+    if(!raw) return;
+    const saved=JSON.parse(raw);
+    if(saved.date!==todayStr()){ clearActiveVisitProgress(); return; }
+    if(!confirm('Tugallanmagan vizit topildi ('+(saved.target?.name||saved.target?.legalName||'')+'). Davom etasizmi?')){
+      clearActiveVisitProgress(); return;
+    }
+    ST.visit = { type:saved.type, target:saved.target, gpsStart:saved.gpsStart, gpsEnd:null,
+      timerStart:saved.timerStart, timerRef:null, vals:{promoRequested:false,promaSumma:0}, products:[], fotoData:null };
+    const c=document.getElementById('visit-flow-container');
+    c.innerHTML=visitFlowHTML(saved.type);
+    c.scrollIntoView({behavior:'smooth'});
+    vfShowStep(3);
+    ST.visit.timerRef=setInterval(vfUpdateTimer,1000);
+  }catch(e){}
 }
 function vfUpdateTimer() {
   const s = Math.floor((Date.now() - ST.visit.timerStart) / 1000);
