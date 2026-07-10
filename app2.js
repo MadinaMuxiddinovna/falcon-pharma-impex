@@ -14,7 +14,7 @@ function buildAllPages(){
   let html='';
   if(role==='mp'){html+=pageHomeMP();html+=pageHistory();html+=pagePlan();html+=pageEndDay('mp');html+=pageReport();html+=pageFeedback();}
   if(role==='ta'){html+=pageHomeTA();html+=pageHistory();html+=pageEndDay('ta');html+=pageReport();html+=pageFeedback();if(ST.user.isTeamLead){html+=pageTeamAgent();html+=pageMap();}}
-  if(role==='manager'){html+=pageManagerDashboard();html+=pagePayDoctor();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();}
+  if(role==='manager'){html+=pageManagerDashboard();html+=pagePayDoctor();html+=pagePromoQueue();html+=pagePlanManager();html+=pageHistoryAdmin();html+=pageTeamKPI();html+=pageMap();}
   if(role==='admin'){html+=pageManagerDashboard();html+=pageAdminBalance();html+=pageAdminJournal();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();html+=pageFeedbackInbox();html+=pageHistoryAdmin();}
   c.innerHTML=html;
 }
@@ -83,7 +83,7 @@ function pageReport(){
         <div id="report-summary" style="margin:10px 0"></div>
         <div style="overflow-x:auto">
           <table class="stbl">
-            <thead><tr><th>Sana</th><th>Boshlandi</th><th>Tugadi</th><th>Soat</th>${isTa?'':'<th>Vrach</th>'}<th>Dorixona</th><th>Jami</th><th>%</th></tr></thead>
+            <thead><tr><th>Sana</th><th>Boshlandi</th><th>Tugadi</th><th>Soat</th>${isTa?'':'<th>Vrach</th>'}<th>Dorixona</th>${isTa?'':'<th>Jami</th>'}<th>%</th></tr></thead>
             <tbody id="report-tbody"></tbody>
           </table>
         </div>
@@ -107,9 +107,9 @@ async function renderReportPage(){
   if(tb)tb.innerHTML=days.length?days.map(d=>`
     <tr>
       <td>${uzDateShort(d.date)}</td><td>${d.startTime||'—'}</td><td>${d.endTime||'—'}</td>
-      <td>${d.hoursWorked||0}</td>${ST.user.role==='ta'?'':'<td>'+d.doctorV+'</td>'}<td>${d.pharmV}</td><td><b>${d.total}</b></td>
+      <td>${d.hoursWorked||0}</td>${ST.user.role==='ta'?'':'<td>'+d.doctorV+'</td>'}<td>${d.pharmV}</td>${ST.user.role==='ta'?'':'<td><b>'+d.total+'</b></td>'}
       <td><span class="bdg ${d.pct>=100?'bdg-g':d.pct>=50?'bdg-y':'bdg-r'}">${d.pct}%</span></td>
-    </tr>`).join(''):`<tr><td colspan="${ST.user.role==='ta'?7:8}" style="text-align:center;color:var(--muted)">Bu oyda ma'lumot yo'q</td></tr>`;
+    </tr>`).join(''):`<tr><td colspan="${ST.user.role==='ta'?6:8}" style="text-align:center;color:var(--muted)">Bu oyda ma'lumot yo'q</td></tr>`;
 }
 
 // ── MP BOSH SAHIFA — Kun boshlash tugmasi shu yerda ──
@@ -458,7 +458,8 @@ function renderHistList(visits,from,today,el){
       const displayName=doc||(isDoc?target:target)||'';
       const displayPlace=doc&&target?target:'';
       const bdgClass=res==='ISHLAYDI'?'bdg-g':res==='QABUL QILMADI'?'bdg-r':'bdg-y';
-      const showRes=(res&&res!=='OK'&&res!=='Vizit')?('<span class="bdg '+bdgClass+'">'+res+'</span>'):'';
+      const resDisplay=res==='BOSHQA'?(v.resultOther||v["Natija qo'shimcha"]||res):res;
+      const showRes=(res&&res!=='OK'&&res!=='Vizit')?('<span class="bdg '+bdgClass+'">'+resDisplay+'</span>'):'';
       html+='<div class="vcard" data-hdate="'+date+'" data-hidx="'+i+'" onclick="showHistDetail(this.dataset.hdate,this.dataset.hidx)" style="cursor:pointer">';
       html+='<div class="vcard-h">';
       html+='<span>'+(isDoc?'🏥':'💊')+' <b>'+(displayName||'—')+'</b></span>'+showRes;
@@ -490,7 +491,7 @@ function showHistDetail(date,idx){
     ${v.specialty||v['Mutaxassisligi']?`<div class="irow"><span class="irow-l">Mutaxassis</span><span class="irow-v">${v.specialty||v['Mutaxassisligi']}</span></div>`:''}
     <div class="irow"><span class="irow-l">Ish joyi</span><span class="irow-v">${target}</span></div>
     ${v.district||v['Tumani']?`<div class="irow"><span class="irow-l">Tuman</span><span class="irow-v">${v.district||v['Tumani']}</span></div>`:''}
-    <div class="irow"><span class="irow-l">Natija</span><span class="irow-v"><span class="bdg ${res==='ISHLAYDI'?'bdg-g':'bdg-y'}">${res}</span></span></div>
+    <div class="irow"><span class="irow-l">Natija</span><span class="irow-v"><span class="bdg ${res==='ISHLAYDI'?'bdg-g':'bdg-y'}">${res==='BOSHQA'?(v.resultOther||v["Natija qo'shimcha"]||res):res}</span></span></div>
     ${t1?`<div class="irow"><span class="irow-l">Boshlandi</span><span class="irow-v">${t1}</span></div>`:''}
     ${t2?`<div class="irow"><span class="irow-l">Tugadi</span><span class="irow-v">${t2}</span></div>`:''}
     ${durStr?`<div class="irow"><span class="irow-l">Davomiylik</span><span class="irow-v">${durStr}</span></div>`:''}
@@ -563,14 +564,19 @@ function apSearchObject(q){
       objMap.set(d.object,{object:d.object,region:d.region,district:d.district,pri});
   });
   const res=[...objMap.values()].sort((a,b)=>a.pri-b.pri).slice(0,10);
+  window._apSearchRes=res;
   const box=document.getElementById('ap-search-res');
   box.innerHTML=res.length
-    ?res.map(r=>`<div class="sitem" onclick='apSelectObject(${JSON.stringify(r)})'>
+    ?res.map((r,i)=>`<div class="sitem" onclick="apSelectObjectByIdx(${i})">
         <span class="sitem-name">${r.object}</span>
         <span class="sitem-meta">${r.district||''} · ${r.region||''}${r.pri===0?' ⭐':''}</span>
       </div>`).join('')
     :'<div class="sitem"><span class="sitem-meta">Topilmadi</span></div>';
   showEl('ap-search-res');
+}
+function apSelectObjectByIdx(i){
+  const obj=(window._apSearchRes||[])[i];
+  if(obj) apSelectObject(obj);
 }
 function apSelectObject(obj){
   apTarget=obj;hideEl('ap-search-res');
