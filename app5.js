@@ -20,8 +20,8 @@ function renderVfStep4() {
         <div class="irow"><span class="irow-l">Maqsad</span><span class="irow-v">${ST.visit.vals.goal||'—'}</span></div>
         <div class="irow"><span class="irow-l">Natija</span>
           <span class="irow-v"><span class="bdg ${ST.visit.vals.result==='ISHLAYDI'?'bdg-g':'bdg-y'}">${ST.visit.vals.result||'—'}</span></span></div>
-        <div class="irow"><span class="irow-l">Proma</span>
-          <span class="irow-v">${ST.visit.vals.promoRequested?fmtMoney(ST.visit.vals.promaSumma||0):'Yo\'q'}</span></div>
+        <div class="irow"><span class="irow-l">FCOIN</span>
+          <span class="irow-v">${ST.visit.vals.promoRequested?fmtCoin(ST.visit.vals.promaSumma||0):'Yo\'q'}</span></div>
         `:`
         <div class="irow"><span class="irow-l">INN</span><span class="irow-v">${ST.visit.target?.inn||''}</span></div>
         <div class="irow"><span class="irow-l">Filial raqami</span><span class="irow-v">${ST.visit.vals.branchNo!==undefined&&ST.visit.vals.branchNo!==''?ST.visit.vals.branchNo:0}</span></div>
@@ -153,6 +153,8 @@ async function vfFinishVisit() {
       mgrId:ST.user.mgrId||'', doctorName:ST.visit.target.name,
       doctorObject:ST.visit.target.object, date:todayStr(),
       promaSumma:ST.visit.vals.promaSumma,
+      lat:(ST.visit.gpsEnd||ST.visit.gpsStart||{}).lat||'',
+      lng:(ST.visit.gpsEnd||ST.visit.gpsStart||{}).lng||'',
     });
   }
 
@@ -167,6 +169,7 @@ async function vfFinishVisit() {
   localStorage.setItem('ff_vis_cache_'+ST.user.id, JSON.stringify(ST.todayVisits));
 
   if(btn){btn.disabled=false;btn.textContent='Vizitni saqlash ✅';}
+  clearActiveVisitProgress();
   // Bosh sahifani darhol yangilaymiz (KPI srazu ko'rinadi)
   renderHome();
   vfShowStep(5);
