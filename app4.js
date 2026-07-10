@@ -106,7 +106,7 @@ function renderDoctorForm() {
   </div>
 
   <div class="card">
-    <div class="card-h">PROMA</div>
+    <div class="card-h">FCOIN</div>
     <div class="card-b">
       <!-- CHAP = O'tkazib yuborish, O'NG = Menejerga so'rov -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="rg-promo">
@@ -124,7 +124,7 @@ function renderDoctorForm() {
       <!-- Faqat raqam kiritish, max 9999999 -->
       <div id="vf-promo-sum-block" class="hide" style="margin-top:10px">
         <label style="font-size:12px;color:var(--muted);margin-bottom:6px;display:block">
-          PROMA SUMMASI (so'm) — faqat raqam
+          FCOIN SUMMASI — faqat raqam
         </label>
         <input id="vf-promo-summa" type="number" min="0" max="9999999"
           placeholder="Masalan: 200000"
@@ -272,7 +272,7 @@ function vfGoToFoto() {
     // Proma summa tekshiruv
     if(ST.visit.vals.promoRequested) {
       const sum=Number(document.getElementById('vf-promo-summa')?.value)||0;
-      if(!sum){alert('Proma summasi kiriting!');return;}
+      if(!sum){alert('FCOIN summasi kiriting!');return;}
       ST.visit.vals.promaSumma=sum;
     } else {
       ST.visit.vals.promaSumma=0;
