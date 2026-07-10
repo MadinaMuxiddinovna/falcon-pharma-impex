@@ -95,7 +95,7 @@ function pageManagerDashboard(){
     </div>`:''}
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-num" id="mgr-vis">—</div><div class="kpi-lbl">Bugungi vizitlar</div></div>
-      <div class="kpi-card"><div class="kpi-num" id="mgr-promo">—</div><div class="kpi-lbl">Kutilayotgan proma</div></div>
+      <div class="kpi-card"><div class="kpi-num" id="mgr-promo">—</div><div class="kpi-lbl">Kutilayotgan FCOIN</div></div>
     </div>
     <div class="card"><div class="card-h">Jamoa holati (bugun)</div>
       <div class="card-b" id="mgr-team"><div class="alert alert-i">Yuklanmoqda...</div></div>
@@ -261,13 +261,13 @@ async function pdShowPromaFlow(){
   const pending=(promos||[]).filter(p=>(p['Holati']||'')==='Kutilmoqda');
   document.getElementById('pd-flow').innerHTML=`
     <div class="card" style="border:2px solid #7a3ca0">
-      <div class="card-h" style="background:#7a3ca0">🤝 Proma (MP yuborgan so'rovlar)
+      <div class="card-h" style="background:#7a3ca0">🤝 FCOIN (MP yuborgan so'rovlar)
         <button onclick="document.getElementById('pd-flow').innerHTML=''"
           style="margin-left:auto;padding:4px 10px;border:1.5px solid #fff;background:#fff;color:#7a3ca0;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">✕</button>
       </div>
       <div class="card-b">
         ${!pending.length
-          ?'<div class="alert alert-i">Kutilayotgan proma so\'rovlar yo\'q</div>'
+          ?'<div class="alert alert-i">Kutilayotgan FCOIN so\'rovlar yo\'q</div>'
           :pending.map(p=>`
             <div class="vcard" style="cursor:pointer" onclick="pdSelectPromo(${p._row})" id="promo-card-${p._row}">
               <div class="vcard-h">
@@ -276,7 +276,7 @@ async function pdShowPromaFlow(){
               </div>
               <div class="vcard-meta">
                 Med Vakil: ${p['Hodim Ismi']||''} · ${p['Ish joyi']||''} ·
-                So'ralgan: <b>${fmtMoney(p["Proma summasi (so'm)"]||0)}</b>
+                So'ralgan: <b>${fmtCoin(p["Proma summasi (so'm)"]||0)}</b>
               </div>
             </div>`).join('')}
         <div id="pd-promo-selected" class="hide" style="margin-top:12px">
@@ -284,7 +284,7 @@ async function pdShowPromaFlow(){
           <div class="fg" style="margin-top:10px"><label>To'lov summasi <span class="req">*</span></label>
             <input id="pd-promo-summa" type="number" min="0" placeholder="200000" /></div>
           <div class="fg"><label>Izoh <span class="req">*</span></label>
-            <input id="pd-promo-comment" placeholder="Proma uchun..." /></div>
+            <input id="pd-promo-comment" placeholder="FCOIN uchun..." /></div>
           <button class="btn btn-pu btn-bl btn-lg" onclick="pdConfirmPromaPay()">To'lovni tasdiqlash</button>
         </div>
       </div>
@@ -307,7 +307,7 @@ function pdSelectPromo(row){
 }
 
 async function pdConfirmPromaPay(){
-  if(!ST.mgrPay.promoData){alert('Proma so\'rovini tanlang!');return;}
+  if(!ST.mgrPay.promoData){alert('FCOIN so\'rovini tanlang!');return;}
   const summa=Number(document.getElementById('pd-promo-summa')?.value)||0;
   if(!summa){alert('Summani kiriting!');return;}
   const comment=(document.getElementById('pd-promo-comment')?.value||'Proma tolovi').trim();
@@ -335,8 +335,18 @@ async function pdFinalizePromaPay(summa,comment){
     type:'PROMA',date:todayStr(),doctorName:p['Vrach FISh']||'',
     doctorSpec:'',doctorObject:p['Ish joyi']||'',doctorDistrict:'',doctorPhone:'',
     mpId:p['Hodim ID']||'',mpName:p['Hodim Ismi']||'',summa,comment});
-  // Promo holati yangilash (fon rejimida)
-  if(p._row) apiPost({action:'decidePromo',row:p._row,approved:true}).catch(()=>{});
+  // Promo holati yangilash (fon rejimida) — menejer GPS bilan (#13)
+  if(p._row){
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(
+        pos=>apiPost({action:'decidePromo',row:p._row,approved:true,lat:pos.coords.latitude,lng:pos.coords.longitude}).catch(()=>{}),
+        ()=>apiPost({action:'decidePromo',row:p._row,approved:true}).catch(()=>{}),
+        {enableHighAccuracy:true,timeout:4000}
+      );
+    } else {
+      apiPost({action:'decidePromo',row:p._row,approved:true}).catch(()=>{});
+    }
+  }
   if(resp.error){alert('Xato: '+resp.error);return;}
   const newBal=resp.newBalance;
   if(newBal!==undefined){
@@ -413,7 +423,7 @@ function pagePromoQueue(){
   return `
   <div class="page" id="page-promo">
     <div class="card">
-      <div class="card-h">Proma so'rovlari</div>
+      <div class="card-h">FCOIN so'rovlari</div>
       <div class="card-b" id="promo-list"><div class="alert alert-i">Yuklanmoqda...</div></div>
     </div>
   </div>`;
@@ -422,7 +432,7 @@ async function renderPromoQueue(){
   const promos=await apiGet('getPromoQueue',{role:ST.user.role,empId:ST.user.id},false).catch(()=>[]);
   ST.promoQueue=promos||[];
   const el=document.getElementById('promo-list');if(!el)return;
-  if(!ST.promoQueue.length){el.innerHTML='<div class="alert alert-i">Proma so\'rovlar yo\'q</div>';return;}
+  if(!ST.promoQueue.length){el.innerHTML='<div class="alert alert-i">FCOIN so\'rovlar yo\'q</div>';return;}
   const isAdmin=ST.user.role==='admin';
   el.innerHTML=ST.promoQueue.map(p=>{
     const status=p['Holati']||'';
@@ -452,7 +462,7 @@ async function renderPromoQueue(){
         ${sana?'Sana: '+sana:''}
       </div>
       ${summa>0?`<div style="font-size:14px;font-weight:700;color:var(--ok);margin-top:4px">
-        Proma summasi: ${fmtMoney(summa)}
+        FCOIN summasi: ${fmtCoin(summa)}
       </div>`:''}
       ${!closed&&!isAdmin?`<div class="btn-row" style="margin-top:8px" data-promo-row="${p._row}">
         <button class="btn btn-r" style="padding:5px 12px;font-size:12px" onclick="promoDecide(${p._row},false)">Rad etish</button>
@@ -473,7 +483,15 @@ function promoDecide(row,approved){
   }
   const p=ST.promoQueue.find(x=>x._row===row);
   if(p){p['Holati']=status;}
-  apiPost({action:'decidePromo',row,approved}).catch(()=>{});
+  if(approved&&navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos=>apiPost({action:'decidePromo',row,approved,lat:pos.coords.latitude,lng:pos.coords.longitude}).catch(()=>{}),
+      ()=>apiPost({action:'decidePromo',row,approved}).catch(()=>{}),
+      {enableHighAccuracy:true,timeout:4000}
+    );
+  } else {
+    apiPost({action:'decidePromo',row,approved}).catch(()=>{});
+  }
 }
 
 // ─── REJALAR — ADMIN ko'radi, MENEJER tasdiqlaydi ───
@@ -578,6 +596,45 @@ async function renderTeamKPI(){
 }
 
 // ─── ADMIN BALANS ────────────────────────────────────
+function pageAdminJournal(){return `
+  <div class="page" id="page-adminjournal">
+    <div class="card">
+      <div class="card-h">Admin jurnali — menejerlarga berilgan mablag'lar</div>
+      <div class="card-b">
+        <div class="fg"><label>Oy</label>
+          <input type="month" id="aj-month" value="${todayStr().slice(0,7)}" onchange="renderAdminJournal()" />
+        </div>
+        <div id="aj-summary" style="margin:10px 0"></div>
+        <div style="overflow-x:auto">
+          <table class="stbl">
+            <thead><tr><th>Sana</th><th>Jami berilgan (so'm)</th></tr></thead>
+            <tbody id="aj-byday-tbody"></tbody>
+          </table>
+        </div>
+        <div class="card-h" style="margin-top:16px;border-radius:8px">Barcha yozuvlar</div>
+        <div id="aj-entries" style="margin-top:8px"></div>
+      </div>
+    </div>
+  </div>`;
+}
+async function renderAdminJournal(){
+  const month=document.getElementById('aj-month')?.value||todayStr().slice(0,7);
+  const data=await apiGet('getAdminJournal',{month},false).catch(()=>({entries:[],byDay:[],total:0}));
+  const sEl=document.getElementById('aj-summary');
+  if(sEl)sEl.innerHTML=`<div class="kpi-grid"><div class="kpi-card" style="grid-column:span 2">
+    <div class="kpi-num">${fmtMoney(data.total||0)}</div><div class="kpi-lbl">Shu oyda jami berilgan</div>
+  </div></div>`;
+  const tb=document.getElementById('aj-byday-tbody');
+  if(tb)tb.innerHTML=(data.byDay||[]).length?data.byDay.map(d=>`
+    <tr><td>${uzDateShort(d.date)}</td><td><b>${fmtMoney(d.summa)}</b></td></tr>
+  `).join(''):'<tr><td colspan="2" style="text-align:center;color:var(--muted)">Bu oyda ma\'lumot yo\'q</td></tr>';
+  const eEl=document.getElementById('aj-entries');
+  if(eEl)eEl.innerHTML=(data.entries||[]).length?data.entries.map(e=>`
+    <div class="irow">
+      <span class="irow-l">${e.mgrName||e.mgrId} <span style="color:var(--muted);font-size:11px">${e.comment?'· '+e.comment:''}</span></span>
+      <span class="irow-v">${fmtMoney(e.summa)}<br><span style="font-size:11px;color:var(--muted)">${uzDateShort(e.date)} ${e.time}</span></span>
+    </div>`).join(''):'<div class="alert alert-i">Yozuv yo\'q</div>';
+}
 function pageAdminBalance(){
   return `
   <div class="page" id="page-adminbalance">
