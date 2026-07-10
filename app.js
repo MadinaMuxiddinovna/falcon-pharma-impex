@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx4dMwJRYRJ6DiRcxQ7CYlbAgkNIs7VmnKK9KUdnS97Bw34Y8sgmdmiXlKVl9gl1dv0rw/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxNRq13QES8RZ_N5mGhF5BVRR7nSafeEKFvMPkupaQtQj6xynsCse_uFRpQ4SS1XDei/exec',
 };
 
 const PREPS = [
@@ -204,7 +204,7 @@ const ROLE_LABELS = { admin:'Administrator', manager:'Menejer', mp:'Med. Vakil',
 const NAV_BY_ROLE = {
   mp:      [['home','Bosh sahifa'],['history','Tarix'],['plan','Reja'],['endday','Kun yakuni'],['report','Hisobot'],['feedback','Murojaat']],
   ta:      [['home','Bosh sahifa'],['history','Tarix'],['endday','Kun yakuni'],['report','Hisobot'],['feedback','Murojaat']],
-  manager: [['mgr','Boshqaruv'],['paydoctor','Pul berish'],['promo','FCOIN'],['planmgr','MP rejalari'],['kpi','Jamoa KPI'],['map','Xarita']],
+  manager: [['mgr','Boshqaruv'],['paydoctor','Pul berish'],['promo','FCOIN'],['planmgr','MP rejalari'],['histadmin','Tarix'],['kpi','Jamoa KPI'],['map','Xarita']],
   admin:   [['mgr','Boshqaruv'],['adminbalance','Menejer balans'],['adminjournal','Admin jurnali'],['promo','FCOIN'],['planmgr','Rejalar'],['histadmin','Tarix'],['kpi','Jamoa KPI'],['map','Xarita'],['feedbackbox','Murojaatlar']],
 };
 
