@@ -46,14 +46,15 @@ async function renderAdminHistory(){
   // Sanaga qarab guruhlash
   const byDate={};
   filtered.forEach(v=>{const d=v.date||today;if(!byDate[d])byDate[d]=[];byDate[d].push(v);});
+  window._histData=byDate;
   el.innerHTML=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,vs])=>`
     <div style="margin-bottom:16px">
       <div style="font-size:12px;font-weight:700;color:var(--primary);
         margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--primary3)">
         ${date} — ${vs.length} ta vizit
       </div>
-      ${vs.map(v=>`
-        <div class="vcard" style="margin-bottom:6px">
+      ${vs.map((v,i)=>`
+        <div class="vcard" onclick="showHistDetail('${date}',${i})" style="margin-bottom:6px;cursor:pointer">
           <div class="vcard-h">
             <span>${v.type==='doctor'?'🏥':'💊'} <b>${v.doctor||v.target||''}</b></span>
             <span class="bdg ${v.result==='ISHLAYDI'?'bdg-g':v.result==='QABUL QILMADI'?'bdg-r':'bdg-y'}">${v.result||'OK'}</span>
@@ -539,12 +540,17 @@ async function renderPlansManagerView(){
           </div>
           <div class="vcard-meta">${date}${maqsad?' · '+maqsad:''}</div>
           ${!isAdmin&&status==='Kutilmoqda'?`<div class="btn-row" style="margin-top:6px">
-            <button class="btn btn-r" style="padding:4px 10px;font-size:12px" onclick="planMgrDecide(${p._row},false)">Rad</button>
+            <button class="btn btn-r" style="padding:4px 10px;font-size:12px" data-emp="${empName.replace(/"/g,'&quot;')}" data-obj="${obj.replace(/"/g,'&quot;')}" onclick="planMgrConfirmReject(${p._row},this.dataset.emp,this.dataset.obj)">Rad</button>
             <button class="btn btn-ok" style="padding:4px 10px;font-size:12px" onclick="planMgrDecide(${p._row},true)">Tasdiqlash</button>
           </div>`:''}
         </div>`;
       }).join('')}
     </div>`).join('');
+}
+function planMgrConfirmReject(row,empName,obj){
+  if(confirm(empName+' — '+obj+'\n\nUshbu rejani rad etmoqchimisiz?')){
+    planMgrDecide(row,false);
+  }
 }
 async function planMgrDecide(row,approved){
   const status=approved?'Tasdiqlangan':'Rad etildi';
