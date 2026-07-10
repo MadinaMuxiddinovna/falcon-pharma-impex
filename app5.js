@@ -17,9 +17,9 @@ function renderVfStep4() {
         <div class="irow"><span class="irow-l">Ish joyi</span>
           <span class="irow-v">${ST.visit.type==='doctor'?(ST.visit.target?.object||''):(ST.visit.target?.legalName||'')}</span></div>
         ${ST.visit.type==='doctor'?`
-        <div class="irow"><span class="irow-l">Maqsad</span><span class="irow-v">${ST.visit.vals.goal||'—'}</span></div>
+        <div class="irow"><span class="irow-l">Maqsad</span><span class="irow-v">${ST.visit.vals.goal==='BOSHQA'?(document.getElementById('vf-goal-other')?.value||ST.visit.vals.goal):(ST.visit.vals.goal||'—')}</span></div>
         <div class="irow"><span class="irow-l">Natija</span>
-          <span class="irow-v"><span class="bdg ${ST.visit.vals.result==='ISHLAYDI'?'bdg-g':'bdg-y'}">${ST.visit.vals.result||'—'}</span></span></div>
+          <span class="irow-v"><span class="bdg ${ST.visit.vals.result==='ISHLAYDI'?'bdg-g':'bdg-y'}">${ST.visit.vals.result==='BOSHQA'?(document.getElementById('vf-result-other')?.value||ST.visit.vals.result):(ST.visit.vals.result||'—')}</span></span></div>
         <div class="irow"><span class="irow-l">FCOIN</span>
           <span class="irow-v">${ST.visit.vals.promoRequested?fmtCoin(ST.visit.vals.promaSumma||0):'Yo\'q'}</span></div>
         `:`
