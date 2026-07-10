@@ -13,14 +13,66 @@ function buildAllPages(){
   const role=ST.user.role,c=document.getElementById('pages-container');
   let html='';
   if(role==='mp'){html+=pageHomeMP();html+=pageHistory();html+=pagePlan();html+=pageEndDay('mp');html+=pageReport();html+=pageFeedback();}
-  if(role==='ta'){html+=pageHomeTA();html+=pageHistory();html+=pageEndDay('ta');html+=pageReport();html+=pageFeedback();}
+  if(role==='ta'){html+=pageHomeTA();html+=pageHistory();html+=pageEndDay('ta');html+=pageReport();html+=pageFeedback();if(ST.user.isTeamLead){html+=pageTeamAgent();html+=pageMap();}}
   if(role==='manager'){html+=pageManagerDashboard();html+=pagePayDoctor();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();}
   if(role==='admin'){html+=pageManagerDashboard();html+=pageAdminBalance();html+=pageAdminJournal();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();html+=pageFeedbackInbox();html+=pageHistoryAdmin();}
   c.innerHTML=html;
 }
 
-// ── OYLIK HISOBOT (#9) — kun-kun bo'yicha vaqt, vizit, % ──
-function pageReport(){return `
+// ── JAMOA (savdo agent-menejeri uchun, masalan Ivan/TA01) ──
+function pageTeamAgent(){return `
+  <div class="page" id="page-team">
+    <div class="card">
+      <div class="card-h">Jamoa — qo'l ostidagi agentlar</div>
+      <div class="card-b">
+        <div class="frow" style="margin-bottom:12px">
+          <div class="fg"><label>Davr</label>
+            <select id="team-filter" onchange="renderTeamAgentPage()">
+              <option value="today">Bugun</option>
+              <option value="week" selected>Hafta</option>
+              <option value="month">Oy</option>
+            </select>
+          </div>
+        </div>
+        <div id="team-list"><div class="alert alert-i">Yuklanmoqda...</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+async function renderTeamAgentPage(){
+  const el=document.getElementById('team-list');if(!el)return;
+  el.innerHTML='<div class="alert alert-i">Yuklanmoqda...</div>';
+  const filter=document.getElementById('team-filter')?.value||'week';
+  const today=todayStr();let from=today;
+  if(filter==='week'){const w=new Date();w.setDate(w.getDate()-7);from=w.toISOString().split('T')[0];}
+  if(filter==='month'){const m=new Date();m.setMonth(m.getMonth()-1);from=m.toISOString().split('T')[0];}
+  // role:'manager' — backend mgrId bo'yicha jamoani (o'ziga bo'ysunuvchi agentlarni) qaytaradi
+  const visits=await apiGet('getMyVisits',{empId:ST.user.id,role:'manager',from,to:today},false).catch(()=>[]);
+  const list=Array.isArray(visits)?visits.filter(v=>v.empId!==ST.user.id):[]; // faqat boshqa agentlar (o'zi emas)
+  if(!list.length){el.innerHTML='<div class="alert alert-i">Bu davrda jamoa vizitlari yo\'q</div>';return;}
+  const byDate={};
+  list.forEach(v=>{const d=v.date||today;if(!byDate[d])byDate[d]=[];byDate[d].push(v);});
+  window._histData=byDate;
+  el.innerHTML=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,vs])=>`
+    <div style="margin-bottom:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--primary);
+        margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--primary3)">
+        ${uzDate(date)} — ${vs.length} ta vizit
+      </div>
+      ${vs.map((v,i)=>`
+        <div class="vcard" onclick="showHistDetail('${date}',${i})" style="cursor:pointer">
+          <div class="vcard-h">
+            <span>💊 <b>${v.target||''}</b></span>
+          </div>
+          <div class="vcard-meta">
+            👤 ${v.empName||''} · 📅 ${uzDateShort(date)} ${v.startTime?'⏰ '+v.startTime:''}
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+function pageReport(){
+  const isTa=ST.user.role==='ta';
+  return `
   <div class="page" id="page-report">
     <div class="card">
       <div class="card-h">Oylik hisobot</div>
@@ -31,7 +83,7 @@ function pageReport(){return `
         <div id="report-summary" style="margin:10px 0"></div>
         <div style="overflow-x:auto">
           <table class="stbl">
-            <thead><tr><th>Sana</th><th>Boshlandi</th><th>Tugadi</th><th>Soat</th><th>Vrach</th><th>Dorixona</th><th>Jami</th><th>%</th></tr></thead>
+            <thead><tr><th>Sana</th><th>Boshlandi</th><th>Tugadi</th><th>Soat</th>${isTa?'':'<th>Vrach</th>'}<th>Dorixona</th><th>Jami</th><th>%</th></tr></thead>
             <tbody id="report-tbody"></tbody>
           </table>
         </div>
@@ -55,9 +107,9 @@ async function renderReportPage(){
   if(tb)tb.innerHTML=days.length?days.map(d=>`
     <tr>
       <td>${uzDateShort(d.date)}</td><td>${d.startTime||'—'}</td><td>${d.endTime||'—'}</td>
-      <td>${d.hoursWorked||0}</td><td>${d.doctorV}</td><td>${d.pharmV}</td><td><b>${d.total}</b></td>
+      <td>${d.hoursWorked||0}</td>${ST.user.role==='ta'?'':'<td>'+d.doctorV+'</td>'}<td>${d.pharmV}</td><td><b>${d.total}</b></td>
       <td><span class="bdg ${d.pct>=100?'bdg-g':d.pct>=50?'bdg-y':'bdg-r'}">${d.pct}%</span></td>
-    </tr>`).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--muted)">Bu oyda ma\'lumot yo\'q</td></tr>';
+    </tr>`).join(''):`<tr><td colspan="${ST.user.role==='ta'?7:8}" style="text-align:center;color:var(--muted)">Bu oyda ma'lumot yo'q</td></tr>`;
 }
 
 // ── MP BOSH SAHIFA — Kun boshlash tugmasi shu yerda ──
