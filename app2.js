@@ -12,11 +12,52 @@ function uzDateShort(d){const dt=d?new Date(d+'T00:00:00'):new Date();return UZ_
 function buildAllPages(){
   const role=ST.user.role,c=document.getElementById('pages-container');
   let html='';
-  if(role==='mp'){html+=pageHomeMP();html+=pageHistory();html+=pagePlan();html+=pageEndDay('mp');html+=pageFeedback();}
-  if(role==='ta'){html+=pageHomeTA();html+=pageHistory();html+=pageEndDay('ta');html+=pageFeedback();}
+  if(role==='mp'){html+=pageHomeMP();html+=pageHistory();html+=pagePlan();html+=pageEndDay('mp');html+=pageReport();html+=pageFeedback();}
+  if(role==='ta'){html+=pageHomeTA();html+=pageHistory();html+=pageEndDay('ta');html+=pageReport();html+=pageFeedback();}
   if(role==='manager'){html+=pageManagerDashboard();html+=pagePayDoctor();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();}
-  if(role==='admin'){html+=pageManagerDashboard();html+=pageAdminBalance();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();html+=pageFeedbackInbox();html+=pageHistoryAdmin();}
+  if(role==='admin'){html+=pageManagerDashboard();html+=pageAdminBalance();html+=pageAdminJournal();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();html+=pageFeedbackInbox();html+=pageHistoryAdmin();}
   c.innerHTML=html;
+}
+
+// ── OYLIK HISOBOT (#9) — kun-kun bo'yicha vaqt, vizit, % ──
+function pageReport(){return `
+  <div class="page" id="page-report">
+    <div class="card">
+      <div class="card-h">Oylik hisobot</div>
+      <div class="card-b">
+        <div class="fg"><label>Oy</label>
+          <input type="month" id="report-month" value="${todayStr().slice(0,7)}" onchange="renderReportPage()" />
+        </div>
+        <div id="report-summary" style="margin:10px 0"></div>
+        <div style="overflow-x:auto">
+          <table class="stbl">
+            <thead><tr><th>Sana</th><th>Boshlandi</th><th>Tugadi</th><th>Soat</th><th>Vrach</th><th>Dorixona</th><th>Jami</th><th>%</th></tr></thead>
+            <tbody id="report-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+async function renderReportPage(){
+  const month=document.getElementById('report-month')?.value||todayStr().slice(0,7);
+  const data=await apiGet('getMonthlyReport',{empId:ST.user.id,month},false).catch(()=>({days:[]}));
+  const days=data.days||[];
+  const sum=data.summary||{};
+  const sEl=document.getElementById('report-summary');
+  if(sEl)sEl.innerHTML=`<div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-num">${sum.totalDays||0}</div><div class="kpi-lbl">Ishlangan kun</div></div>
+    <div class="kpi-card"><div class="kpi-num">${sum.totalHours||0}</div><div class="kpi-lbl">Jami soat</div></div>
+    <div class="kpi-card"><div class="kpi-num">${sum.totalVisits||0}</div><div class="kpi-lbl">Jami vizit</div></div>
+    <div class="kpi-card"><div class="kpi-num">${sum.avgPct||0}%</div><div class="kpi-lbl">O'rtacha bajarilgan</div></div>
+  </div>`;
+  const tb=document.getElementById('report-tbody');
+  if(tb)tb.innerHTML=days.length?days.map(d=>`
+    <tr>
+      <td>${uzDateShort(d.date)}</td><td>${d.startTime||'—'}</td><td>${d.endTime||'—'}</td>
+      <td>${d.hoursWorked||0}</td><td>${d.doctorV}</td><td>${d.pharmV}</td><td><b>${d.total}</b></td>
+      <td><span class="bdg ${d.pct>=100?'bdg-g':d.pct>=50?'bdg-y':'bdg-r'}">${d.pct}%</span></td>
+    </tr>`).join(''):'<tr><td colspan="8" style="text-align:center;color:var(--muted)">Bu oyda ma\'lumot yo\'q</td></tr>';
 }
 
 // ── MP BOSH SAHIFA — Kun boshlash tugmasi shu yerda ──
@@ -133,8 +174,18 @@ function wtStart(){
   }
   if(!localStorage.getItem(key)){
     localStorage.setItem(key,new Date().toISOString());
-    apiPost({action:'startDay',empId:ST.user.id,empName:ST.user.name,role:ST.user.role,
-      date:todayStr(),startTime:nowTimeStr()}).catch(()=>{});
+    navigator.geolocation.getCurrentPosition(
+      pos=>{
+        apiPost({action:'startDay',empId:ST.user.id,empName:ST.user.name,role:ST.user.role,
+          date:todayStr(),startTime:nowTimeStr(),
+          lat:pos.coords.latitude,lng:pos.coords.longitude}).catch(()=>{});
+      },
+      ()=>{
+        apiPost({action:'startDay',empId:ST.user.id,empName:ST.user.name,role:ST.user.role,
+          date:todayStr(),startTime:nowTimeStr()}).catch(()=>{});
+      },
+      {enableHighAccuracy:true,timeout:4000}
+    );
   }
   startWtTicker();
   const btn=document.getElementById('home-wt-btn');
@@ -391,7 +442,7 @@ function showHistDetail(date,idx){
     ${t1?`<div class="irow"><span class="irow-l">Boshlandi</span><span class="irow-v">${t1}</span></div>`:''}
     ${t2?`<div class="irow"><span class="irow-l">Tugadi</span><span class="irow-v">${t2}</span></div>`:''}
     ${durStr?`<div class="irow"><span class="irow-l">Davomiylik</span><span class="irow-v">${durStr}</span></div>`:''}
-    ${(v.promoSumma||v["Proma summasi (so'm)"])>0?`<div class="irow"><span class="irow-l">Proma</span><span class="irow-v">${fmtMoney(v.promoSumma||v["Proma summasi (so'm)"]||0)}</span></div>`:''}
+    ${(v.promoSumma||v["Proma summasi (so'm)"])>0?`<div class="irow"><span class="irow-l">FCOIN</span><span class="irow-v">${fmtCoin(v.promoSumma||v["Proma summasi (so'm)"]||0)}</span></div>`:''}
     ${(()=>{
       if(!v.products||!v.products.length) return '';
       let html='<div style="margin:10px 0 4px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Preparatlar</div>';
@@ -586,7 +637,7 @@ async function renderEndDay(){
     }
   }catch(e){}
   const done=ST.todayVisits.filter(v=>!v.date||v.date===todayStr()).length;
-  const norm=ST.user.role==='ta'?25:20;
+  const norm=ST.user.role==='ta'?25:17;
   const pct=norm>0?Math.round(done/norm*100):0;
   const doneEl=document.getElementById('ed-done');if(doneEl)doneEl.textContent=done;
   const pctEl=document.getElementById('ed-pct');if(pctEl)pctEl.textContent=pct+'%';
