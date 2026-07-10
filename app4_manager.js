@@ -756,7 +756,7 @@ function normDistrictJS(s){
 async function renderMapPage(){
   const days=document.getElementById('map-days')?.value||'7';
   const [locs,coverage]=await Promise.all([
-    apiGet('getLocations',{empId:ST.user.id,role:ST.user.role,days},false).catch(()=>[]),
+    apiGet('getLocations',{empId:ST.user.id,role:(ST.user.role==='ta'&&ST.user.isTeamLead)?'manager':ST.user.role,days},false).catch(()=>[]),
     apiGet('getDistrictCoverage',{days},false).catch(()=>({}))
   ]);
   const validLocs=(locs||[]).filter(l=>l.lat&&l.lng);
