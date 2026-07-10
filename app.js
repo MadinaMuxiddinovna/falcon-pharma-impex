@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx_euS8O_gyPg2miakC6hRkTtD4hzLSzNnDwBDHrX1CN2AJC-jKoDzq33UgRZbVwJRgPQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby4qCu54G2zjqcXstKIkSyT_bPJZLYkcOCN43Hy7eozbYbXk-L7XKBacM2BeHJz-GM5qw/exec',
 };
 
 const PREPS = [
@@ -218,6 +218,9 @@ function enterApp() {
     // Menejer ismini server dan olamiz yoki ID ko'rsatamiz
     roleLabel = 'Med. Vakil';
   }
+  if (ST.user.role==='ta' && ST.user.isTeamLead) {
+    roleLabel = 'Menejer';
+  }
   document.getElementById('hdr-role').textContent = roleLabel;
   buildNav(); buildAllPages(); initData();
   if(ST.user.role==='mp'||ST.user.role==='ta') setTimeout(checkResumeActiveVisit,600);
@@ -225,7 +228,10 @@ function enterApp() {
 
 function buildNav() {
   const nav = document.getElementById('main-nav');
-  const items = NAV_BY_ROLE[ST.user.role] || NAV_BY_ROLE.mp;
+  let items = NAV_BY_ROLE[ST.user.role] || NAV_BY_ROLE.mp;
+  if (ST.user.role==='ta' && ST.user.isTeamLead) {
+    items = items.concat([['team','Jamoa'],['map','Xarita']]);
+  }
   nav.innerHTML = items.map((it,i) =>
     `<div class="nav-tab ${i===0?'active':''}" data-p="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</div>`
   ).join('');
@@ -243,6 +249,7 @@ function showPage(p) {
   if (p==='histadmin')    renderAdminHistory();
   if (p==='endday')       renderEndDay();
   if (p==='report')       renderReportPage();
+  if (p==='team')         renderTeamAgentPage();
   if (p==='mgr')          renderMgrDashboard();
   if (p==='promo')        renderPromoQueue();
   if (p==='kpi')          renderTeamKPI();
