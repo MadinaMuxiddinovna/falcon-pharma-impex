@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyxnlrSYrhMZzets_jt7_4IGgESNWJKuA_tKAOEDD-aeE5iu7KQWMjnlHLO6cCfWX-tRw/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbz19lSnRwhfhNRMyOEu0FDdyBaIr5PibeM9Sdsf_agsgPyYtHgV2-bWtlMVN321zEruvQ/exec',
 };
 
 const PREPS = [
@@ -284,6 +284,23 @@ async function refreshHomeLive() {
 // ═══ MA'LUMOT YUKLASH ═══════════════════════════════
 async function initData() {
   const role = ST.user.role;
+  // Kun boshlash holatini serverdan tekshirib, boshqa qurilma/sessiyada ham to'g'ri davom etishini ta'minlaymiz (#2)
+  if (role==='mp'||role==='ta') {
+    try {
+      const dsInfo = await apiGet('getDayStartInfo',{empId:ST.user.id,date:todayStr()},false).catch(()=>null);
+      const wtKey='ff_wt_'+ST.user.id+'_'+todayStr();
+      if (dsInfo && dsInfo.started && dsInfo.startTime && !localStorage.getItem(wtKey)) {
+        // Server "boshlangan" deydi, lekin bu qurilmada localStorage'da yo'q — sinxronlaymiz
+        const [hh,mm,ss]=dsInfo.startTime.split(':').map(Number);
+        const startDate=new Date();
+        startDate.setHours(hh,mm,ss||0,0);
+        localStorage.setItem(wtKey, startDate.toISOString());
+      }
+      if (dsInfo && dsInfo.ended) {
+        localStorage.setItem('ff_endday_'+ST.user.id, todayStr());
+      }
+    } catch(e) {}
+  }
   // Cache dan darhol ko'rsatamiz
   const cd = JSON.parse(localStorage.getItem('ff_doc_cache')||'[]');
   const cp = JSON.parse(localStorage.getItem('ff_pharm_cache')||'[]');
