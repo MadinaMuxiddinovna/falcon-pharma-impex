@@ -153,7 +153,7 @@ function pageHomeMP(){return `
         <div class="alert alert-i" style="font-size:12px">Rejalar yuklanmoqda...</div>
       </div>
     </div>
-    <div class="card"><div class="card-h">Yangi vizit boshlash</div>
+    <div class="card" id="home-newvisit-card"><div class="card-h">Yangi vizit boshlash</div>
       <div class="card-b">
         <div class="rg">
           <div class="ropt" style="padding:16px;flex-direction:column;gap:4px;justify-content:center" onclick="startVisitFlow('doctor')">
@@ -192,7 +192,7 @@ function pageHomeTA(){return `
         <div class="kpi-card"><div class="kpi-num" id="home-pct">0%</div><div class="kpi-lbl">Bajarilgan %</div></div>
       </div>
     </div></div>
-    <div class="card"><div class="card-h">Yangi dorixona viziti</div>
+    <div class="card" id="home-newvisit-card"><div class="card-h">Yangi dorixona viziti</div>
       <div class="card-b"><button class="btn btn-p btn-bl btn-lg" onclick="startVisitFlow('pharmacy')">Boshlash</button></div>
     </div>
     <div id="visit-flow-container"></div>
@@ -311,7 +311,17 @@ function renderHome(){
   // Vizit soni
   const done=ST.todayVisits.filter(v=>v.date===todayStr()||!v.date).length;
   const doneElHome=document.getElementById('home-done');if(doneElHome)doneElHome.textContent=done;
-  if(ST.user.role==='mp'){
+  // Kun yakunlangan bo'lsa — yangi vizit va reja bo'limlarini butunlay yashiramiz
+  const newVisitCard=document.getElementById('home-newvisit-card');
+  const plansCard=document.getElementById('home-plans-card');
+  if(endedToday){
+    if(newVisitCard)newVisitCard.classList.add('hide');
+    if(plansCard)plansCard.classList.add('hide');
+  } else {
+    if(newVisitCard)newVisitCard.classList.remove('hide');
+    if(plansCard)plansCard.classList.remove('hide');
+  }
+  if(ST.user.role==='mp'&&!endedToday){
     const todayPlans=ST.plans.filter(p=>{
       const d=(p['Vizit sanasi']||p.date||'').toString().slice(0,10);
       return d===todayStr();
@@ -530,7 +540,7 @@ function pagePlan(){return `
         <div class="fg"><label>Sana <span class="req">*</span></label>
           <input type="date" id="ap-date" value="${todayStr()}" /></div>
         <div class="fg"><label>Ish joyi <span class="req">*</span></label>
-          <div class="search-wrap"><input id="ap-search" placeholder="2-3 harf kiriting..." oninput="apSearchObject(this.value)" /></div>
+          <div class="search-wrap"><input id="ap-search" placeholder="2-3 harf kiriting..." oninput="apSearchObject(this.value)" onfocus="apSearchObject(this.value,true)" /></div>
           <div id="ap-search-res" class="slist hide"></div>
         </div>
         <div id="ap-selected" class="alert alert-ok hide"></div>
@@ -552,9 +562,29 @@ function toggleAddPlanForm(){
   apTarget=null;const inp=document.getElementById('ap-search');if(inp)inp.value='';
   hideEl('ap-selected');hideEl('ap-search-res');
 }
-function apSearchObject(q){
-  q=q.trim();if(q.length<2){hideEl('ap-search-res');return;}
-  const ql=q.toLowerCase(),myD=(ST.user.district||'').toLowerCase(),myR=(ST.user.region||'').toLowerCase();
+function apSearchObject(q,isFocus){
+  q=q.trim();
+  const myD=(ST.user.district||'').toLowerCase(),myR=(ST.user.region||'').toLowerCase();
+  if(q.length<2){
+    if(!isFocus){hideEl('ap-search-res');return;}
+    const objMap0=new Map();
+    ST.doctors.forEach(d=>{
+      if(!(d.district||'').toLowerCase().includes(myD.slice(0,4)))return;
+      if(!objMap0.has(d.object))objMap0.set(d.object,{object:d.object,region:d.region,district:d.district,pri:0});
+    });
+    const res0=[...objMap0.values()].slice(0,10);
+    window._apSearchRes=res0;
+    const box0=document.getElementById('ap-search-res');
+    box0.innerHTML=res0.length
+      ?res0.map((r,i)=>`<div class="sitem" onclick="apSelectObjectByIdx(${i})">
+          <span class="sitem-name">${r.object}</span>
+          <span class="sitem-meta">${r.district||''} · ${r.region||''} ⭐</span>
+        </div>`).join('')
+      :'<div class="sitem"><span class="sitem-meta">Topilmadi</span></div>';
+    showEl('ap-search-res');
+    return;
+  }
+  const ql=q.toLowerCase();
   const objMap=new Map();
   ST.doctors.forEach(d=>{
     const ok=(d.object||'').toLowerCase().includes(ql)||(d.name||'').toLowerCase().includes(ql);
@@ -591,7 +621,17 @@ async function renderPlans(){
   // qo'shilgani darhol ko'rinishi uchun (#1, #8)
   try{
     const fresh=await apiGet('getPlans',{empId:ST.user.id,role:ST.user.role},false).catch(()=>null);
-    if(fresh&&!fresh.error&&Array.isArray(fresh))ST.plans=fresh;
+    if(fresh&&!fresh.error&&Array.isArray(fresh)){
+      // Server hali "ko'rmagan" (yozuv kechikkan) lekin shu sessiyada qo'shilgan rejalarni yo'qotmaymiz
+      const merged=[...fresh];
+      (ST.plans||[]).forEach(p=>{
+        if(!p._row){ // faqat hali serverdan tasdiqlanmagan (_row yo'q) lokal yozuvlar
+          const dup=merged.some(f=>f['Obyekt nomi']===p['Obyekt nomi']&&(f['Vizit sanasi']||'').toString().slice(0,10)===(p['Vizit sanasi']||'').toString().slice(0,10)&&f['Hodim ID']===p['Hodim ID']);
+          if(!dup)merged.push(p);
+        }
+      });
+      ST.plans=merged;
+    }
   }catch(e){}
   const today=todayStr();let from=today,to=today;
   if(planFilter==='week'){const w=new Date();w.setDate(w.getDate()+7);to=w.toISOString().split('T')[0];}
@@ -620,12 +660,23 @@ async function renderPlans(){
         const status=p['Holati']||p.status||'';
         const obj=p['Obyekt nomi']||p.targetName||'';
         if(!obj||obj==='undefined')return '';
+        const sentAt=p['Yaratilgan vaqt']||'';
+        const canCancel=status==='Kutilmoqda'&&p._row;
         return `<div class="vcard">
           <div class="vcard-h"><span class="vcard-name">${obj}</span>
-            <span class="bdg ${status==='Tasdiqlangan'?'bdg-g':status==='Rad etildi'?'bdg-r':'bdg-y'}">${status}</span>
-          </div></div>`;
+            <span class="bdg ${status==='Tasdiqlangan'?'bdg-g':status==='Rad etildi'?'bdg-r':status==='Bekor qilindi'?'bdg-r':'bdg-y'}">${status}</span>
+            ${canCancel?`<span onclick="cancelMyPlan(${p._row})" style="margin-left:8px;cursor:pointer;color:var(--danger);font-weight:800" title="Bekor qilish">✕</span>`:''}
+          </div>
+          ${sentAt?`<div class="vcard-meta">Yuborildi: ${sentAt}</div>`:''}
+          </div>`;
       }).join('')}
     </div>`).join('');
+}
+async function cancelMyPlan(row){
+  if(!confirm('Ushbu rejani bekor qilmoqchimisiz?'))return;
+  const resp=await apiPost({action:'cancelPlan',row,empId:ST.user.id}).catch(()=>null);
+  if(resp&&resp.error){alert(resp.error);return;}
+  renderPlans();
 }
 async function savePlan(){
   if(!apTarget){alert('Ish joyini tanlang!');return;}
@@ -764,8 +815,19 @@ async function doEndDay(){
   }
   const h=Math.floor(durationSec/3600),m=Math.floor((durationSec%3600)/60);
   clearInterval(_wtInterval);
+  // GPS olishga urinamiz (3 soniya kutamiz, xato bo'lsa davom etamiz)
+  const endGps=await new Promise(resolve=>{
+    const t=setTimeout(()=>resolve(null),3000);
+    if(!navigator.geolocation){clearTimeout(t);resolve(null);return;}
+    navigator.geolocation.getCurrentPosition(
+      pos=>{clearTimeout(t);resolve({lat:pos.coords.latitude,lng:pos.coords.longitude});},
+      ()=>{clearTimeout(t);resolve(null);},
+      {enableHighAccuracy:true,timeout:2500}
+    );
+  });
   await apiPost({action:'endDay',empId:ST.user.id,empName:ST.user.name,
     role:ST.user.role,date:document.getElementById('ed-end-date')?.value||todayStr(),startTime,endTime,durationSec,
+    lat:endGps?.lat||'',lng:endGps?.lng||'',
     visitCount:ST.todayVisits.filter(v=>!v.date||v.date===todayStr()).length});
   // Yakunlangan sana va vaqtni saqlaymiz
   const endTs = new Date().toISOString();
