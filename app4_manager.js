@@ -595,19 +595,58 @@ async function renderTeamKPI(){
   const entries=Object.entries(kpi);
   if(!entries.length){el.innerHTML='<div class="alert alert-i">Bu sana uchun ma\'lumot yo\'q</div>';el.className='';return;}
   el.className='';
+  const isAgentTeam=(ST.user.role==='ta'&&ST.user.isTeamLead);
   el.innerHTML=entries.map(([id,s])=>`
     <div class="vcard">
       <div class="vcard-h"><span class="vcard-name">${s.empName||id}</span>
         <span class="bdg ${(s.pct||0)>=80?'bdg-g':(s.pct||0)>=50?'bdg-y':'bdg-r'}">${s.pct||0}%</span>
       </div>
       <div class="vcard-meta">
-        Vrach viziti: ${s.doctorV||0} · Dorixona viziti: ${s.pharmV||0} ·
+        ${isAgentTeam?'':'Vrach viziti: '+(s.doctorV||0)+' · '}Dorixona viziti: ${s.pharmV||0} ·
         Ijobiy natija: ${s.positive||0} · Shubhali: ${s.shubhali||0}
       </div>
     </div>`).join('');
 }
 
 // ─── ADMIN BALANS ────────────────────────────────────
+// ── BOSH MENEJER: qo'l ostidagi menejerlar balansi (#8) ──
+function pageMgrBalanceOverview(){return `
+  <div class="page" id="page-mgrbalanceoverview">
+    <div class="card">
+      <div class="card-h">Menejerlar balansi</div>
+      <div class="card-b" id="mgr-balance-overview-list"><div class="alert alert-i">Yuklanmoqda...</div></div>
+    </div>
+  </div>`;
+}
+async function renderMgrBalanceOverview(){
+  const el=document.getElementById('mgr-balance-overview-list');if(!el)return;
+  const data=await apiGet('getManagerBalanceOverview',{mgrId:ST.user.id},false).catch(()=>[]);
+  window._mgrBalOverview=data;
+  if(!data.length){el.innerHTML='<div class="alert alert-i">Qo\'l ostingizda menejer topilmadi</div>';return;}
+  el.innerHTML=data.map((m,i)=>`
+    <div class="vcard" onclick="showMgrBalanceDetail(${i})" style="cursor:pointer;margin-bottom:10px">
+      <div class="vcard-h"><span class="vcard-name">${m.mgrName}</span>
+        <span class="bdg ${m.qolgan>=0?'bdg-g':'bdg-r'}">${fmtMoney(m.qolgan)}</span></div>
+      <div class="vcard-meta">Jami berilgan: ${fmtMoney(m.jami)} · Sarflangan: ${fmtMoney(m.sarflangan)}</div>
+    </div>`).join('');
+}
+function showMgrBalanceDetail(i){
+  const m=(window._mgrBalOverview||[])[i];if(!m)return;
+  const journalHtml=(m.journal||[]).slice().reverse().slice(0,30).map(j=>{
+    const amt=j["Miqdor (so'm)"]||0;
+    return '<div class="irow" style="font-size:12.5px">'
+      +'<span class="irow-l">'+(j['Harakat']||'')+' — '+(j['Izoh']||'')+'</span>'
+      +'<span class="irow-v">'+fmtMoney(amt)+'<br><span style="font-size:11px;color:var(--muted)">'+(j['Vaqt va sana']||'')+'</span></span>'
+      +'</div>';
+  }).join('');
+  showModal(m.mgrName+' — balans tarixi',`
+    <div class="irow"><span class="irow-l">Jami berilgan</span><span class="irow-v">${fmtMoney(m.jami)}</span></div>
+    <div class="irow"><span class="irow-l">Sarflangan</span><span class="irow-v">${fmtMoney(m.sarflangan)}</span></div>
+    <div class="irow"><span class="irow-l"><b>Qolgan</b></span><span class="irow-v" style="font-weight:800">${fmtMoney(m.qolgan)}</span></div>
+    <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">So'nggi harakatlar</div>
+    ${journalHtml||'<div class="alert alert-i" style="margin-top:6px">Tarix yo\'q</div>'}
+  `,'<button class="btn btn-p" onclick="closeModal()">Yopish</button>');
+}
 function pageAdminJournal(){return `
   <div class="page" id="page-adminjournal">
     <div class="card">
