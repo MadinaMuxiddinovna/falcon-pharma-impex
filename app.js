@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyXbS_wIisSmbTexHa4Jx9i-6X5ApaBSVVyGLow9or5_x2fetO_8b9YfLN2Xa5AGRphtQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzJwG9q9rxUdiphkuKYv2G1Ag-UuajZGinrPn3F-Xz9yWqUC1bPax6O-JiepJjInzwKgQ/exec',
 };
 
 const PREPS = [
@@ -231,7 +231,7 @@ function buildNav() {
   const nav = document.getElementById('main-nav');
   let items = NAV_BY_ROLE[ST.user.role] || NAV_BY_ROLE.mp;
   if (ST.user.role==='ta' && ST.user.isTeamLead) {
-    items = items.concat([['team','Jamoa'],['map','Xarita']]);
+    items = items.concat([['team','Jamoa'],['kpi','Jamoa KPI'],['map','Xarita']]);
   }
   nav.innerHTML = items.map((it,i) =>
     `<div class="nav-tab ${i===0?'active':''}" data-p="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</div>`
