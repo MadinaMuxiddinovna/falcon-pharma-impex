@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwEiLNiekxVI_RmsX7SBRTSl-fRzN5VuqEyR4CDuOGbErMvzId6lIeGMX7LAi4wDV9LvQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbySV-nHnJa6m72HoBpb9_qU5maCtG0tvC4MEdfSOfkqtnwz9-iDYGHlUsj8zKRr39mLrg/exec',
 };
 
 const PREPS = [
@@ -222,6 +222,9 @@ function enterApp() {
   if (ST.user.role==='ta' && ST.user.isTeamLead) {
     roleLabel = 'Menejer';
   }
+  if (ST.user.role==='manager' && ST.user.isSuperManager) {
+    roleLabel = 'BOSH MENEJER';
+  }
   document.getElementById('hdr-role').textContent = roleLabel;
   buildNav(); buildAllPages(); initData();
   if(ST.user.role==='mp'||ST.user.role==='ta') setTimeout(checkResumeActiveVisit,600);
@@ -232,6 +235,9 @@ function buildNav() {
   let items = NAV_BY_ROLE[ST.user.role] || NAV_BY_ROLE.mp;
   if (ST.user.role==='ta' && ST.user.isTeamLead) {
     items = items.concat([['team','Jamoa'],['kpi','Jamoa KPI'],['map','Xarita']]);
+  }
+  if (ST.user.role==='manager' && ST.user.isSuperManager) {
+    items = items.concat([['mgrbalanceoverview','Menejer balans']]);
   }
   nav.innerHTML = items.map((it,i) =>
     `<div class="nav-tab ${i===0?'active':''}" data-p="${it[0]}" onclick="showPage('${it[0]}')">${it[1]}</div>`
@@ -248,6 +254,7 @@ function showPage(p) {
   if (p==='history')      renderHistory();
   if (p==='histadmin')    { if(typeof renderAdminHistory==='function') renderAdminHistory(); }
   if (p==='histadmin')    renderAdminHistory();
+  if (p==='mgrbalanceoverview') renderMgrBalanceOverview();
   if (p==='endday')       renderEndDay();
   if (p==='report')       renderReportPage();
   if (p==='team')         renderTeamAgentPage();
