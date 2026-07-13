@@ -340,12 +340,12 @@ async function pdFinalizePromaPay(summa,comment){
   if(p._row){
     if(navigator.geolocation){
       navigator.geolocation.getCurrentPosition(
-        pos=>apiPost({action:'decidePromo',row:p._row,approved:true,lat:pos.coords.latitude,lng:pos.coords.longitude}).catch(()=>{}),
-        ()=>apiPost({action:'decidePromo',row:p._row,approved:true}).catch(()=>{}),
+        pos=>apiPost({action:'decidePromo',row:p._row,approved:true,lat:pos.coords.latitude,lng:pos.coords.longitude,mgrId:ST.user.id,mgrName:ST.user.name,mgrDistrict:ST.user.district||''}).catch(()=>{}),
+        ()=>apiPost({action:'decidePromo',row:p._row,approved:true,mgrId:ST.user.id,mgrName:ST.user.name,mgrDistrict:ST.user.district||''}).catch(()=>{}),
         {enableHighAccuracy:true,timeout:4000}
       );
     } else {
-      apiPost({action:'decidePromo',row:p._row,approved:true}).catch(()=>{});
+      apiPost({action:'decidePromo',row:p._row,approved:true,mgrId:ST.user.id,mgrName:ST.user.name,mgrDistrict:ST.user.district||''}).catch(()=>{});
     }
   }
   if(resp.error){alert('Xato: '+resp.error);return;}
@@ -361,13 +361,18 @@ function pdSearchDoc(q){
   q=q.trim();if(q.length<2){hideEl('pd-doc-res');return;}
   const ql=q.toLowerCase();
   const res=ST.doctors.filter(r=>(r.name||'').toLowerCase().includes(ql)).slice(0,8);
+  window._pdDocRes=res;
   const box=document.getElementById('pd-doc-res');
   box.innerHTML=res.length
-    ?res.map(r=>`<div class="sitem" onclick='pdSelectDoc(${JSON.stringify(r)})'>
+    ?res.map((r,i)=>`<div class="sitem" onclick="pdSelectDocByIdx(${i})">
         <span class="sitem-name">${r.name}</span>
         <span class="sitem-meta">${r.specialty||''} · ${r.object||''}</span></div>`).join('')
     :'<div class="sitem"><span class="sitem-meta">Topilmadi</span></div>';
   showEl('pd-doc-res');
+}
+function pdSelectDocByIdx(i){
+  const r=(window._pdDocRes||[])[i];
+  if(r) pdSelectDoc(r);
 }
 function pdSelectDoc(r){
   ST.mgrPay.target=r;hideEl('pd-doc-res');
@@ -486,12 +491,12 @@ function promoDecide(row,approved){
   if(p){p['Holati']=status;}
   if(approved&&navigator.geolocation){
     navigator.geolocation.getCurrentPosition(
-      pos=>apiPost({action:'decidePromo',row,approved,lat:pos.coords.latitude,lng:pos.coords.longitude}).catch(()=>{}),
-      ()=>apiPost({action:'decidePromo',row,approved}).catch(()=>{}),
+      pos=>apiPost({action:'decidePromo',row,approved,lat:pos.coords.latitude,lng:pos.coords.longitude,mgrId:ST.user.id,mgrName:ST.user.name,mgrDistrict:ST.user.district||''}).catch(()=>{}),
+      ()=>apiPost({action:'decidePromo',row,approved,mgrId:ST.user.id,mgrName:ST.user.name,mgrDistrict:ST.user.district||''}).catch(()=>{}),
       {enableHighAccuracy:true,timeout:4000}
     );
   } else {
-    apiPost({action:'decidePromo',row,approved}).catch(()=>{});
+    apiPost({action:'decidePromo',row,approved,mgrId:ST.user.id,mgrName:ST.user.name,mgrDistrict:ST.user.district||''}).catch(()=>{});
   }
 }
 
@@ -565,7 +570,7 @@ async function planMgrDecide(row,approved){
   // ST.plans da ham yangilaymiz
   const p=ST.plans.find(x=>x._row===row);
   if(p){p['Holati']=status;p.status=status;}
-  apiPost({action:'updatePlan',row,status}).catch(()=>{});
+  apiPost({action:'updatePlan',row,status,mgrId:ST.user.id,mgrName:ST.user.name,mgrDistrict:ST.user.district||''}).catch(()=>{});
 }
 
 // ─── JAMOA KPI ───────────────────────────────────────
