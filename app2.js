@@ -14,7 +14,7 @@ function buildAllPages(){
   let html='';
   if(role==='mp'){html+=pageHomeMP();html+=pageHistory();html+=pagePlan();html+=pageEndDay('mp');html+=pageReport();html+=pageFeedback();}
   if(role==='ta'){html+=pageHomeTA();html+=pageHistory();html+=pageEndDay('ta');html+=pageReport();html+=pageFeedback();if(ST.user.isTeamLead){html+=pageTeamAgent();html+=pageTeamKPI();html+=pageMap();}}
-  if(role==='manager'){html+=pageManagerDashboard();html+=pagePayDoctor();html+=pagePromoQueue();html+=pagePlanManager();html+=pageHistoryAdmin();html+=pageTeamKPI();html+=pageMap();}
+  if(role==='manager'){html+=pageManagerDashboard();html+=pagePayDoctor();html+=pagePromoQueue();html+=pagePlanManager();html+=pageHistoryAdmin();html+=pageTeamKPI();html+=pageMap();if(ST.user.isSuperManager)html+=pageMgrBalanceOverview();}
   if(role==='admin'){html+=pageManagerDashboard();html+=pageAdminBalance();html+=pageAdminJournal();html+=pagePromoQueue();html+=pagePlanManager();html+=pageTeamKPI();html+=pageMap();html+=pageFeedbackInbox();html+=pageHistoryAdmin();}
   c.innerHTML=html;
 }
