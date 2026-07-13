@@ -64,6 +64,7 @@ function renderVfStep2Doctor() {
             <option>Endokrinolog</option><option>Pediatr</option><option>Kardiolog</option>
             <option>Oftalomolog</option><option>Allergolog</option><option>Immunolog</option>
             <option>Infeksionist</option><option>Xirurg</option><option>Dermatolog</option>
+            <option>Gepatolog</option>
             <option>Urolog</option><option>Ortoped</option><option>VOP</option>
           </select>
         </div>
@@ -266,8 +267,8 @@ function renderVfStep2Pharmacy() {
           <input id="np-name" placeholder="Masalan: DOBRIY DOKTOR AYBOLIT MCHJ" />
         </div>
         <div class="fg">
-          <label>Filial raqami (yo'q bo'lsa bo'sh qoldiring)</label>
-          <input id="np-branch" type="number" min="1" placeholder="Masalan: 1, 2, 5..." />
+          <label>Filial raqami <span class="req">*</span></label>
+          <input id="np-branch" type="number" min="0" placeholder="Masalan: 1, 2, 5... (yo'q bo'lsa 0)" />
         </div>
         <div class="fg">
           <label>ЛПР F.I.Sh (mas'ul shaxs)</label>
@@ -288,11 +289,20 @@ function renderVfStep2Pharmacy() {
     </div>
 
     <div class="fg hide" id="vf-branch-block">
-      <label>Filial raqami <span class="req">*</span></label>
+      <label>Tuman (rayon) <span class="req">*</span></label>
+      <select id="vf-pharm-tuman" onchange="ST.visit.vals.pharmTuman=this.value;vfCheckBranchReady();">
+        <option value="">— Tanlang —</option>
+        <option>Chilonzor</option><option>Yunusobod</option><option>Sergeli</option>
+        <option>Shayxontohur</option><option>Uchtepa</option><option>Keles</option>
+        <option>Mirzo Ulug'bek</option><option>Olmazor</option><option>Qibray</option>
+        <option>Yashnobod</option><option>Bektemir</option><option>Mirobod</option>
+        <option>Yakkasaroy</option><option>Yangihayot</option>
+      </select>
+      <label style="margin-top:10px">Filial raqami <span class="req">*</span></label>
       <div id="vf-branch-known" class="alert alert-ok hide"></div>
       <div id="vf-branch-ask" class="hide">
         <input id="vf-branch-no" type="number" min="1" placeholder="Masalan: 2 yoki 45..."
-          oninput="ST.visit.vals.branchNo=this.value;document.getElementById('vf-next2').disabled=!this.value;" />
+          oninput="ST.visit.vals.branchNo=this.value;vfCheckBranchReady();" />
       </div>
     </div>
 
@@ -322,7 +332,10 @@ function vfSearchPharm(q, isFocus) {
       (r.inn||'').includes(q) || (r.legalName||'').toLowerCase().includes(ql)
     );
   }
-  res = res.slice().sort((a,b)=>{
+  // INN bo'yicha noyoblashtiramiz — har filial emas, har KOMPANIYA uchun 1 ta natija (#3)
+  const uniqMap=new Map();
+  res.forEach(r=>{ if(!uniqMap.has(r.inn)) uniqMap.set(r.inn,r); });
+  res = [...uniqMap.values()].sort((a,b)=>{
     const ad=(a.district||'').toLowerCase()===dist?0:1;
     const bd=(b.district||'').toLowerCase()===dist?0:1;
     return ad-bd;
@@ -331,13 +344,13 @@ function vfSearchPharm(q, isFocus) {
   const box = document.getElementById('vf-pharm-res');
   if (!res.length) {
     box.innerHTML = '<div class="sitem"><span class="sitem-meta">Topilmadi — pastda yangi dorixona qo\'shing</span></div>';
-    showEl('vf-new-pharm-block');
+    showEl('vf-new-pharm-block'); hideEl('vf-branch-block');
   } else {
     hideEl('vf-new-pharm-block');
     box.innerHTML = res.map((r,i) => `
       <div class="sitem" onclick="vfSelectPharmByIdx(${i})">
         <span class="sitem-name">${r.legalName}</span>
-        <span class="sitem-meta">INN: ${r.inn} · ${r.district||''} ${r.branch?'· Filial: '+r.branch:''}</span>
+        <span class="sitem-meta">INN: ${r.inn}</span>
       </div>`).join('');
   }
   showEl('vf-pharm-res');
@@ -347,23 +360,25 @@ function vfSelectPharmByIdx(i) {
   const r = (window._pharmSearchRes||[])[i];
   if (r) vfSelectPharm(r);
 }
+function vfCheckBranchReady(){
+  const tuman=document.getElementById('vf-pharm-tuman')?.value||'';
+  const branch=ST.visit.vals.branchNo;
+  const btn=document.getElementById('vf-next2');
+  if(btn) btn.disabled = !(tuman && branch);
+}
 function vfSelectPharm(r) {
   ST.visit.target = r;
   hideEl('vf-pharm-res'); hideEl('vf-new-pharm-block');
   document.getElementById('vf-pharm-q').value = r.legalName;
   document.getElementById('vf-pharm-sel').innerHTML =
-    `<div class="alert alert-ok">✅ <b>${r.legalName}</b> · INN: ${r.inn} · ${r.district||''}</div>`;
+    `<div class="alert alert-ok">✅ <b>${r.legalName}</b> · INN: ${r.inn}</div>`;
   showEl('vf-pharm-sel');
   showEl('vf-branch-block');
-  if (r.branch && r.branch.trim() && r.branch !== "Yo'q") {
-    document.getElementById('vf-branch-known').innerHTML = `✅ Filial raqami: <b>${r.branch}</b> (avval kiritilgan)`;
-    showEl('vf-branch-known'); hideEl('vf-branch-ask');
-    ST.visit.vals.branchNo = r.branch;
-    document.getElementById('vf-next2').disabled = false;
-  } else {
-    hideEl('vf-branch-known'); showEl('vf-branch-ask');
-    document.getElementById('vf-next2').disabled = true;
-  }
+  hideEl('vf-branch-known'); showEl('vf-branch-ask');
+  ST.visit.vals.branchNo = '';
+  const tumanSel=document.getElementById('vf-pharm-tuman'); if(tumanSel) tumanSel.value='';
+  ST.visit.vals.pharmTuman = '';
+  document.getElementById('vf-next2').disabled = true;
 }
 
 
@@ -371,15 +386,17 @@ function vfConfirmNewPharm() {
   const inn = (document.getElementById('np-inn')?.value||'').replace(/\D/g,'');
   const name = (document.getElementById('np-name')?.value||'').trim();
   const dist = (document.getElementById('np-dist')?.value||'').trim();
+  const branchVal = (document.getElementById('np-branch')?.value||'').trim();
   const lprName = (document.getElementById('np-lpr-name')?.value||'').trim();
   const lprPhoneRaw = (document.getElementById('np-lpr-phone')?.value||'').replace(/\D/g,'');
   if (inn.length !== 9) { alert('INN aynan 9 ta raqam bo\'lishi kerak!'); return; }
   if (!name) { alert('Dorixona Yuridik Nomini kiriting!'); return; }
+  if (branchVal==='') { alert('Filial raqamini kiriting (yo\'q bo\'lsa 0 yozing)!'); return; }
   if (lprPhoneRaw && lprPhoneRaw.length !== 9) { alert('ЛПР telefon aynan 9 ta raqamdan iborat bo\'lishi kerak!'); return; }
   const lprPhone = lprPhoneRaw ? '+998'+lprPhoneRaw : '';
 
   const region = (document.getElementById('np-region')?.value||ST.user.region||'').trim();
-  const newP = { id:'NEW-'+Date.now(), region, district:dist, inn, legalName:name, branch:document.getElementById('np-branch')?.value||'', lprName, lprPhone, _isNew:true };
+  const newP = { id:'NEW-'+Date.now(), region, district:dist, inn, legalName:name, branch:branchVal, lprName, lprPhone, _isNew:true };
 
   showModal('Ma\'lumotni tekshiring',
     `<div class="irow"><span class="irow-l">Mintaqa</span><span class="irow-v">${region}</span></div>
@@ -395,6 +412,7 @@ function vfConfirmNewPharm() {
 
 async function vfFinalizeNewPharm(newP) {
   ST.pharmacies.push(newP); ST.visit.target = newP; ST.visit.newObjData = newP;
+  ST.visit.vals.pharmTuman = newP.district||'';
   document.getElementById('vf-pharm-sel').innerHTML =
     `<div class="alert alert-ok">✅ <b>${newP.legalName}</b> (yangi) · ${newP.district}</div>`;
   showEl('vf-pharm-sel'); showEl('vf-branch-block');
