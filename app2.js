@@ -501,6 +501,7 @@ function showHistDetail(date,idx){
     ${v.specialty||v['Mutaxassisligi']?`<div class="irow"><span class="irow-l">Mutaxassis</span><span class="irow-v">${v.specialty||v['Mutaxassisligi']}</span></div>`:''}
     <div class="irow"><span class="irow-l">Ish joyi</span><span class="irow-v">${target}</span></div>
     ${v.district||v['Tumani']?`<div class="irow"><span class="irow-l">Tuman</span><span class="irow-v">${v.district||v['Tumani']}</span></div>`:''}
+    ${v.branchNo||v['Filial raqami']?`<div class="irow"><span class="irow-l">Filial</span><span class="irow-v">${v.branchNo||v['Filial raqami']}</span></div>`:''}
     <div class="irow"><span class="irow-l">Natija</span><span class="irow-v"><span class="bdg ${res==='ISHLAYDI'?'bdg-g':'bdg-y'}">${res==='BOSHQA'?(v.resultOther||v["Natija qo'shimcha"]||res):res}</span></span></div>
     ${t1?`<div class="irow"><span class="irow-l">Boshlandi</span><span class="irow-v">${t1}</span></div>`:''}
     ${t2?`<div class="irow"><span class="irow-l">Tugadi</span><span class="irow-v">${t2}</span></div>`:''}
