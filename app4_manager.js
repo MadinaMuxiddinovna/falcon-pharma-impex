@@ -589,7 +589,8 @@ function pageTeamKPI(){
 async function renderTeamKPI(){
   const date=v('kpi-date')||todayStr();
   // Har doim yangi ma'lumot — KPI srazu ko'rinishi kerak (#10)
-  const kpi=await apiGet('getKPI',{role:ST.user.role,empId:ST.user.id,date},false).catch(()=>({}));
+  const effRole=(ST.user.role==='ta'&&ST.user.isTeamLead)?'manager':ST.user.role;
+  const kpi=await apiGet('getKPI',{role:effRole,empId:ST.user.id,date},false).catch(()=>({}));
   const el=document.getElementById('kpi-team');if(!el)return;
   const entries=Object.entries(kpi);
   if(!entries.length){el.innerHTML='<div class="alert alert-i">Bu sana uchun ma\'lumot yo\'q</div>';el.className='';return;}
