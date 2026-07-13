@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxNRq13QES8RZ_N5mGhF5BVRR7nSafeEKFvMPkupaQtQj6xynsCse_uFRpQ4SS1XDei/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzFIRmdZ4uYGe0d4F2I_qQRulrZvYPzFr-ao1RZY9JoIdFg691Kr3Vk0MgQKR4RZTHRJQ/exec',
 };
 
 const PREPS = [
@@ -385,6 +385,10 @@ function mergeTodayVisits(serverList) {
 function startVisitFlow(type) {
   if(localStorage.getItem('ff_endday_'+ST.user.id)===todayStr()){
     alert('Bugungi kun yakunlangan — endi vizit qilib bo\'lmaydi!');
+    return;
+  }
+  if(!localStorage.getItem('ff_wt_'+ST.user.id+'_'+todayStr())){
+    alert('Avval "Ish kunini boshlash" tugmasini bosing!');
     return;
   }
   // Vrach/dorixona bazasini fonda yangilaymiz — kun davomida bazaga yangi qo'shilgan/o'chirilganlar ko'rinsin (#14)
