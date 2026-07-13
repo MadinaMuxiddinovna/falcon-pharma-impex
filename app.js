@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzFIRmdZ4uYGe0d4F2I_qQRulrZvYPzFr-ao1RZY9JoIdFg691Kr3Vk0MgQKR4RZTHRJQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwvZP4wh1ICkAn4M5s27_nwo-fiiJMRYiyK-mbJWY6K4WWfiODehCPDD6XXCFazqOwwew/exec',
 };
 
 const PREPS = [
@@ -80,6 +80,7 @@ async function doLogin() {
     mgrId: result.mgrId||'',
     district: result.district||'',
     group: result.group||'',
+    isTeamLead: result.isTeamLead||false,
     passHash: simpleHash(pass), // parolni emas, hash ni saqlaymiz
   };
   localStorage.setItem('ff_user_cache_' + id, JSON.stringify(userInfo));
