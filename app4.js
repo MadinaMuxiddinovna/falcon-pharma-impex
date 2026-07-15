@@ -292,6 +292,12 @@ function vfGoToFoto() {
     if(!lprNameVal){alert('ЛПР F.I.Sh kiriting!');return;}
     if(lprPhoneVal.length!==9){alert('ЛПР telefon raqamini to\'liq (9 ta raqam) kiriting!');return;}
     if(!lpuVal){alert('ЛПУ (obyekt nomi) kiriting!');return;}
+    const hasAnyBronVal=(ST.visit.vals.bron||[]).some(s=>Number(s.qty)>0)
+      || Array.from(document.querySelectorAll('[id^="vf-bron-"]')||[]).some(inp=>inp.tagName==='INPUT'&&Number(inp.value)>0);
+    if(hasAnyBronVal){
+      const payType=document.getElementById('vf-payment-type')?.value||'';
+      if(!payType){alert("Bron uchun To'lov shaklini tanlang!");return;}
+    }
   }
 
   const elapsed=Math.floor((Date.now()-ST.visit.timerStart)/1000);
@@ -311,6 +317,7 @@ function vfGoToFoto() {
         lprName:(document.getElementById('vf-bron-lpr-name')?.value||'').trim(),
         lprPhone:lprPhoneRaw?('+998'+lprPhoneRaw):'',
         lpuObject:(document.getElementById('vf-bron-lpu')?.value||'').trim(),
+        paymentType:(document.getElementById('vf-payment-type')?.value||''),
       };
     }catch(e){}
   }
@@ -350,7 +357,7 @@ function buildBronTable(){
     <tr>
       <td style="color:var(--muted);font-size:11px">${i+1}</td>
       <td style="font-size:11px">${p}</td>
-      <td><input type="number" min="0" value="0" id="vf-bron-${i}" oninput="vfUpdateBronSum()" style="width:65px" /></td>
+      <td><input type="number" min="0" value="0" id="vf-bron-${i}" oninput="vfUpdateBronSum();vfCheckPaymentTypeVisibility();" style="width:65px" /></td>
       <td style="font-size:11px;color:var(--muted)">${fmtMoney(PRICES[p]||0)}</td>
       <td class="sum-cell" id="vf-bron-sum-${i}">0</td>
     </tr>`).join('');
@@ -400,11 +407,29 @@ function vfPharmGoStage2(){
         <label>ЛПУ (obyekt nomi)</label>
         <input id="vf-bron-lpu" placeholder="Masalan: 6-Oilaviy Poliklinika" />
       </div>
+      <div class="fg hide" id="vf-payment-type-block">
+        <label>To'lov shakli <span class="req">*</span></label>
+        <select id="vf-payment-type">
+          <option value="">— Tanlang —</option>
+          <option value="Без предоплаты">Без предоплаты</option>
+          <option value="Оплата 25%">Оплата 25%</option>
+          <option value="Оплата 50%">Оплата 50%</option>
+          <option value="Оплата 100%">Оплата 100%</option>
+        </select>
+      </div>
       <div class="btn-row">
         <button class="btn btn-o" onclick="vfPharmBackStage()">← Qoldiq bosqichiga qaytish</button>
       </div>
     </div>`;
   buildStockTableRows();
+  vfCheckPaymentTypeVisibility();
+}
+// Bron preparat soni kiritilgan bo'lsa — To'lov shaklini so'raymiz, aks holda yashiramiz (#6)
+function vfCheckPaymentTypeVisibility(){
+  const block=document.getElementById('vf-payment-type-block');if(!block)return;
+  const hasAnyBron=(ST.visit.vals.bron||[]).some(s=>Number(s.qty)>0)
+    || Array.from(document.querySelectorAll('#vf-bron-tbody input')||[]).some(inp=>Number(inp.value)>0);
+  if(hasAnyBron) block.classList.remove('hide'); else block.classList.add('hide');
 }
 
 function vfPharmBackStage(){
