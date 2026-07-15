@@ -75,13 +75,23 @@ async function vfFinishVisit() {
   const btn = document.getElementById('vf-finish-btn');
   if (btn) { btn.disabled=true; btn.textContent='Saqlanmoqda...'; }
 
-  // GPS oxirgi koordinata — 5 soniya kutib, xato bo'lsa davom etamiz
+  // GPS oxirgi koordinata — avval aniq (satellite) usulda, indoor joylarda ishlamasa
+  // tezroq (WiFi/uyali aloqa) usulga o'tamiz — bo'sh qoldirmaslik uchun
   await new Promise(resolve=>{
-    const t=setTimeout(resolve,5000);
+    let done=false;
+    const finish=()=>{ if(!done){ done=true; resolve(); } };
+    const t=setTimeout(()=>{
+      // Aniq GPS topilmadi — tezroq, kam aniq usulni sinaymiz (indoor uchun yaxshiroq)
+      navigator.geolocation.getCurrentPosition(
+        pos=>{ST.visit.gpsEnd={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};finish();},
+        ()=>finish(),
+        {enableHighAccuracy:false,timeout:4000,maximumAge:60000}
+      );
+    },8000);
     navigator.geolocation.getCurrentPosition(
-      pos=>{ST.visit.gpsEnd={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};clearTimeout(t);resolve();},
-      ()=>{clearTimeout(t);resolve();},
-      {enableHighAccuracy:true,timeout:4500}
+      pos=>{ST.visit.gpsEnd={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};clearTimeout(t);finish();},
+      ()=>{}, // xato bo'lsa ham kutamiz — timeout orqali fallback ishga tushadi
+      {enableHighAccuracy:true,timeout:8000}
     );
   });
 
@@ -103,6 +113,7 @@ async function vfFinishVisit() {
       goal:ST.visit.vals.goal||'', goalOther:(document.getElementById('vf-goal-other')?.value||''),
       products:ST.visit.products.filter(p=>p.name&&p.qty>0),
       sampleRequested:ST.visit.vals.sample==='Ha',
+      probnikPreps:(ST.visit.vals.probnikPreps||[]).join(', '),
       result:ST.visit.vals.result||'', resultOther:(document.getElementById('vf-result-other')?.value||''),
       promoRequested:!!ST.visit.vals.promoRequested,
       promaSumma:ST.visit.vals.promaSumma||0,
@@ -130,6 +141,7 @@ async function vfFinishVisit() {
       branchNo:(ST.visit.vals.branchNo!==undefined&&ST.visit.vals.branchNo!==null&&ST.visit.vals.branchNo!=='')?ST.visit.vals.branchNo:0,
       isNewPharmacy:!!ST.visit.target._isNew,
       bron, stock,
+      lprName:(ST.visit._lprData?.lprName||''), lprPhone:(ST.visit._lprData?.lprPhone||''), lpuObject:(ST.visit._lprData?.lpuObject||''),
       comment:(document.getElementById('vf-comment')?.value||''),
       visitStartTime:nowTimeFromTs(ST.visit.timerStart),
       visitEndTime:nowTimeStr(), durationSec:duration,
