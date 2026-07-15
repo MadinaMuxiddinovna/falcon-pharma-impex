@@ -83,7 +83,7 @@ function pageReport(){
         <div id="report-summary" style="margin:10px 0"></div>
         <div style="overflow-x:auto">
           <table class="stbl">
-            <thead><tr><th>Sana</th><th>Boshlandi</th><th>Tugadi</th><th>Soat</th>${isTa?'':'<th>Vrach</th>'}<th>Dorixona</th>${isTa?'':'<th>Jami</th>'}<th>%</th></tr></thead>
+            <thead><tr><th>Sana</th><th>Boshlandi</th><th>Tugadi</th><th>Soat</th>${isTa?'':'<th>Vrach</th>'}<th>Dorixona</th>${isTa?'':'<th>Jami</th>'}<th>%</th><th>1-vizit</th><th>Oxirgi vizit</th><th>Davomiylik</th></tr></thead>
             <tbody id="report-tbody"></tbody>
           </table>
         </div>
@@ -109,7 +109,8 @@ async function renderReportPage(){
       <td>${uzDateShort(d.date)}</td><td>${d.startTime||'—'}</td><td>${d.endTime||'—'}</td>
       <td>${d.hoursWorked||0}</td>${ST.user.role==='ta'?'':'<td>'+d.doctorV+'</td>'}<td>${d.pharmV}</td>${ST.user.role==='ta'?'':'<td><b>'+d.total+'</b></td>'}
       <td><span class="bdg ${d.pct>=100?'bdg-g':d.pct>=50?'bdg-y':'bdg-r'}">${d.pct}%</span></td>
-    </tr>`).join(''):`<tr><td colspan="${ST.user.role==='ta'?6:8}" style="text-align:center;color:var(--muted)">Bu oyda ma'lumot yo'q</td></tr>`;
+      <td>${d.firstVisitStart||'—'}</td><td>${d.lastVisitEnd||'—'}</td><td>${d.visitsSpan||'—'}</td>
+    </tr>`).join(''):`<tr><td colspan="${ST.user.role==='ta'?9:11}" style="text-align:center;color:var(--muted)">Bu oyda ma'lumot yo'q</td></tr>`;
 }
 
 // ── MP BOSH SAHIFA — Kun boshlash tugmasi shu yerda ──
@@ -502,6 +503,7 @@ function showHistDetail(date,idx){
     <div class="irow"><span class="irow-l">Ish joyi</span><span class="irow-v">${target}</span></div>
     ${v.district||v['Tumani']?`<div class="irow"><span class="irow-l">Tuman</span><span class="irow-v">${v.district||v['Tumani']}</span></div>`:''}
     ${v.branchNo||v['Filial raqami']?`<div class="irow"><span class="irow-l">Filial</span><span class="irow-v">${v.branchNo||v['Filial raqami']}</span></div>`:''}
+    ${(v.vizitHolati||'').indexOf('Shubhali')>=0?`<div class="alert alert-r" style="margin-top:8px"><b>⚠️ Shubhali sabab:</b><br>${(v.vizitHolati||'').replace('Shubhali: ','')}</div>`:''}
     <div class="irow"><span class="irow-l">Natija</span><span class="irow-v"><span class="bdg ${res==='ISHLAYDI'?'bdg-g':'bdg-y'}">${res==='BOSHQA'?(v.resultOther||v["Natija qo'shimcha"]||res):res}</span></span></div>
     ${t1?`<div class="irow"><span class="irow-l">Boshlandi</span><span class="irow-v">${t1}</span></div>`:''}
     ${t2?`<div class="irow"><span class="irow-l">Tugadi</span><span class="irow-v">${t2}</span></div>`:''}
