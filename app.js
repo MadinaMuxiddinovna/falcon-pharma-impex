@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwJawUsGmiXDp2InF_VvAs74aJP5K6i4vxNleOgWwCE_QR2v2qmpWHPDOrtMA7x8diBsg/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzYjAP-niEB8qmfope_Qjppwf3GEe8sdiYfFsA2nhs4XeG0qspa5TT_n54d238JiA7RQQ/exec',
 };
 
 const PREPS = [
@@ -81,6 +81,8 @@ async function doLogin() {
     district: result.district||'',
     group: result.group||'',
     isTeamLead: result.isTeamLead||false,
+    isSuperManager: result.isSuperManager||false,
+    subManagerIds: result.subManagerIds||[],
     passHash: simpleHash(pass), // parolni emas, hash ni saqlaymiz
   };
   localStorage.setItem('ff_user_cache_' + id, JSON.stringify(userInfo));
@@ -204,7 +206,7 @@ function invalidateApiCache(action) {
 const ROLE_LABELS = { admin:'Administrator', manager:'Menejer', mp:'Med. Vakil', ta:'Torgovoy Agent' };
 const NAV_BY_ROLE = {
   mp:      [['home','Bosh sahifa'],['history','Tarix'],['plan','Reja'],['endday','Kun yakuni'],['report','Hisobot'],['feedback','Murojaat']],
-  ta:      [['home','Bosh sahifa'],['history','Tarix'],['endday','Kun yakuni'],['report','Hisobot'],['feedback','Murojaat']],
+  ta:      [['home','Bosh sahifa'],['history','Tarix'],['endday','Kun yakuni'],['report','Hisobot']],
   manager: [['mgr','Boshqaruv'],['paydoctor','FCOIN berish'],['promo','FCOIN'],['planmgr','MP rejalari'],['histadmin','Tarix'],['kpi','Jamoa KPI'],['map','Xarita']],
   admin:   [['mgr','Boshqaruv'],['adminbalance','Menejer balans'],['adminjournal','Admin jurnali'],['promo','FCOIN'],['planmgr','Rejalar'],['histadmin','Tarix'],['kpi','Jamoa KPI'],['map','Xarita'],['feedbackbox','Murojaatlar']],
 };
@@ -235,6 +237,9 @@ function buildNav() {
   let items = NAV_BY_ROLE[ST.user.role] || NAV_BY_ROLE.mp;
   if (ST.user.role==='ta' && ST.user.isTeamLead) {
     items = items.concat([['team','Jamoa'],['kpi','Jamoa KPI'],['map','Xarita']]);
+  }
+  if (ST.user.role==='ta') {
+    items = items.concat([['feedback','Murojaat']]);
   }
   if (ST.user.role==='manager' && ST.user.isSuperManager) {
     items = items.concat([['mgrbalanceoverview','Menejer balans']]);
@@ -383,6 +388,7 @@ function showModal(title, body, btns) {
 function closeModal() { document.getElementById('modal-bg')?.classList.add('hide'); }
 function fmtMoney(n) { return Math.round(n||0).toLocaleString('uz-UZ')+" so'm"; }
 function fmtCoin(n) { return Math.round(n||0).toLocaleString('uz-UZ')+" FCOIN"; }
+function fmtNum(n) { return Math.round(n||0).toLocaleString('uz-UZ'); }
 function todayStr() {
   // Lokal sana (timezone muammosini hal qiladi)
   const d = new Date();
