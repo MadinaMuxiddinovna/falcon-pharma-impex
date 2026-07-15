@@ -91,7 +91,7 @@ function pageManagerDashboard(){
       <div style="font-size:16px;font-weight:700;color:var(--primary)" id="mgr-region-info"></div>
     </div>
     <div class="balance-box" id="mgr-bal-box" onclick="showMgrJournal()" style="cursor:pointer">
-      <div class="balance-num" id="mgr-bal-qolgan">— so'm</div>
+      <div class="balance-num" id="mgr-bal-qolgan">—</div>
       <div class="balance-lbl">Balansingiz — bosib batafsil ko'rish</div>
     </div>`:''}
     <div class="kpi-grid">
@@ -419,7 +419,7 @@ function updateBalanceUI(newBal){
   const el=document.getElementById('pd-bal');if(el)el.textContent=fmtMoney(newBal);
   const box=document.getElementById('pd-bal-box');
   if(box)box.style.background=newBal<0?'linear-gradient(135deg,#8b0000,#c0260a)':'linear-gradient(135deg,#7a3ca0,#9b59d8)';
-  const el2=document.getElementById('mgr-bal-qolgan');if(el2)el2.textContent=fmtMoney(newBal);
+  const el2=document.getElementById('mgr-bal-qolgan');if(el2)el2.textContent=fmtNum(newBal);
   const box2=document.getElementById('mgr-bal-box');
   if(box2)box2.style.background=newBal<0?'linear-gradient(135deg,#8b0000,#c0260a)':'linear-gradient(135deg,#7a3ca0,#9b59d8)';
 }
@@ -670,8 +670,8 @@ async function renderMgrBalanceOverview(){
   el.innerHTML=data.map((m,i)=>`
     <div class="vcard" onclick="showMgrBalanceDetail(${i})" style="cursor:pointer;margin-bottom:10px">
       <div class="vcard-h"><span class="vcard-name">${m.mgrName}</span>
-        <span class="bdg ${m.qolgan>=0?'bdg-g':'bdg-r'}">${fmtMoney(m.qolgan)}</span></div>
-      <div class="vcard-meta">Jami berilgan: ${fmtMoney(m.jami)} · Sarflangan: ${fmtMoney(m.sarflangan)}</div>
+        <span class="bdg ${m.qolgan>=0?'bdg-g':'bdg-r'}">${fmtNum(m.qolgan)}</span></div>
+      <div class="vcard-meta">Jami berilgan: ${fmtNum(m.jami)} · Sarflangan: ${fmtNum(m.sarflangan)}</div>
     </div>`).join('');
 }
 function showMgrBalanceDetail(i){
@@ -680,13 +680,13 @@ function showMgrBalanceDetail(i){
     const amt=j["Miqdor (so'm)"]||0;
     return '<div class="irow" style="font-size:12.5px">'
       +'<span class="irow-l">'+(j['Harakat']||'')+' — '+(j['Izoh']||'')+'</span>'
-      +'<span class="irow-v">'+fmtMoney(amt)+'<br><span style="font-size:11px;color:var(--muted)">'+(j['Vaqt va sana']||'')+'</span></span>'
+      +'<span class="irow-v">'+fmtNum(amt)+'<br><span style="font-size:11px;color:var(--muted)">'+(j['Vaqt va sana']||'')+'</span></span>'
       +'</div>';
   }).join('');
   showModal(m.mgrName+' — balans tarixi',`
-    <div class="irow"><span class="irow-l">Jami berilgan</span><span class="irow-v">${fmtMoney(m.jami)}</span></div>
-    <div class="irow"><span class="irow-l">Sarflangan</span><span class="irow-v">${fmtMoney(m.sarflangan)}</span></div>
-    <div class="irow"><span class="irow-l"><b>Qolgan</b></span><span class="irow-v" style="font-weight:800">${fmtMoney(m.qolgan)}</span></div>
+    <div class="irow"><span class="irow-l">Jami berilgan</span><span class="irow-v">${fmtNum(m.jami)}</span></div>
+    <div class="irow"><span class="irow-l">Sarflangan</span><span class="irow-v">${fmtNum(m.sarflangan)}</span></div>
+    <div class="irow"><span class="irow-l"><b>Qolgan</b></span><span class="irow-v" style="font-weight:800">${fmtNum(m.qolgan)}</span></div>
     <div style="margin-top:10px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">So'nggi harakatlar</div>
     ${journalHtml||'<div class="alert alert-i" style="margin-top:6px">Tarix yo\'q</div>'}
   `,'<button class="btn btn-p" onclick="closeModal()">Yopish</button>');
