@@ -124,7 +124,7 @@ function renderDoctorForm() {
       <!-- Faqat raqam kiritish, max 9999999 -->
       <div id="vf-promo-sum-block" class="hide" style="margin-top:10px">
         <label style="font-size:12px;color:var(--muted);margin-bottom:6px;display:block">
-          FCOIN SUMMASI — faqat raqam
+          FCOIN
         </label>
         <input id="vf-promo-summa" type="number" min="0" max="9999999"
           placeholder="Masalan: 200000"
