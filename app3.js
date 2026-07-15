@@ -64,7 +64,7 @@ function renderVfStep2Doctor() {
             <option>Endokrinolog</option><option>Pediatr</option><option>Kardiolog</option>
             <option>Oftalomolog</option><option>Allergolog</option><option>Immunolog</option>
             <option>Infeksionist</option><option>Xirurg</option><option>Dermatolog</option>
-            <option>Gepatolog</option>
+            <option>Gepatolog</option><option>LOR</option><option>Onkolog</option>
             <option>Urolog</option><option>Ortoped</option><option>VOP</option>
           </select>
         </div>
