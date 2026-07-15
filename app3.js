@@ -228,6 +228,19 @@ async function vfFinalizeNewDoctor(newDoc) {
 }
 
 // ── DORIXONA TANLASH ────────────────────────────────
+const TASHKENT_SHAHAR_TUMANLAR=["Chilonzor","Yunusobod","Sergeli","Shayxontohur","Uchtepa","Keles",
+  "Mirzo Ulug'bek","Olmazor","Qibray","Yashnobod","Bektemir","Mirobod","Yakkasaroy","Yangihayot"];
+// Toshkent shahri MP/agentlari uchun standart 14 ta tuman; viloyat xodimlari uchun
+// o'zining ro'yxatdagi rayon(lar)i ko'rsatiladi (#10)
+function vfBuildTumanOptions(){
+  const region=(ST.user.region||'').toLowerCase();
+  if(region.includes('shahri')||region.includes('shahar')||!region){
+    return TASHKENT_SHAHAR_TUMANLAR.map(t=>`<option>${t}</option>`).join('');
+  }
+  const own=(ST.user.district||'').split(',').map(s=>s.trim()).filter(Boolean);
+  if(own.length) return own.map(t=>`<option>${t}</option>`).join('');
+  return TASHKENT_SHAHAR_TUMANLAR.map(t=>`<option>${t}</option>`).join('');
+}
 function renderVfStep2Pharmacy() {
   document.getElementById('vfs2').innerHTML = `
     <div class="fg">
@@ -292,11 +305,7 @@ function renderVfStep2Pharmacy() {
       <label>Tuman (rayon) <span class="req">*</span></label>
       <select id="vf-pharm-tuman" onchange="ST.visit.vals.pharmTuman=this.value;vfCheckBranchReady();">
         <option value="">— Tanlang —</option>
-        <option>Chilonzor</option><option>Yunusobod</option><option>Sergeli</option>
-        <option>Shayxontohur</option><option>Uchtepa</option><option>Keles</option>
-        <option>Mirzo Ulug'bek</option><option>Olmazor</option><option>Qibray</option>
-        <option>Yashnobod</option><option>Bektemir</option><option>Mirobod</option>
-        <option>Yakkasaroy</option><option>Yangihayot</option>
+        ${vfBuildTumanOptions()}
       </select>
       <label style="margin-top:10px">Filial raqami <span class="req">*</span></label>
       <div id="vf-branch-known" class="alert alert-ok hide"></div>
