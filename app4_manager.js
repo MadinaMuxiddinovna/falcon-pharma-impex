@@ -194,8 +194,8 @@ function pagePayDoctor(){
       <div class="balance-num" id="pd-bal">— so'm</div>
       <div class="balance-lbl">Sizning hozirgi balansingiz</div>
     </div>
-    <div class="alert alert-i">Balans manfiy bo'lsa ham pul berishingiz mumkin — admin keyinroq to'ldiradi.</div>
-    <div class="card"><div class="card-h">Pul berish turi</div>
+    <div class="alert alert-i">Balans manfiy bo'lsa ham FCOIN berishingiz mumkin — admin keyinroq to'ldiradi.</div>
+    <div class="card"><div class="card-h">FCOIN berish turi</div>
       <div class="card-b">
         <div class="rg">
           <div class="ropt" style="padding:16px;flex-direction:column;gap:4px;justify-content:center" onclick="pdSetType('DOKTOR')">
@@ -203,7 +203,7 @@ function pagePayDoctor(){
             <span style="font-size:11px;color:var(--muted)">Mustaqil, MP shart emas</span>
           </div>
           <div class="ropt" style="padding:16px;flex-direction:column;gap:4px;justify-content:center" onclick="pdSetType('PROMA')">
-            <span style="font-size:24px">🤝</span><b>PROMA</b>
+            <span style="font-size:24px">🤝</span><b>FCOIN</b>
             <span style="font-size:11px;color:var(--muted)">MP yuborgan so'rov bo'yicha</span>
           </div>
         </div>
@@ -551,6 +551,37 @@ async function renderPlansManagerView(){
         </div>`;
       }).join('')}
     </div>`).join('');
+  if(ST.user.role==='manager'&&ST.user.isSuperManager) renderSubTeamPlansReadOnly();
+}
+async function renderSubTeamPlansReadOnly(){
+  const el2=document.getElementById('plan-mgr-list');if(!el2)return;
+  const subPlans=await apiGet('getSubTeamPlans',{mgrId:ST.user.id},false).catch(()=>[]);
+  if(!subPlans.length)return;
+  const byEmp2={};
+  subPlans.forEach(p=>{
+    const name=p['Hodim Ismi']||'Noma\'lum';
+    if(!byEmp2[name])byEmp2[name]=[];byEmp2[name].push(p);
+  });
+  const readOnlyHtml=`
+    <div class="card-h" style="margin-top:16px;border-radius:8px">Boshqa menejerlar MP'lari (faqat ko'rish)</div>
+    <div style="margin-top:10px">
+    ${Object.entries(byEmp2).map(([empName,pList])=>`
+      <div style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px">${empName}</div>
+        ${pList.map(p=>{
+          const obj=p['Obyekt nomi']||'';
+          const status=p['Holati']||'';
+          const decidedBy=p['Qaror qilgan Menejer Ismi']||'';
+          const decidedAt=p['Qaror vaqti']||'';
+          return `<div class="vcard" style="margin-bottom:6px">
+            <div class="vcard-h"><span class="vcard-name">${obj}</span>
+              <span class="bdg ${status==='Tasdiqlangan'?'bdg-g':status==='Rad etildi'?'bdg-r':'bdg-y'}">${status}</span></div>
+            <div class="vcard-meta">${p['Vizit sanasi']||''}${decidedBy?' · '+decidedBy+(decidedAt?' ('+decidedAt+')':''):''}</div>
+          </div>`;
+        }).join('')}
+      </div>`).join('')}
+    </div>`;
+  el2.insertAdjacentHTML('beforeend',readOnlyHtml);
 }
 function planMgrConfirmReject(row,empName,obj){
   if(confirm(empName+' — '+obj+'\n\nUshbu rejani rad etmoqchimisiz?')){
@@ -596,16 +627,29 @@ async function renderTeamKPI(){
   if(!entries.length){el.innerHTML='<div class="alert alert-i">Bu sana uchun ma\'lumot yo\'q</div>';el.className='';return;}
   el.className='';
   const isAgentTeam=(ST.user.role==='ta'&&ST.user.isTeamLead);
-  el.innerHTML=entries.map(([id,s])=>`
-    <div class="vcard">
-      <div class="vcard-h"><span class="vcard-name">${s.empName||id}</span>
-        <span class="bdg ${(s.pct||0)>=80?'bdg-g':(s.pct||0)>=50?'bdg-y':'bdg-r'}">${s.pct||0}%</span>
-      </div>
-      <div class="vcard-meta">
-        ${isAgentTeam?'':'Vrach viziti: '+(s.doctorV||0)+' · '}Dorixona viziti: ${s.pharmV||0} ·
-        Ijobiy natija: ${s.positive||0} · Shubhali: ${s.shubhali||0}
-      </div>
-    </div>`).join('');
+  function calcHours(st,en){
+    if(!st||!en)return '—';
+    const[sh,sm,ss]=st.split(':').map(Number),[eh,em,es]=en.split(':').map(Number);
+    const mins=(eh*60+em)-(sh*60+sm);
+    return mins>0?Math.round(mins/60*10)/10:'—';
+  }
+  el.innerHTML=`<div style="overflow-x:auto">
+    <table class="stbl">
+      <thead><tr><th>F.I.Sh</th><th>Boshlandi</th><th>Tugadi</th><th>Soat</th>${isAgentTeam?'':'<th>Vrach</th>'}<th>Dorixona</th><th>%</th></tr></thead>
+      <tbody>
+        ${entries.map(([id,s])=>`
+        <tr>
+          <td><b>${s.empName||id}</b></td>
+          <td>${s.startTime||'—'}</td>
+          <td>${s.endTime||'—'}</td>
+          <td>${calcHours(s.startTime,s.endTime)}</td>
+          ${isAgentTeam?'':'<td>'+(s.doctorV||0)+'</td>'}
+          <td>${s.pharmV||0}</td>
+          <td><span class="bdg ${(s.pct||0)>=80?'bdg-g':(s.pct||0)>=50?'bdg-y':'bdg-r'}">${s.pct||0}%</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
 }
 
 // ─── ADMIN BALANS ────────────────────────────────────
