@@ -452,19 +452,23 @@ async function vfFinalizeNewPharm(newP) {
   document.getElementById('vf-pharm-sel').innerHTML =
     `<div class="alert alert-ok">✅ <b>${newP.legalName}</b> (yangi) · ${newP.district}</div>`;
   showEl('vf-pharm-sel'); showEl('vf-branch-block');
+  const tumanSel2=document.getElementById('vf-pharm-tuman'); if(tumanSel2) tumanSel2.value=newP.district||'';
   const branchVal = (newP.branch||'').toString().trim();
   if (branchVal) {
     // Filial raqami dorixona qo'shish shaklida allaqachon kiritilgan — qayta so'ramaymiz
     ST.visit.vals.branchNo = branchVal;
     document.getElementById('vf-branch-known').innerHTML = `✅ Filial raqami: <b>${branchVal}</b>`;
     showEl('vf-branch-known'); hideEl('vf-branch-ask');
-    document.getElementById('vf-next2').disabled = false;
   } else {
     // Bo'sh qoldirilgan — filial yo'q deb hisoblab, bazaga 0 sifatida yozamiz, qayta so'ramaymiz
     ST.visit.vals.branchNo = 0;
     hideEl('vf-branch-known'); hideEl('vf-branch-ask');
-    document.getElementById('vf-next2').disabled = false;
   }
+  // ЛПР F.I.Sh/telefon dorixona qo'shish shaklida kiritilgan bo'lsa — Stage 2 maydonlariga o'tkazamiz
+  const lprNameInp2=document.getElementById('vf-pharm-lpr-name'); if(lprNameInp2) lprNameInp2.value=newP.lprName||'';
+  const lprPhoneInp2=document.getElementById('vf-pharm-lpr-phone'); if(lprPhoneInp2) lprPhoneInp2.value=(newP.lprPhone||'').replace('+998','');
+  // ЛПУ (obyekt nomi) — yangi dorixona shaklida so'ralmagan, hali ham to'ldirilishi kerak
+  vfCheckBranchReady(); // tugma FAQAT hamma maydon (jumladan ЛПУ) to'ldirilganda yoqiladi
   // Bazaga yuborish (INN + Yuridik Nomi)
   await apiPost({ action:'addNewPharmacy', ...newP, empName:ST.user.name });
 }
