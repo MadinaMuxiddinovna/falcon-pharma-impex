@@ -391,10 +391,16 @@ function vfCheckBranchReady(){
   const tuman=document.getElementById('vf-pharm-tuman')?.value||'';
   const branch=ST.visit.vals.branchNo;
   const lprName=(document.getElementById('vf-pharm-lpr-name')?.value||'').trim();
-  const lprPhone=(document.getElementById('vf-pharm-lpr-phone')?.value||'').trim();
+  const lprPhoneRaw=(document.getElementById('vf-pharm-lpr-phone')?.value||'').trim();
   const lpu=(document.getElementById('vf-pharm-lpu')?.value||'').trim();
+  // Har bir o'zgarishda darhol ST.visit'ga yozamiz — bosqich almashsa ham yo'qolmasin
+  ST.visit._lprData={
+    lprName, lprPhone:lprPhoneRaw?('+998'+lprPhoneRaw):'', lpuObject:lpu,
+    paymentType:ST.visit._lprData?.paymentType||'',
+  };
+  ST.visit.vals.pharmTuman=tuman;
   const btn=document.getElementById('vf-next2');
-  if(btn) btn.disabled = !(tuman && branch && lprName && lprPhone.length===9 && lpu);
+  if(btn) btn.disabled = !(tuman && branch && lprName && lprPhoneRaw.length===9 && lpu);
 }
 function vfSelectPharm(r) {
   ST.visit.target = r;
