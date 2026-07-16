@@ -1,4 +1,5 @@
-// app4.js v10 — SO'ROVNOMA (Vrach va Dorixona)
+// app4.js v11-LPR-NOBLOCK — SO'ROVNOMA (Vrach va Dorixona)
+// v11: LPR yakunlashda BLOKLAMAYDI (olib tashlandi), to'lov shakli ko'rinish xatosi tuzatildi
 // Tuzatishlar:
 // - Natija: 5 variantdan faqat 1 tasi tanlanadi
 // - Proma: faqat raqam kiritiladi, CHAP=O'TKAZIB, O'NG=SO'ROV
@@ -283,7 +284,7 @@ function vfGoToFoto() {
       alert('Avval qoldiq bosqichini tugatib "Qoldiqni kiritish" tugmasini bosing!');return;
     }
     const hasAnyBronVal=(ST.visit.vals.bron||[]).some(s=>Number(s.qty)>0)
-      || Array.from(document.querySelectorAll('#vf-bron-tbody input[type="number"]')||[]).some(inp=>Number(inp.value)>0);
+      || Array.from(document.querySelectorAll('#vf-stock-tbody input[type="number"]')||[]).some(inp=>Number(inp.value)>0);
     if(hasAnyBronVal){
       const payType=document.getElementById('vf-payment-type')?.value||'';
       if(!payType){alert("Bron uchun To'lov shaklini tanlang!");return;}
@@ -395,7 +396,7 @@ function vfPharmGoStage2(){
 function vfCheckPaymentTypeVisibility(){
   const block=document.getElementById('vf-payment-type-block');if(!block)return;
   const hasAnyBron=(ST.visit.vals.bron||[]).some(s=>Number(s.qty)>0)
-    || Array.from(document.querySelectorAll('#vf-bron-tbody input[type="number"]')||[]).some(inp=>Number(inp.value)>0);
+    || Array.from(document.querySelectorAll('#vf-stock-tbody input[type="number"]')||[]).some(inp=>Number(inp.value)>0);
   if(hasAnyBron) block.classList.remove('hide'); else block.classList.add('hide');
 }
 
@@ -428,7 +429,7 @@ function buildStockTableRows(){
     <tr>
       <td style="color:var(--muted);font-size:11px">${i+1}</td>
       <td style="font-size:11px">${p}</td>
-      <td><input type="number" min="0" value="0" id="vf-st-${i}" oninput="vfUpdateStockSum()" style="width:65px" /></td>
+      <td><input type="number" min="0" value="0" id="vf-st-${i}" oninput="vfUpdateStockSum();vfCheckPaymentTypeVisibility();" style="width:65px" /></td>
       <td style="font-size:11px;color:var(--muted)">${fmtMoney(PRICES[p]||0)}</td>
       <td class="sum-cell" id="vf-sum-${i}">0</td>
     </tr>`).join('');
