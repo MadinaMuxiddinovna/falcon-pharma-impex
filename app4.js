@@ -282,13 +282,6 @@ function vfGoToFoto() {
     if(!document.getElementById('vf-stock-tbody')){
       alert('Avval qoldiq bosqichini tugatib "Qoldiqni kiritish" tugmasini bosing!');return;
     }
-    // ЛПР ma'lumotlari — Stage 2'da vizit boshlanganda saqlangan (#endi majburiy o'sha yerda)
-    const lprNameVal=(ST.visit._lprData?.lprName||'');
-    const lprPhoneVal=(ST.visit._lprData?.lprPhone||'').replace(/\D/g,'');
-    const lpuVal=(ST.visit._lprData?.lpuObject||'');
-    if(!lprNameVal||lprPhoneVal.length!==9||!lpuVal){
-      alert('ЛПР ma\'lumotlari topilmadi — iltimos vizitni qaytadan boshlang.');return;
-    }
     const hasAnyBronVal=(ST.visit.vals.bron||[]).some(s=>Number(s.qty)>0)
       || Array.from(document.querySelectorAll('#vf-bron-tbody input[type="number"]')||[]).some(inp=>Number(inp.value)>0);
     if(hasAnyBronVal){
