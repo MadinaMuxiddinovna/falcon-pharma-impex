@@ -143,6 +143,7 @@ async function vfFinishVisit() {
       bron, stock,
       lprName:(ST.visit._lprData?.lprName||''), lprPhone:(ST.visit._lprData?.lprPhone||''), lpuObject:(ST.visit._lprData?.lpuObject||''),
       paymentType:(ST.visit._lprData?.paymentType||''),
+      crossRefName:(ST.visit._lprData?.crossRefName||''),
       comment:(document.getElementById('vf-comment')?.value||''),
       visitStartTime:nowTimeFromTs(ST.visit.timerStart),
       visitEndTime:nowTimeStr(), durationSec:duration,
