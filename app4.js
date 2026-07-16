@@ -282,18 +282,15 @@ function vfGoToFoto() {
     if(!document.getElementById('vf-stock-tbody')){
       alert('Avval qoldiq bosqichini tugatib "Qoldiqni kiritish" tugmasini bosing!');return;
     }
-    // ЛПР ma'lumotlari majburiy (#3) — Stage 1'ga qaytgan bo'lsa, avval saqlangan qiymatga tayanadi
-    const lprNameEl=document.getElementById('vf-bron-lpr-name');
-    const lprPhoneEl=document.getElementById('vf-bron-lpr-phone');
-    const lpuEl=document.getElementById('vf-bron-lpu');
-    const lprNameVal=lprNameEl?lprNameEl.value.trim():(ST.visit._lprData?.lprName||'');
-    const lprPhoneVal=lprPhoneEl?lprPhoneEl.value.replace(/\D/g,''):((ST.visit._lprData?.lprPhone||'').replace(/\D/g,''));
-    const lpuVal=lpuEl?lpuEl.value.trim():(ST.visit._lprData?.lpuObject||'');
-    if(!lprNameVal){alert('ЛПР F.I.Sh kiriting!');return;}
-    if(lprPhoneVal.length!==9){alert('ЛПР telefon raqamini to\'liq (9 ta raqam) kiriting!');return;}
-    if(!lpuVal){alert('ЛПУ (obyekt nomi) kiriting!');return;}
+    // ЛПР ma'lumotlari — Stage 2'da vizit boshlanganda saqlangan (#endi majburiy o'sha yerda)
+    const lprNameVal=(ST.visit._lprData?.lprName||'');
+    const lprPhoneVal=(ST.visit._lprData?.lprPhone||'').replace(/\D/g,'');
+    const lpuVal=(ST.visit._lprData?.lpuObject||'');
+    if(!lprNameVal||lprPhoneVal.length!==9||!lpuVal){
+      alert('ЛПР ma\'lumotlari topilmadi — iltimos vizitni qaytadan boshlang.');return;
+    }
     const hasAnyBronVal=(ST.visit.vals.bron||[]).some(s=>Number(s.qty)>0)
-      || Array.from(document.querySelectorAll('[id^="vf-bron-"]')||[]).some(inp=>inp.tagName==='INPUT'&&Number(inp.value)>0);
+      || Array.from(document.querySelectorAll('#vf-bron-tbody input[type="number"]')||[]).some(inp=>Number(inp.value)>0);
     if(hasAnyBronVal){
       const payType=document.getElementById('vf-payment-type')?.value||'';
       if(!payType){alert("Bron uchun To'lov shaklini tanlang!");return;}
@@ -308,17 +305,12 @@ function vfGoToFoto() {
     return;
   }
   clearInterval(ST.visit.timerRef);
-  // Step 4 ga o'tishdan oldin bron/qoldiq va ЛПР ma'lumotlarini saqlaymiz
+  // Step 4 ga o'tishdan oldin bron/qoldiq ma'lumotlarini saqlaymiz (ЛПР — Stage 2'da allaqachon saqlangan)
   if(ST.visit.type==='pharmacy'){
     try{ ST.visit._pharmData=getBronAndStockData(); }catch(e){}
     try{
-      const lprPhoneRaw=(document.getElementById('vf-bron-lpr-phone')?.value||'').replace(/\D/g,'');
-      ST.visit._lprData={
-        lprName:(document.getElementById('vf-bron-lpr-name')?.value||'').trim(),
-        lprPhone:lprPhoneRaw?('+998'+lprPhoneRaw):'',
-        lpuObject:(document.getElementById('vf-bron-lpu')?.value||'').trim(),
-        paymentType:(document.getElementById('vf-payment-type')?.value||''),
-      };
+      if(!ST.visit._lprData) ST.visit._lprData={};
+      ST.visit._lprData.paymentType=(document.getElementById('vf-payment-type')?.value||'');
     }catch(e){}
   }
   vfShowStep(4); // 4 = yakunlash (foto yo'q)
@@ -389,24 +381,6 @@ function vfPharmGoStage2(){
       <div style="text-align:right;margin-top:10px;font-weight:800;font-size:15px;color:var(--ok)">
         Jami bron: <span id="vf-stock-total">0 so'm</span>
       </div>
-      <div class="fg" style="margin-top:14px">
-        <label>ЛПР F.I.Sh (bron uchun mas'ul shaxs)</label>
-        <input id="vf-bron-lpr-name" placeholder="Familiya Ismi Sharifi" />
-      </div>
-      <div class="fg">
-        <label>ЛПР Telefon raqami</label>
-        <div style="display:flex;align-items:center;gap:0">
-          <span style="background:#eef2fb;border:1.5px solid var(--border);border-right:none;
-            padding:10px 12px;border-radius:8px 0 0 8px;font-size:14px;color:var(--muted);white-space:nowrap">+998</span>
-          <input id="vf-bron-lpr-phone" type="tel" maxlength="9" placeholder="901234567"
-            style="border-radius:0 8px 8px 0;border-left:none"
-            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9)" />
-        </div>
-      </div>
-      <div class="fg">
-        <label>ЛПУ (obyekt nomi)</label>
-        <input id="vf-bron-lpu" placeholder="Masalan: 6-Oilaviy Poliklinika" />
-      </div>
       <div class="fg hide" id="vf-payment-type-block">
         <label>To'lov shakli <span class="req">*</span></label>
         <select id="vf-payment-type">
@@ -428,7 +402,7 @@ function vfPharmGoStage2(){
 function vfCheckPaymentTypeVisibility(){
   const block=document.getElementById('vf-payment-type-block');if(!block)return;
   const hasAnyBron=(ST.visit.vals.bron||[]).some(s=>Number(s.qty)>0)
-    || Array.from(document.querySelectorAll('#vf-bron-tbody input')||[]).some(inp=>Number(inp.value)>0);
+    || Array.from(document.querySelectorAll('#vf-bron-tbody input[type="number"]')||[]).some(inp=>Number(inp.value)>0);
   if(hasAnyBron) block.classList.remove('hide'); else block.classList.add('hide');
 }
 
