@@ -471,11 +471,16 @@ async function renderPromoQueue(){
         FCOIN summasi: ${fmtCoin(summa)}
       </div>`:''}
       ${!closed&&!isAdmin?`<div class="btn-row" style="margin-top:8px" data-promo-row="${p._row}">
-        <button class="btn btn-r" style="padding:5px 12px;font-size:12px" onclick="promoDecide(${p._row},false)">Rad etish</button>
+        <button class="btn btn-r" style="padding:5px 12px;font-size:12px" data-vrach="${vrach.replace(/"/g,'&quot;')}" data-mp="${mp.replace(/"/g,'&quot;')}" onclick="promoConfirmReject(${p._row},this.dataset.vrach,this.dataset.mp)">Rad etish</button>
         <button class="btn btn-ok" style="padding:5px 12px;font-size:12px" onclick="promoDecide(${p._row},true)">Tasdiqlash</button>
       </div>`:''}
     </div>`;
   }).join('');
+}
+function promoConfirmReject(row,vrach,mp){
+  if(confirm((mp?mp+' — ':'')+vrach+'\n\nUshbu FCOIN so\'rovini rad etmoqchimisiz?')){
+    promoDecide(row,false);
+  }
 }
 function promoDecide(row,approved){
   const status=approved?'Tasdiqlandi':'Rad etildi';
