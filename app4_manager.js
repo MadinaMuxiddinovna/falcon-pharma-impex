@@ -53,21 +53,26 @@ async function renderAdminHistory(){
         margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--primary3)">
         ${date} — ${vs.length} ta vizit
       </div>
-      ${vs.map((v,i)=>`
-        <div class="vcard" onclick="showHistDetail('${date}',${i})" style="margin-bottom:6px;cursor:pointer">
+      ${vs.map((v,i)=>{
+        const isShubhali=(v.vizitHolati||'').indexOf('Shubhali')>=0;
+        const isMgrView=(ST.user.role==='manager'||ST.user.role==='admin'||(ST.user.role==='ta'&&ST.user.isTeamLead));
+        return `
+        <div class="vcard" onclick="showHistDetail('${date}',${i})"
+          style="margin-bottom:6px;cursor:pointer${isMgrView&&isShubhali?';background:#fff0f0;border-color:#ffb3b3':''}">
           <div class="vcard-h">
-            <span>${v.type==='doctor'?'🏥':'💊'} <b>${v.doctor||v.target||''}</b></span>
+            <span><b>${v.doctor||v.target||''}</b></span>
             <span class="bdg ${v.result==='ISHLAYDI'?'bdg-g':v.result==='QABUL QILMADI'?'bdg-r':'bdg-y'}">${v.result||'OK'}</span>
           </div>
           <div class="vcard-meta">
-            ${v.empName?'👤 '+v.empName+' · ':''}
-            ${v.mgrName?'👔 '+v.mgrName+' · ':''}
-            ${v.type==='doctor'&&v.target?'🏢 '+v.target+' · ':''}
+            ${v.empName?v.empName+' · ':''}
+            ${v.mgrName?v.mgrName+' · ':''}
+            ${v.type==='doctor'&&v.target?v.target+' · ':''}
             ${v.specialty?v.specialty+' · ':''}
-            ${v.startTime?'⏰ '+v.startTime+(v.endTime?' → '+v.endTime:''):''}
+            ${v.startTime?v.startTime+(v.endTime?' → '+v.endTime:''):''}
             ${v.durationMin?'· '+v.durationMin+' min':''}
           </div>
-        </div>`).join('')}
+        </div>`;
+      }).join('')}
     </div>`).join('');
 }
 // app4_manager.js FINAL
@@ -191,7 +196,7 @@ function pagePayDoctor(){
   return `
   <div class="page" id="page-paydoctor">
     <div class="balance-box" id="pd-bal-box">
-      <div class="balance-num" id="pd-bal">— so'm</div>
+      <div class="balance-num" id="pd-bal">—</div>
       <div class="balance-lbl">Sizning hozirgi balansingiz</div>
     </div>
     <div class="alert alert-i">Balans manfiy bo'lsa ham FCOIN berishingiz mumkin — admin keyinroq to'ldiradi.</div>
@@ -330,7 +335,7 @@ async function pdFinalizePromaPay(summa,comment){
   const optimisticBal=(ST.mgrBalance?.qolgan||0)-summa;
   updateBalanceUI(optimisticBal);
   showModal("To'lov amalga oshirildi",
-    `<p>${p['Vrach FISh']||''} ga <b>${fmtMoney(summa)}</b> berildi.<br>Yangi balans: <b id="pd-modal-bal" style="color:${optimisticBal<0?'var(--danger)':'var(--ok)'}">${fmtMoney(optimisticBal)}</b></p>`,
+    `<p>${p['Vrach FISh']||''} ga <b>${fmtNum(summa)}</b> berildi.<br>Yangi balans: <b id="pd-modal-bal" style="color:${optimisticBal<0?'var(--danger)':'var(--ok)'}">${fmtNum(optimisticBal)}</b></p>`,
     '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'pd-flow\').innerHTML=\'\'">OK</button>');
   const resp=await apiPost({action:'mgrPayDoctor',mgrId:ST.user.id,mgrName:ST.user.name,
     type:'PROMA',date:todayStr(),doctorName:p['Vrach FISh']||'',
@@ -400,7 +405,7 @@ async function pdFinalizePay(summa,comment){
   const optimisticBal=(ST.mgrBalance?.qolgan||0)-summa;
   updateBalanceUI(optimisticBal);
   showModal("To'lov amalga oshirildi",
-    `<p>${t.name} ga <b>${fmtMoney(summa)}</b> berildi.<br>Yangi balans: <b id="pd-modal-bal" style="color:${optimisticBal<0?'var(--danger)':'var(--ok)'}">${fmtMoney(optimisticBal)}</b></p>`,
+    `<p>${t.name} ga <b>${fmtNum(summa)}</b> berildi.<br>Yangi balans: <b id="pd-modal-bal" style="color:${optimisticBal<0?'var(--danger)':'var(--ok)'}">${fmtNum(optimisticBal)}</b></p>`,
     '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'pd-flow\').innerHTML=\'\'">OK</button>');
   const resp=await apiPost({action:'mgrPayDoctor',mgrId:ST.user.id,mgrName:ST.user.name,
     type:'DOKTOR',date:todayStr(),doctorName:t.name,doctorSpec:t.specialty||'',
@@ -416,7 +421,7 @@ async function pdFinalizePay(summa,comment){
 }
 function updateBalanceUI(newBal){
   ST.mgrBalance=ST.mgrBalance||{};ST.mgrBalance.qolgan=newBal;
-  const el=document.getElementById('pd-bal');if(el)el.textContent=fmtMoney(newBal);
+  const el=document.getElementById('pd-bal');if(el)el.textContent=fmtNum(newBal);
   const box=document.getElementById('pd-bal-box');
   if(box)box.style.background=newBal<0?'linear-gradient(135deg,#8b0000,#c0260a)':'linear-gradient(135deg,#7a3ca0,#9b59d8)';
   const el2=document.getElementById('mgr-bal-qolgan');if(el2)el2.textContent=fmtNum(newBal);
@@ -640,7 +645,7 @@ async function renderTeamKPI(){
   }
   el.innerHTML=`<div style="overflow-x:auto">
     <table class="stbl">
-      <thead><tr><th>F.I.Sh</th><th>Boshlandi</th><th>Tugadi</th><th>Soat</th>${isAgentTeam?'':'<th>Vrach</th>'}<th>Dorixona</th><th>%</th></tr></thead>
+      <thead><tr><th>F.I.Sh</th><th>Boshlandi</th><th>Tugadi</th><th>Soat</th>${isAgentTeam?'':'<th>Vrach</th>'}<th>Dorixona</th><th>%</th><th>To'g'ri</th><th>Shubhali</th></tr></thead>
       <tbody>
         ${entries.map(([id,s])=>`
         <tr>
@@ -651,6 +656,8 @@ async function renderTeamKPI(){
           ${isAgentTeam?'':'<td>'+(s.doctorV||0)+'</td>'}
           <td>${s.pharmV||0}</td>
           <td><span class="bdg ${(s.pct||0)>=80?'bdg-g':(s.pct||0)>=50?'bdg-y':'bdg-r'}">${s.pct||0}%</span></td>
+          <td>${s.positive||0}</td>
+          <td>${(s.shubhali||0)>0?'<span class="bdg bdg-r">'+s.shubhali+'</span>':'0'}</td>
         </tr>`).join('')}
       </tbody>
     </table>
