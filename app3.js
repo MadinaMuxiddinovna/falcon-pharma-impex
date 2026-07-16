@@ -494,7 +494,8 @@ function saveActiveVisitProgress(){
   try{
     localStorage.setItem('ff_active_visit_'+ST.user.id, JSON.stringify({
       type:ST.visit.type, target:ST.visit.target, timerStart:ST.visit.timerStart,
-      gpsStart:ST.visit.gpsStart, date:todayStr()
+      gpsStart:ST.visit.gpsStart, date:todayStr(),
+      lprData:ST.visit._lprData||null, branchNo:ST.visit.vals?.branchNo||'', pharmTuman:ST.visit.vals?.pharmTuman||''
     }));
   }catch(e){}
 }
@@ -511,7 +512,9 @@ function checkResumeActiveVisit(){
       clearActiveVisitProgress(); return;
     }
     ST.visit = { type:saved.type, target:saved.target, gpsStart:saved.gpsStart, gpsEnd:null,
-      timerStart:saved.timerStart, timerRef:null, vals:{promoRequested:false,promaSumma:0}, products:[], fotoData:null };
+      timerStart:saved.timerStart, timerRef:null,
+      vals:{promoRequested:false,promaSumma:0,branchNo:saved.branchNo||'',pharmTuman:saved.pharmTuman||''},
+      products:[], fotoData:null, _lprData:saved.lprData||null };
     const c=document.getElementById('visit-flow-container');
     c.innerHTML=visitFlowHTML(saved.type);
     c.scrollIntoView({behavior:'smooth'});
