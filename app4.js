@@ -109,17 +109,15 @@ function renderDoctorForm() {
   <div class="card">
     <div class="card-h">FCOIN</div>
     <div class="card-b">
-      <!-- CHAP = O'tkazib yuborish, O'NG = Menejerga so'rov -->
+      <!-- CHAP = Menejerga FCOIN yuborish, O'NG = O'tkazib yuborish -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="rg-promo">
-        <div class="ropt on" onclick="vfPickProma(this,false)" id="proma-skip"
-          style="flex-direction:column;padding:14px;justify-content:center;text-align:center">
-          <div style="font-size:20px">⏭️</div>
-          <b>O'TKAZIB YUBORISH</b>
-        </div>
         <div class="ropt" onclick="vfPickProma(this,true)" id="proma-send"
           style="flex-direction:column;padding:14px;justify-content:center;text-align:center">
-          <div style="font-size:20px">💰</div>
-          <b>Menejerga so'rov</b>
+          <b>Menejerga FCOIN yuborish</b>
+        </div>
+        <div class="ropt on" onclick="vfPickProma(this,false)" id="proma-skip"
+          style="flex-direction:column;padding:14px;justify-content:center;text-align:center">
+          <b>O'TKAZIB YUBORISH</b>
         </div>
       </div>
       <!-- Faqat raqam kiritish, max 9999999 -->
@@ -305,6 +303,7 @@ function vfGoToFoto() {
     try{
       if(!ST.visit._lprData) ST.visit._lprData={};
       ST.visit._lprData.paymentType=(document.getElementById('vf-payment-type')?.value||'');
+      ST.visit._lprData.crossRefName=(document.getElementById('vf-crossref-sel')?.value||'');
     }catch(e){}
   }
   vfShowStep(4); // 4 = yakunlash (foto yo'q)
@@ -385,6 +384,10 @@ function vfPharmGoStage2(){
           <option value="Оплата 100%">Оплата 100%</option>
         </select>
       </div>
+      <div class="fg hide" id="vf-crossref-block">
+        <label id="vf-crossref-label">Bog'liq xodim</label>
+        <select id="vf-crossref-sel"><option value="">— Tanlang —</option></select>
+      </div>
       <div class="btn-row">
         <button class="btn btn-o" onclick="vfPharmBackStage()">← Qoldiq bosqichiga qaytish</button>
       </div>
@@ -392,12 +395,41 @@ function vfPharmGoStage2(){
   buildStockTableRows();
   vfCheckPaymentTypeVisibility();
 }
+window._crossRefLoaded=false;
+// Bron uchun bog'liq xodim ro'yxatini yuklaydi (#2): MP bo'lsa Torgoviy agentlar, TA bo'lsa Med vakillar
+// MGR01'ning o'z MP'lari (Toshkent viloyati) bu bog'lashga kirmaydi/kerak emas
+async function vfLoadCrossRefList(){
+  if(window._crossRefLoaded) return;
+  const block=document.getElementById('vf-crossref-block');
+  const label=document.getElementById('vf-crossref-label');
+  const sel=document.getElementById('vf-crossref-sel');
+  if(!block||!sel) return;
+  if(ST.user.role==='mp'){
+    // MGR01'ning o'z MP'si bo'lsa — bog'lash kerak emas, bu blok butunlay yashiriladi
+    if((ST.user.mgrId||'').toUpperCase()==='MGR01'){ block.style.display='none'; window._crossRefLoaded=true; return; }
+    label.textContent='Torgoviy agent';
+    const list=await apiGet('getEmployeeListByRole',{role:'ta'},false).catch(()=>[]);
+    sel.innerHTML='<option value="">— Tanlang —</option>'+list.map(e=>`<option value="${e.name}">${e.name}</option>`).join('');
+  } else if(ST.user.role==='ta'){
+    label.textContent='Med vakili';
+    const list=await apiGet('getEmployeeListByRole',{role:'mp',excludeMgrId:'MGR01'},false).catch(()=>[]);
+    sel.innerHTML='<option value="">— Tanlang —</option>'+list.map(e=>`<option value="${e.name}">${e.name}</option>`).join('');
+  }
+  window._crossRefLoaded=true;
+}
 // Bron preparat soni kiritilgan bo'lsa — To'lov shaklini so'raymiz, aks holda yashiramiz (#6)
 function vfCheckPaymentTypeVisibility(){
   const block=document.getElementById('vf-payment-type-block');if(!block)return;
+  const crBlock=document.getElementById('vf-crossref-block');
   const hasAnyBron=(ST.visit.vals.bron||[]).some(s=>Number(s.qty)>0)
     || Array.from(document.querySelectorAll('#vf-stock-tbody input[type="number"]')||[]).some(inp=>Number(inp.value)>0);
-  if(hasAnyBron) block.classList.remove('hide'); else block.classList.add('hide');
+  if(hasAnyBron){
+    block.classList.remove('hide');
+    if(crBlock){ vfLoadCrossRefList().then(()=>{ if(crBlock.style.display!=='none') crBlock.classList.remove('hide'); }); }
+  } else {
+    block.classList.add('hide');
+    if(crBlock) crBlock.classList.add('hide');
+  }
 }
 
 function vfPharmBackStage(){
