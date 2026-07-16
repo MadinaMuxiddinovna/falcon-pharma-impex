@@ -50,25 +50,34 @@ async function renderTeamAgentPage(){
   const visits=await apiGet('getMyVisits',{empId:ST.user.id,role:'manager',from,to:today},false).catch(()=>[]);
   const list=Array.isArray(visits)?visits.filter(v=>v.empId!==ST.user.id):[]; // faqat boshqa agentlar (o'zi emas)
   if(!list.length){el.innerHTML='<div class="alert alert-i">Bu davrda jamoa vizitlari yo\'q</div>';return;}
+  // Har bir xodim uchun ALOHIDA guruh (aralashmasin) — #5
+  const byEmp={};
+  list.forEach(v=>{const emp=v.empName||v.empId||'Noma\'lum';if(!byEmp[emp])byEmp[emp]=[];byEmp[emp].push(v);});
+  // showHistDetail uchun window._histData ni sana bo'yicha ham tayyorlab qo'yamiz
   const byDate={};
   list.forEach(v=>{const d=v.date||today;if(!byDate[d])byDate[d]=[];byDate[d].push(v);});
   window._histData=byDate;
-  el.innerHTML=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0])).map(([date,vs])=>`
-    <div style="margin-bottom:16px">
-      <div style="font-size:12px;font-weight:700;color:var(--primary);
+  el.innerHTML=Object.entries(byEmp).map(([empName,vs])=>{
+    const shubhaliCount=vs.filter(v=>(v.vizitHolati||'').indexOf('Shubhali')>=0).length;
+    const sorted=vs.slice().sort((a,b)=>(b.date+((b.startTime)||'')).localeCompare(a.date+((a.startTime)||'')));
+    return `
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:800;color:var(--primary);
         margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--primary3)">
-        ${uzDate(date)} — ${vs.length} ta vizit
+        ${empName} — ${vs.length} ta vizit${shubhaliCount?' · '+shubhaliCount+' ta shubhali':''}
       </div>
-      ${vs.map((v,i)=>`
-        <div class="vcard" onclick="showHistDetail('${date}',${i})" style="cursor:pointer">
-          <div class="vcard-h">
-            <span>💊 <b>${v.target||''}</b></span>
-          </div>
-          <div class="vcard-meta">
-            👤 ${v.empName||''} · 📅 ${uzDateShort(date)} ${v.startTime?'⏰ '+v.startTime:''}
-          </div>
-        </div>`).join('')}
-    </div>`).join('');
+      ${sorted.map(v=>{
+        const date=v.date||today;
+        const idx=byDate[date].indexOf(v);
+        const isShubhali=(v.vizitHolati||'').indexOf('Shubhali')>=0;
+        return `<div class="vcard" onclick="showHistDetail('${date}',${idx})"
+          style="cursor:pointer;margin-bottom:6px${isShubhali?';background:#fff0f0;border-color:#ffb3b3':''}">
+          <div class="vcard-h"><span><b>${v.target||''}</b></span></div>
+          <div class="vcard-meta">${uzDateShort(date)}${v.startTime?' '+v.startTime:''}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
 }
 function pageReport(){
   const isTa=ST.user.role==='ta';
