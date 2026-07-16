@@ -313,6 +313,24 @@ function renderVfStep2Pharmacy() {
         <input id="vf-branch-no" type="number" min="1" placeholder="Masalan: 2 yoki 45..."
           oninput="ST.visit.vals.branchNo=this.value;vfCheckBranchReady();" />
       </div>
+      <div class="fg" style="margin-top:10px">
+        <label>ЛПР F.I.Sh (mas'ul shaxs) <span class="req">*</span></label>
+        <input id="vf-pharm-lpr-name" placeholder="Familiya Ismi Sharifi" oninput="vfCheckBranchReady();" />
+      </div>
+      <div class="fg">
+        <label>ЛПР Telefon raqami <span class="req">*</span></label>
+        <div style="display:flex;align-items:center;gap:0">
+          <span style="background:#eef2fb;border:1.5px solid var(--border);border-right:none;
+            padding:10px 12px;border-radius:8px 0 0 8px;font-size:14px;color:var(--muted);white-space:nowrap">+998</span>
+          <input id="vf-pharm-lpr-phone" type="tel" maxlength="9" placeholder="901234567"
+            style="border-radius:0 8px 8px 0;border-left:none"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9);vfCheckBranchReady();" />
+        </div>
+      </div>
+      <div class="fg">
+        <label>ЛПУ (obyekt nomi) <span class="req">*</span></label>
+        <input id="vf-pharm-lpu" placeholder="Masalan: 6-Oilaviy Poliklinika" oninput="vfCheckBranchReady();" />
+      </div>
     </div>
 
     <div class="btn-row">
@@ -372,8 +390,11 @@ function vfSelectPharmByIdx(i) {
 function vfCheckBranchReady(){
   const tuman=document.getElementById('vf-pharm-tuman')?.value||'';
   const branch=ST.visit.vals.branchNo;
+  const lprName=(document.getElementById('vf-pharm-lpr-name')?.value||'').trim();
+  const lprPhone=(document.getElementById('vf-pharm-lpr-phone')?.value||'').trim();
+  const lpu=(document.getElementById('vf-pharm-lpu')?.value||'').trim();
   const btn=document.getElementById('vf-next2');
-  if(btn) btn.disabled = !(tuman && branch);
+  if(btn) btn.disabled = !(tuman && branch && lprName && lprPhone.length===9 && lpu);
 }
 function vfSelectPharm(r) {
   ST.visit.target = r;
@@ -384,10 +405,16 @@ function vfSelectPharm(r) {
   showEl('vf-pharm-sel');
   showEl('vf-branch-block');
   hideEl('vf-branch-known'); showEl('vf-branch-ask');
-  ST.visit.vals.branchNo = '';
-  const tumanSel=document.getElementById('vf-pharm-tuman'); if(tumanSel) tumanSel.value='';
-  ST.visit.vals.pharmTuman = '';
-  document.getElementById('vf-next2').disabled = true;
+  const isNew=!!r._isNew;
+  ST.visit.vals.branchNo = isNew?(r.branch||''):'';
+  const branchInp=document.getElementById('vf-branch-no'); if(branchInp) branchInp.value=isNew?(r.branch||''):'';
+  const tumanSel=document.getElementById('vf-pharm-tuman'); if(tumanSel) tumanSel.value=isNew?(r.district||''):'';
+  ST.visit.vals.pharmTuman = isNew?(r.district||''):'';
+  // Yangi qo'shilgan dorixonada ЛПР ma'lumoti allaqachon bo'lsa — qayta so'ramaymiz
+  const lprNameInp=document.getElementById('vf-pharm-lpr-name'); if(lprNameInp) lprNameInp.value=isNew?(r.lprName||''):'';
+  const lprPhoneInp=document.getElementById('vf-pharm-lpr-phone'); if(lprPhoneInp) lprPhoneInp.value=isNew?(r.lprPhone||'').replace('+998',''):'';
+  const lpuInp=document.getElementById('vf-pharm-lpu'); if(lpuInp) lpuInp.value=isNew?(r.lpuObject||''):'';
+  vfCheckBranchReady();
 }
 
 
@@ -445,6 +472,14 @@ async function vfFinalizeNewPharm(newP) {
 // ── TIMER ───────────────────────────────────────────
 function vfStartTimer() {
   if (!ST.visit.target) { alert('Ob\'ektni tanlang!'); return; }
+  if(ST.visit.type==='pharmacy'){
+    const lprPhoneRaw=(document.getElementById('vf-pharm-lpr-phone')?.value||'').replace(/\D/g,'');
+    ST.visit._lprData={
+      lprName:(document.getElementById('vf-pharm-lpr-name')?.value||'').trim(),
+      lprPhone:lprPhoneRaw?('+998'+lprPhoneRaw):'',
+      lpuObject:(document.getElementById('vf-pharm-lpu')?.value||'').trim(),
+    };
+  }
   ST.visit.timerStart = Date.now();
   vfShowStep(3);
   ST.visit.timerRef = setInterval(vfUpdateTimer, 1000);
