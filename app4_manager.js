@@ -119,7 +119,7 @@ async function renderMgrDashboard(){
     if(bal){
       ST.mgrBalance=bal;
       const el=document.getElementById('mgr-bal-qolgan');
-      if(el) el.textContent=fmtMoney(bal.qolgan||0);
+      if(el) el.textContent=fmtNum(bal.qolgan||0);
       const rInfo=document.getElementById('mgr-region-info');
       if(rInfo){
         // Login paytida saqlangan districts dan olamiz (tez)
@@ -172,9 +172,9 @@ async function showMgrJournal(){
   const bal=ST.mgrBalance||{jami:0,sarflangan:0,qolgan:0};
   showModal('Balans jurnali',
     `<div style="font-size:12px;color:var(--muted);margin-bottom:10px">
-      Jami kirim: <b style="color:var(--ok)">${fmtMoney(bal.jami||0)}</b> ·
-      Sarflangan: <b style="color:var(--danger)">${fmtMoney(bal.sarflangan||0)}</b> ·
-      Qolgan: <b style="color:${(bal.qolgan||0)<0?'var(--danger)':'var(--primary)'}">${fmtMoney(bal.qolgan||0)}</b>
+      Jami kirim: <b style="color:var(--ok)">${fmtNum(bal.jami||0)}</b> ·
+      Sarflangan: <b style="color:var(--danger)">${fmtNum(bal.sarflangan||0)}</b> ·
+      Qolgan: <b style="color:${(bal.qolgan||0)<0?'var(--danger)':'var(--primary)'}">${fmtNum(bal.qolgan||0)}</b>
     </div>
     ${list.length?list.map(j=>`
       <div class="irow">
@@ -184,7 +184,7 @@ async function showMgrJournal(){
           <span style="font-size:11px;color:var(--muted)">${j['Izoh']||''}</span>
         </span>
         <span class="irow-v" style="color:${j['Harakat']==='CHIQIM'?'var(--danger)':'var(--ok)'}">
-          ${j['Harakat']==='CHIQIM'?'−':'+'}${fmtMoney(j["Miqdor (so'm)"]||0)}
+          ${j['Harakat']==='CHIQIM'?'−':'+'}${fmtNum(j["Miqdor (so'm)"]||0)}
         </span>
       </div>`).join('')
     :'<div class="alert alert-i">Jurnal bo\'sh</div>'}`,
@@ -223,7 +223,7 @@ async function renderPayDoctorPage(){
   ST.mgrBalance=bal;
   const el=document.getElementById('pd-bal');
   const box=document.getElementById('pd-bal-box');
-  if(el) el.textContent=fmtMoney(bal.qolgan||0);
+  if(el) el.textContent=fmtNum(bal.qolgan||0);
   if(box) box.style.background=(bal.qolgan||0)<0
     ?'linear-gradient(135deg,#8b0000,#c0260a)'
     :'linear-gradient(135deg,#7a3ca0,#9b59d8)';
@@ -252,7 +252,7 @@ function pdShowDoctorFlow(){
           <div id="pd-doc-res" class="slist hide"></div>
         </div>
         <div id="pd-doc-sel" class="alert alert-ok hide"></div>
-        <div class="fg"><label>Summa (so'm) <span class="req">*</span></label>
+        <div class="fg"><label>FCOIN <span class="req">*</span></label>
           <input id="pd-summa" type="number" min="0" placeholder="200000" /></div>
         <div class="fg"><label>Izoh <span class="req">*</span></label>
           <input id="pd-comment" placeholder="Nima uchun..." /></div>
@@ -323,7 +323,7 @@ async function pdConfirmPromaPay(){
     `<div class="irow"><span class="irow-l">Vrach</span><span class="irow-v">${p['Vrach FISh']||''}</span></div>
      <div class="irow"><span class="irow-l">Ish joyi</span><span class="irow-v">${p['Ish joyi']||''}</span></div>
      <div class="irow"><span class="irow-l">Med Vakil</span><span class="irow-v">${p['Hodim Ismi']||''}</span></div>
-     <div class="irow"><span class="irow-l">Summa</span><span class="irow-v" style="color:var(--ok);font-size:17px">${fmtMoney(summa)}</span></div>
+     <div class="irow"><span class="irow-l">Summa</span><span class="irow-v" style="color:var(--ok);font-size:17px">${fmtNum(summa)}</span></div>
      ${(bal.qolgan||0)<summa?'<div class="alert alert-w">Balans yetarli emas — minus bo\'ladi.</div>':''}`,
     `<button class="btn btn-o" onclick="closeModal()">Bekor</button>
      <button class="btn btn-pu" onclick="closeModal();pdFinalizePromaPay(${summa},'${comment}')">Tasdiqlash</button>`);
@@ -358,7 +358,7 @@ async function pdFinalizePromaPay(summa,comment){
   if(newBal!==undefined){
     updateBalanceUI(newBal);
     const modalBal=document.getElementById('pd-modal-bal');
-    if(modalBal){modalBal.textContent=fmtMoney(newBal);modalBal.style.color=newBal<0?'var(--danger)':'var(--ok)';}
+    if(modalBal){modalBal.textContent=fmtNum(newBal);modalBal.style.color=newBal<0?'var(--danger)':'var(--ok)';}
   }
 }
 
@@ -394,7 +394,7 @@ async function pdConfirmPay(){
   showModal('Tasdiqlash',
     `<div class="irow"><span class="irow-l">Vrach</span><span class="irow-v">${t.name}</span></div>
      <div class="irow"><span class="irow-l">Ish joyi</span><span class="irow-v">${t.object||''}</span></div>
-     <div class="irow"><span class="irow-l">Summa</span><span class="irow-v" style="color:var(--ok);font-size:17px">${fmtMoney(summa)}</span></div>
+     <div class="irow"><span class="irow-l">Summa</span><span class="irow-v" style="color:var(--ok);font-size:17px">${fmtNum(summa)}</span></div>
      ${(bal.qolgan||0)<summa?'<div class="alert alert-w">Balans yetarli emas — minus bo\'ladi.</div>':''}`,
     `<button class="btn btn-o" onclick="closeModal()">Bekor</button>
      <button class="btn btn-pu" onclick="closeModal();pdFinalizePay(${summa},'${comment}')">Tasdiqlash</button>`);
@@ -416,7 +416,7 @@ async function pdFinalizePay(summa,comment){
   if(newBal!==undefined){
     updateBalanceUI(newBal);
     const modalBal=document.getElementById('pd-modal-bal');
-    if(modalBal){modalBal.textContent=fmtMoney(newBal);modalBal.style.color=newBal<0?'var(--danger)':'var(--ok)';}
+    if(modalBal){modalBal.textContent=fmtNum(newBal);modalBal.style.color=newBal<0?'var(--danger)':'var(--ok)';}
   }
 }
 function updateBalanceUI(newBal){
@@ -714,7 +714,7 @@ function pageAdminJournal(){return `
         <div id="aj-summary" style="margin:10px 0"></div>
         <div style="overflow-x:auto">
           <table class="stbl">
-            <thead><tr><th>Sana</th><th>Jami berilgan (so'm)</th></tr></thead>
+            <thead><tr><th>Sana</th><th>Jami berilgan</th></tr></thead>
             <tbody id="aj-byday-tbody"></tbody>
           </table>
         </div>
@@ -729,17 +729,17 @@ async function renderAdminJournal(){
   const data=await apiGet('getAdminJournal',{month},false).catch(()=>({entries:[],byDay:[],total:0}));
   const sEl=document.getElementById('aj-summary');
   if(sEl)sEl.innerHTML=`<div class="kpi-grid"><div class="kpi-card" style="grid-column:span 2">
-    <div class="kpi-num">${fmtMoney(data.total||0)}</div><div class="kpi-lbl">Shu oyda jami berilgan</div>
+    <div class="kpi-num">${fmtNum(data.total||0)}</div><div class="kpi-lbl">Shu oyda jami berilgan</div>
   </div></div>`;
   const tb=document.getElementById('aj-byday-tbody');
   if(tb)tb.innerHTML=(data.byDay||[]).length?data.byDay.map(d=>`
-    <tr><td>${uzDateShort(d.date)}</td><td><b>${fmtMoney(d.summa)}</b></td></tr>
+    <tr><td>${uzDateShort(d.date)}</td><td><b>${fmtNum(d.summa)}</b></td></tr>
   `).join(''):'<tr><td colspan="2" style="text-align:center;color:var(--muted)">Bu oyda ma\'lumot yo\'q</td></tr>';
   const eEl=document.getElementById('aj-entries');
   if(eEl)eEl.innerHTML=(data.entries||[]).length?data.entries.map(e=>`
     <div class="irow">
       <span class="irow-l">${e.mgrName||e.mgrId} <span style="color:var(--muted);font-size:11px">${e.comment?'· '+e.comment:''}</span></span>
-      <span class="irow-v">${fmtMoney(e.summa)}<br><span style="font-size:11px;color:var(--muted)">${uzDateShort(e.date)} ${e.time}</span></span>
+      <span class="irow-v">${fmtNum(e.summa)}<br><span style="font-size:11px;color:var(--muted)">${uzDateShort(e.date)} ${e.time}</span></span>
     </div>`).join(''):'<div class="alert alert-i">Yozuv yo\'q</div>';
 }
 function pageAdminBalance(){
@@ -750,7 +750,7 @@ function pageAdminBalance(){
         <div class="fg"><label>Menejer</label>
           <select id="ab-mgr" onchange="abResetForm()"><option value="">— Tanlang —</option></select>
         </div>
-        <div class="fg"><label>Ajratiladigan summa (so'm) <span class="req">*</span></label>
+        <div class="fg"><label>Ajratiladigan FCOIN <span class="req">*</span></label>
           <input id="ab-summa" type="number" min="1" placeholder="Masalan: 5000000" /></div>
         <div class="fg"><label>Izoh</label>
           <input id="ab-comment" placeholder="Nima maqsadda..." /></div>
@@ -777,10 +777,10 @@ async function renderAdminBalance(){
       <div class="vcard" onclick="showMgrJournalAdmin('${b.mgrId}')" style="cursor:pointer">
         <div class="vcard-h"><span class="vcard-name">${b.mgrName}</span>
           <span class="bdg ${(b.qolgan||0)<0?'bdg-r':'bdg-p'}" style="white-space:nowrap">
-            ${(b.qolgan||0)<0?'−':''}${fmtMoney(Math.abs(b.qolgan||0))} qoldi
+            ${(b.qolgan||0)<0?'−':''}${fmtNum(Math.abs(b.qolgan||0))} qoldi
           </span>
         </div>
-        <div class="vcard-meta">Jami kirim: ${fmtMoney(b.jami||0)} · Sarflangan: ${fmtMoney(b.sarflangan||0)}</div>
+        <div class="vcard-meta">Jami kirim: ${fmtNum(b.jami||0)} · Sarflangan: ${fmtNum(b.sarflangan||0)}</div>
         <div style="font-size:11px;color:var(--ok);margin-top:4px">Bosib batafsil ko'rish</div>
       </div>`).join('')
     :'<div class="alert alert-i">Hali balans ajratilmagan</div>';
@@ -796,7 +796,7 @@ async function abSave(){
   const summa=Number(v('ab-summa'))||0;if(!summa){alert('Summani kiriting!');return;}
   const resp=await apiPost({action:'addMgrBalance',mgrId,mgrName,summa,date:todayStr(),comment:v('ab-comment')||'Admin tomonidan'});
   if(resp.error){alert('Xato: '+resp.error);return;}
-  showModal('Saqlandi',`<p>${mgrName} ga ${fmtMoney(summa)} qo'shildi.</p>`,
+  showModal('Saqlandi',`<p>${mgrName} ga ${fmtNum(summa)} qo'shildi.</p>`,
     '<button class="btn btn-p" onclick="closeModal()">OK</button>');
   renderAdminBalance();
 }
@@ -812,7 +812,7 @@ async function showMgrJournalAdmin(mgrId){
           <br><span style="font-size:11px;color:var(--muted)">${j['Izoh']||''}</span>
         </span>
         <span class="irow-v" style="color:${j['Harakat']==='CHIQIM'?'var(--danger)':'var(--ok)'}">
-          ${j['Harakat']==='CHIQIM'?'−':'+'}${fmtMoney(j["Miqdor (so'm)"]||0)}
+          ${j['Harakat']==='CHIQIM'?'−':'+'}${fmtNum(j["Miqdor (so'm)"]||0)}
         </span>
       </div>`).join('')
     :'<div class="alert alert-i">Jurnal bo\'sh</div>',
