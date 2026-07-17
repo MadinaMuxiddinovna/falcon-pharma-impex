@@ -94,6 +94,7 @@ function pageManagerDashboard(){
     <div style="text-align:center;padding:8px 0 4px">
       <div style="font-size:12px;color:var(--muted)">Menejer</div>
       <div style="font-size:16px;font-weight:700;color:var(--primary)" id="mgr-region-info"></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px" id="mgr-diag-info"></div>
     </div>
     <div class="balance-box" id="mgr-bal-box" onclick="showMgrJournal()" style="cursor:pointer">
       <div class="balance-num" id="mgr-bal-qolgan">—</div>
@@ -121,6 +122,11 @@ async function renderMgrDashboard(){
       const el=document.getElementById('mgr-bal-qolgan');
       if(el) el.textContent=fmtNum(bal.qolgan||0);
       const rInfo=document.getElementById('mgr-region-info');
+      const diagInfo=document.getElementById('mgr-diag-info');
+      if(diagInfo){
+        diagInfo.textContent='ID: '+ST.user.id+' | isSuperManager: '+(ST.user.isSuperManager?'HA':"YO'Q")+
+          (ST.user.isSuperManager?' | Qo\'l ostidagi menejerlar: '+(ST.user.subManagerIds||[]).join(', '):' | Hech kim Menejer ID ustunida '+ST.user.id+' deb yozmagan');
+      }
       if(rInfo){
         // Login paytida saqlangan districts dan olamiz (tez)
         const reg = ST.user.region||'';
