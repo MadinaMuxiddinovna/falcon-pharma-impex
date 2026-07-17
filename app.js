@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby9CWmjGULplLmLKeXVuEtfhGXMHoQfRrKeIPCMSgSAuz8Mu7VDSd8cHVHjeb35Di2PNg/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzPNhERJoRE0dk8JdaZL5Swl_xn2eGmTBVnnMmasibpgvFlyyAL-IKiXFZgBoOF4RQmkg/exec',
 };
 
 const PREPS = [
@@ -427,6 +427,7 @@ function startVisitFlow(type) {
   apiGet('getPharmacies',{},false).then(ph=>{if(ph&&!ph.error){ST.pharmacies=ph;localStorage.setItem('ff_pharm_cache',JSON.stringify(ph));}}).catch(()=>{});
   ST.visit = { type, target:null, gpsStart:null, gpsEnd:null, timerStart:null, timerRef:null,
     vals:{promoRequested:false,promaSumma:0}, products:[], fotoData:null };
+  window._crossRefLoaded=false;
   const c = document.getElementById('visit-flow-container');
   c.innerHTML = visitFlowHTML(type);
   c.scrollIntoView({ behavior:'smooth' });
