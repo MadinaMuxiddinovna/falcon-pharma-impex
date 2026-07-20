@@ -233,13 +233,9 @@ const TASHKENT_SHAHAR_TUMANLAR=["Chilonzor","Yunusobod","Sergeli","Shayxontohur"
 // Toshkent shahri MP/agentlari uchun standart 14 ta tuman; viloyat xodimlari uchun
 // o'zining ro'yxatdagi rayon(lar)i ko'rsatiladi (#10)
 function vfBuildTumanOptions(){
-  const region=(ST.user.region||'').toLowerCase();
-  if(region.includes('shahri')||region.includes('shahar')||!region){
-    return TASHKENT_SHAHAR_TUMANLAR.map(t=>`<option>${t}</option>`).join('');
-  }
   const own=(ST.user.district||'').split(',').map(s=>s.trim()).filter(Boolean);
-  if(own.length) return own.map(t=>`<option>${t}</option>`).join('');
-  return TASHKENT_SHAHAR_TUMANLAR.map(t=>`<option>${t}</option>`).join('');
+  const combined=[...new Set([...own,...TASHKENT_SHAHAR_TUMANLAR])];
+  return combined.map(t=>`<option>${t}</option>`).join('');
 }
 function renderVfStep2Pharmacy() {
   document.getElementById('vfs2').innerHTML = `
