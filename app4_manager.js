@@ -289,6 +289,8 @@ async function pdShowPromaFlow(){
               <div class="vcard-meta">
                 Med Vakil: ${p['Hodim Ismi']||''} · ${p['Ish joyi']||''} ·
                 So'ralgan: <b>${fmtCoin(p["Proma summasi (so'm)"]||0)}</b>
+                ${Number(p["O'zi to'lagan (so'm)"]||0)>0?' · Menejer o\'zi to\'lagan: <b>'+fmtNum(p["O'zi to'lagan (so'm)"])+'</b> · Qolgan: <b>'+fmtNum(p["Qolgan (so'm)"]||0)+'</b>':''}
+                · ${p['Yaratilgan vaqt']||p['Sana']||''}
               </div>
             </div>`).join('')}
         <div id="pd-promo-selected" class="hide" style="margin-top:12px">
@@ -413,10 +415,22 @@ async function pdFinalizePay(summa,comment){
   showModal("To'lov amalga oshirildi",
     `<p>${t.name} ga <b>${fmtNum(summa)}</b> berildi.<br>Yangi balans: <b id="pd-modal-bal" style="color:${optimisticBal<0?'var(--danger)':'var(--ok)'}">${fmtNum(optimisticBal)}</b></p>`,
     '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'pd-flow\').innerHTML=\'\'">OK</button>');
-  const resp=await apiPost({action:'mgrPayDoctor',mgrId:ST.user.id,mgrName:ST.user.name,
+  const doPay=(lat,lng)=>apiPost({action:'mgrPayDoctor',mgrId:ST.user.id,mgrName:ST.user.name,
     type:'DOKTOR',date:todayStr(),doctorName:t.name,doctorSpec:t.specialty||'',
     doctorObject:t.object||'',doctorDistrict:t.district||'',doctorPhone:t.phone||'',
-    mpId:'',mpName:'',summa,comment});
+    mpId:'',mpName:'',summa,comment,lat:lat||'',lng:lng||''});
+  let resp;
+  if(navigator.geolocation){
+    resp=await new Promise(resolve=>{
+      navigator.geolocation.getCurrentPosition(
+        pos=>resolve(doPay(pos.coords.latitude,pos.coords.longitude)),
+        ()=>resolve(doPay()),
+        {enableHighAccuracy:true,timeout:4000}
+      );
+    });
+  } else {
+    resp=await doPay();
+  }
   if(resp.error){alert('Xato: '+resp.error);return;}
   const newBal=resp.newBalance;
   if(newBal!==undefined){
@@ -543,6 +557,10 @@ async function renderPlansManagerView(){
   validPlans.forEach(p=>{
     const name=p['Hodim Ismi']||p.empName||'Noma\'lum';
     if(!byEmp[name])byEmp[name]=[];byEmp[name].push(p);
+  });
+  // Har bir xodim ichida sana bo'yicha tartiblaymiz — aralash ko'rinmasligi uchun (#3)
+  Object.values(byEmp).forEach(pList=>{
+    pList.sort((a,b)=>String(a['Vizit sanasi']||a.date||'').localeCompare(String(b['Vizit sanasi']||b.date||'')));
   });
   el.innerHTML=Object.entries(byEmp).map(([empName,pList])=>`
     <div style="margin-bottom:18px">
