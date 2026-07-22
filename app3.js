@@ -35,7 +35,7 @@ function renderVfStep2Doctor() {
           </div>
           <div class="fg">
             <label>Tuman (rayon)</label>
-            <input id="nd-dist" value="${ST.user.district||''}" placeholder="Tuman nomini kiriting" />
+            <select id="nd-dist">${vfBuildTumanOptions()}</select>
           </div>
         </div>
         <!-- FIO: 3 ta alohida qator -->
@@ -64,7 +64,7 @@ function renderVfStep2Doctor() {
             <option>Endokrinolog</option><option>Pediatr</option><option>Kardiolog</option>
             <option>Oftalomolog</option><option>Allergolog</option><option>Immunolog</option>
             <option>Infeksionist</option><option>Xirurg</option><option>Dermatolog</option>
-            <option>Gepatolog</option><option>LOR</option><option>Onkolog</option>
+            <option>Gepatolog</option><option>LOR</option><option>Onkolog</option><option>Neonatolog</option>
             <option>Urolog</option><option>Ortoped</option><option>VOP</option>
           </select>
         </div>
@@ -235,7 +235,8 @@ const TASHKENT_SHAHAR_TUMANLAR=["Chilonzor","Yunusobod","Sergeli","Shayxontohur"
 function vfBuildTumanOptions(){
   const own=(ST.user.district||'').split(',').map(s=>s.trim()).filter(Boolean);
   const combined=[...new Set([...own,...TASHKENT_SHAHAR_TUMANLAR])];
-  return combined.map(t=>`<option>${t}</option>`).join('');
+  const myFirst=own[0]||'';
+  return combined.map(t=>`<option${t===myFirst?' selected':''}>${t}</option>`).join('');
 }
 function renderVfStep2Pharmacy() {
   document.getElementById('vfs2').innerHTML = `
@@ -259,7 +260,7 @@ function renderVfStep2Pharmacy() {
           </div>
           <div class="fg">
             <label>Tuman (rayon)</label>
-            <input id="np-dist" value="${ST.user.district||''}" placeholder="Tuman nomini kiriting" />
+            <select id="np-dist">${vfBuildTumanOptions()}</select>
           </div>
         </div>
         <div class="fg">
