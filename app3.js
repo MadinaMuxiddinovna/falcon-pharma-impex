@@ -60,12 +60,12 @@ function renderVfStep2Doctor() {
           <label>Mutaxassisligi <span class="req">*</span></label>
           <select id="nd-spec">
             <option value="">— Tanlang —</option>
-            <option>Ginekolog</option><option>Terapevt</option><option>Nevropatolog</option>
-            <option>Endokrinolog</option><option>Pediatr</option><option>Kardiolog</option>
-            <option>Oftalomolog</option><option>Allergolog</option><option>Immunolog</option>
-            <option>Infeksionist</option><option>Xirurg</option><option>Dermatolog</option>
-            <option>Gepatolog</option><option>LOR</option><option>Onkolog</option><option>Neonatolog</option>
-            <option>Urolog</option><option>Ortoped</option><option>VOP</option>
+            <option>Allergolog</option><option>Dermatolog</option><option>Endokrinolog</option>
+            <option>Gepatolog</option><option>Ginekolog</option><option>Immunolog</option>
+            <option>Infeksionist</option><option>Kardiolog</option><option>LOR</option>
+            <option>Neonatolog</option><option>Nevropatolog</option><option>Oftalomolog</option>
+            <option>Onkolog</option><option>Ortoped</option><option>Pediatr</option>
+            <option>Terapevt</option><option>Urolog</option><option>VOP</option><option>Xirurg</option>
           </select>
         </div>
         <div class="fg">
@@ -234,7 +234,7 @@ const TASHKENT_SHAHAR_TUMANLAR=["Chilonzor","Yunusobod","Sergeli","Shayxontohur"
 // o'zining ro'yxatdagi rayon(lar)i ko'rsatiladi (#10)
 function vfBuildTumanOptions(){
   const own=(ST.user.district||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const combined=[...new Set([...own,...TASHKENT_SHAHAR_TUMANLAR])];
+  const combined=[...new Set([...own,...TASHKENT_SHAHAR_TUMANLAR])].sort((a,b)=>a.localeCompare(b));
   const myFirst=own[0]||'';
   return combined.map(t=>`<option${t===myFirst?' selected':''}>${t}</option>`).join('');
 }
