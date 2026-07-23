@@ -230,11 +230,40 @@ async function vfFinalizeNewDoctor(newDoc) {
 // ── DORIXONA TANLASH ────────────────────────────────
 const TASHKENT_SHAHAR_TUMANLAR=["Chilonzor","Yunusobod","Sergeli","Shayxontohur","Uchtepa","Keles",
   "Mirzo Ulug'bek","Olmazor","Qibray","Yashnobod","Bektemir","Mirobod","Yakkasaroy","Yangihayot"];
+// O'zbekistonning barcha viloyatlari/respublikasi va ularning to'liq tuman ro'yxati (#2)
+const UZ_REGIONS_TUMANLAR={
+  "qoraqalpogiston":["Amudaryo","Beruniy","Bo'zatov","Chimboy","Ellikqal'a","Kegeyli","Mo'ynoq","Nukus tumani","Qanliko'l","Qorao'zak","Shumanay","Taxtako'pir","Taxiatosh","To'rtko'l","Xo'jayli"],
+  "andijon":["Andijon","Asaka","Baliqchi","Bo'z","Buloqboshi","Izboskan","Jalaquduq","Marhamat","Oltinko'l","Paxtaobod","Qo'rg'ontepa","Shahrixon","Ulug'nor","Xo'jaobod"],
+  "buxoro":["Buxoro","G'ijduvon","Jondor","Kogon","Olot","Peshku","Qorako'l","Qorovulbozor","Romitan","Shofirkon","Vobkent"],
+  "fargona":["Bog'dod","Beshariq","Buvayda","Dang'ara","Farg'ona","Furqat","Oltiariq","O'zbekiston","Qo'shtepa","Quva","Rishton","So'x","Toshloq","Uchko'prik","Yozyovon"],
+  "jizzax":["Arnasoy","Baxmal","Do'stlik","Forish","G'allaorol","Sharof Rashidov","Mirzacho'l","Paxtakor","Yangiobod","Zafarobod","Zarbdor","Zomin"],
+  "namangan":["Chortoq","Chust","Kosonsoy","Mingbuloq","Namangan","Norin","Pop","To'raqo'rg'on","Uchqo'rg'on","Uychi","Yangiqo'rg'on"],
+  "navoiy":["Konimex","Karmana","Qiziltepa","Navbahor","Nurota","Tomdi","Uchquduq","Xatirchi"],
+  "qashqadaryo":["Chiroqchi","Dehqonobod","G'uzor","Qamashi","Qarshi","Koson","Kasbi","Kitob","Ko'kdala","Mirishkor","Muborak","Nishon","Shahrisabz","Yakkabog'"],
+  "samarqand":["Bulung'ur","Ishtixon","Jomboy","Kattaqo'rg'on","Qo'shrabot","Narpay","Nurobod","Oqdaryo","Payariq","Pastdarg'om","Paxtachi","Samarqand","Toyloq","Urgut"],
+  "sirdaryo":["Boyovut","Guliston","Mirzaobod","Oqoltin","Sayxunobod","Sardoba","Sirdaryo","Xovos"],
+  "surxondaryo":["Angor","Bandixon","Boysun","Denov","Jarqo'rg'on","Qiziriq","Qumqo'rg'on","Muzrabot","Oltinsoy","Sariosiyo","Sherobod","Sho'rchi","Termiz","Uzun"],
+  "toshkent viloyati":["Bekobod","Bo'ka","Bo'stonliq","Chinoz","Qibray","Ohangaron","Oqqo'rg'on","Parkent","Piskent","Quyichirchiq","O'rtachirchiq","Toshkent tumani","Yangiyo'l","Yuqorichirchiq","Zangiota"],
+  "xorazm":["Bog'ot","Gurlan","Xonqa","Hazorasp","Xiva","Qo'shko'pir","Shovot","Tuproqqal'a","Urganch","Yangiariq","Yangibozor"],
+  "toshkent shahri":TASHKENT_SHAHAR_TUMANLAR,
+};
+function normRegionKey(region){
+  const r=String(region||'').toLowerCase();
+  if(r.includes('toshkent')&&(r.includes('shahri')||r.includes('shahar')))return 'toshkent shahri';
+  if(r.includes('toshkent'))return 'toshkent viloyati';
+  if(r.includes('qoraqalpog'))return 'qoraqalpogiston';
+  for(const key of Object.keys(UZ_REGIONS_TUMANLAR)){
+    if(key!=='toshkent shahri'&&key!=='toshkent viloyati'&&r.includes(key))return key;
+  }
+  return '';
+}
 // Toshkent shahri MP/agentlari uchun standart 14 ta tuman; viloyat xodimlari uchun
 // o'zining ro'yxatdagi rayon(lar)i ko'rsatiladi (#10)
 function vfBuildTumanOptions(){
   const own=(ST.user.district||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const combined=[...new Set([...own,...TASHKENT_SHAHAR_TUMANLAR])].sort((a,b)=>a.localeCompare(b));
+  const regionKey=normRegionKey(ST.user.region);
+  const regionList=UZ_REGIONS_TUMANLAR[regionKey]||TASHKENT_SHAHAR_TUMANLAR;
+  const combined=[...new Set([...own,...regionList])].sort((a,b)=>a.localeCompare(b));
   const myFirst=own[0]||'';
   return combined.map(t=>`<option${t===myFirst?' selected':''}>${t}</option>`).join('');
 }
