@@ -166,6 +166,7 @@ async function vfFinishVisit() {
       action:'requestPromo', empId:ST.user.id, empName:ST.user.name,
       mgrId:ST.user.mgrId||'', doctorName:ST.visit.target.name,
       doctorObject:ST.visit.target.object, date:todayStr(),
+      district:ST.visit.target.district||ST.user.district||'',
       promaSumma:ST.visit.vals.promaSumma,
       lat:(ST.visit.gpsEnd||ST.visit.gpsStart||{}).lat||'',
       lng:(ST.visit.gpsEnd||ST.visit.gpsStart||{}).lng||'',
