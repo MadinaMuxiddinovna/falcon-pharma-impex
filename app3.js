@@ -117,17 +117,27 @@ function renderVfStep2Doctor() {
 function vfSearchDoc(q, isFocus) {
   q = (q||'').trim();
   const dist=(ST.user.district||'').toLowerCase();
+  const myRegion=(ST.user.region||'').toLowerCase();
+  const sameRegion=r=>{
+    if(!myRegion)return true; // hudud noma'lum bo'lsa — cheklamaymiz
+    const rr=(r.region||'').toLowerCase();
+    if(!rr)return true; // vrachning hududi bo'sh bo'lsa — chiqarib tashlamaymiz
+    // "Toshkent shahri" va "Toshkent viloyati" alohida hisoblanadi, boshqa viloyatlar nomi bo'yicha solishtiriladi
+    return rr.includes(myRegion.split(' ')[0])||myRegion.includes(rr.split(' ')[0]);
+  };
   let res;
   if (q.length < 2) {
     if (!isFocus) { hideEl('vf-doc-res'); return; }
     // Fokus qilinganda, hali hech narsa yozilmagan bo'lsa — o'z rayoni vrachlarini ko'rsatamiz
-    res = dist ? ST.doctors.filter(r => (r.district||'').toLowerCase()===dist) : ST.doctors.slice();
+    res = dist ? ST.doctors.filter(r => (r.district||'').toLowerCase()===dist) : ST.doctors.filter(sameRegion);
   } else {
     const ql = q.toLowerCase();
     res = ST.doctors.filter(r =>
-      (r.name||'').toLowerCase().includes(ql) ||
-      (r.object||'').toLowerCase().includes(ql) ||
-      (r.specialty||'').toLowerCase().includes(ql)
+      sameRegion(r) && (
+        (r.name||'').toLowerCase().includes(ql) ||
+        (r.object||'').toLowerCase().includes(ql) ||
+        (r.specialty||'').toLowerCase().includes(ql)
+      )
     );
   }
   // O'z rayoni natijalari birinchi chiqadi
@@ -257,11 +267,25 @@ function normRegionKey(region){
   }
   return '';
 }
+// Region nomi tanilmasa ham, xodimning o'z tumani qaysi viloyatga tegishli ekanini
+// ro'yxatlar ichidan qidirib topadi — Toshkentga noto'g'ri qaytib ketishning oldini oladi
+function findRegionKeyByDistrict(districtName){
+  const d=String(districtName||'').trim().toLowerCase();
+  if(!d)return '';
+  for(const key of Object.keys(UZ_REGIONS_TUMANLAR)){
+    if(UZ_REGIONS_TUMANLAR[key].some(t=>t.toLowerCase()===d))return key;
+  }
+  return '';
+}
 // Toshkent shahri MP/agentlari uchun standart 14 ta tuman; viloyat xodimlari uchun
 // o'zining ro'yxatdagi rayon(lar)i ko'rsatiladi (#10)
 function vfBuildTumanOptions(){
   const own=(ST.user.district||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const regionKey=normRegionKey(ST.user.region);
+  let regionKey=normRegionKey(ST.user.region);
+  if(!regionKey&&own.length){
+    // Region nomi tanilmadi — o'z tumani orqali to'g'ri viloyatni topamiz
+    for(const dName of own){ const k=findRegionKeyByDistrict(dName); if(k){regionKey=k;break;} }
+  }
   const regionList=UZ_REGIONS_TUMANLAR[regionKey]||TASHKENT_SHAHAR_TUMANLAR;
   const combined=[...new Set([...own,...regionList])].sort((a,b)=>a.localeCompare(b));
   const myFirst=own[0]||'';
@@ -375,10 +399,17 @@ function vfValidateINN(input) {
 function vfSearchPharm(q, isFocus) {
   q = (q||'').trim();
   const dist=(ST.user.district||'').toLowerCase();
+  const myRegion=(ST.user.region||'').toLowerCase();
+  const sameRegion=r=>{
+    if(!myRegion)return true;
+    const rr=(r.region||'').toLowerCase();
+    if(!rr)return true;
+    return rr.includes(myRegion.split(' ')[0])||myRegion.includes(rr.split(' ')[0]);
+  };
   let res;
   if (q.length < 2) {
     if (!isFocus) { hideEl('vf-pharm-res'); return; }
-    res = dist ? ST.pharmacies.filter(r => (r.district||'').toLowerCase()===dist) : ST.pharmacies.slice();
+    res = dist ? ST.pharmacies.filter(r => (r.district||'').toLowerCase()===dist) : ST.pharmacies.filter(sameRegion);
   } else {
     const ql = q.toLowerCase();
     res = ST.pharmacies.filter(r =>
