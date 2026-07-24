@@ -270,7 +270,16 @@ function pdShowDoctorFlow(){
 // PROMA puli — MP yuborgan so'rovlar ro'yxatidan
 async function pdShowPromaFlow(){
   const promos=await apiGet('getPromoQueue',{role:'manager',empId:ST.user.id},false).catch(()=>[]);
-  const pending=(promos||[]).filter(p=>(p['Holati']||'')==='Kutilmoqda');
+  const pending=(promos||[]).filter(p=>{
+    const st=p['Holati']||'';
+    if(st==='Rad etildi')return false;
+    if(st!=='Kutilmoqda'&&st!=='Tasdiqlandi')return false;
+    // To'liq to'langan bo'lsa (Doktor turi bilan o'zi berib bo'lgan bo'lsa) — endi kerak emas
+    const reqSumma=Number(p["Proma summasi (so'm)"]||0);
+    const selfPaid=Number(p["O'zi to'lagan (so'm)"]||0);
+    if(reqSumma>0&&selfPaid>=reqSumma)return false;
+    return true;
+  });
   document.getElementById('pd-flow').innerHTML=`
     <div class="card" style="border:2px solid #7a3ca0">
       <div class="card-h" style="background:#7a3ca0">🤝 FCOIN (MP yuborgan so'rovlar)
@@ -280,11 +289,13 @@ async function pdShowPromaFlow(){
       <div class="card-b">
         ${!pending.length
           ?'<div class="alert alert-i">Kutilayotgan FCOIN so\'rovlar yo\'q</div>'
-          :pending.map(p=>`
+          :pending.map(p=>{
+            const st=p['Holati']||'';
+            return `
             <div class="vcard" style="cursor:pointer" onclick="pdSelectPromo(${p._row})" id="promo-card-${p._row}">
               <div class="vcard-h">
                 <span class="vcard-name">${p['Vrach FISh']||p['Vrach F.I.Sh']||''}</span>
-                <span class="bdg bdg-y">Kutilmoqda</span>
+                <span class="bdg ${st==='Tasdiqlandi'?'bdg-g':'bdg-y'}">${st}</span>
               </div>
               <div class="vcard-meta">
                 Med Vakil: ${p['Hodim Ismi']||''} · ${p['Ish joyi']||''} ·
@@ -292,7 +303,8 @@ async function pdShowPromaFlow(){
                 ${Number(p["O'zi to'lagan (so'm)"]||0)>0?' · Menejer o\'zi to\'lagan: <b>'+fmtNum(p["O'zi to'lagan (so'm)"])+'</b> · Qolgan: <b>'+fmtNum(p["Qolgan (so'm)"]||0)+'</b>':''}
                 · ${p['Yaratilgan vaqt']||p['Sana']||''}
               </div>
-            </div>`).join('')}
+            </div>`;
+          }).join('')}
         <div id="pd-promo-selected" class="hide" style="margin-top:12px">
           <div id="pd-promo-info" class="alert alert-ok"></div>
           <div class="fg" style="margin-top:10px"><label>To'lov summasi <span class="req">*</span></label>
