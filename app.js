@@ -4,7 +4,8 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbycefJe_hLVJDNbCU_ahjCEF5wKg2mmPNDN9yGNHTKLwfqxMI8FS9bEXlAfi-z6yZbOFQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbymIkdDVB6FKifBBykS0kdvVmsKZlL35PhH0Z7En5I5b-beGHOxMXujK0QzxhEnZ4Wi/exec',
+  API_KEY: 'FPI-2026-XkQ9mZr4tVwLbN',
 };
 
 const PREPS = [
@@ -158,13 +159,14 @@ const _apiCache = {};
 async function apiGet(action, params, useCache=true) {
   const key = action + JSON.stringify(params);
   if (useCache && _apiCache[key]) return _apiCache[key];
-  const qs = new URLSearchParams({ action, ...params }).toString();
+  const qs = new URLSearchParams({ action, apiKey:CFG.API_KEY, ...params }).toString();
   const r = await fetch(CFG.SCRIPT_URL + '?' + qs, { redirect:'follow' });
   const data = await r.json();
   if (!data.error) _apiCache[key] = data;
   return data;
 }
 async function apiPost(d) {
+  d = { ...d, apiKey:CFG.API_KEY };
   if (!navigator.onLine) { queueSave(d); return { status:'queued', offline:true }; }
   try {
     // MUHIM TUZATISH: avvalgi kod mode:'no-cors' ishlatgani uchun server javobi
