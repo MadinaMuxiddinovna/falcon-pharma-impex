@@ -117,7 +117,7 @@ async function vfFinishVisit() {
       result:ST.visit.vals.result||'', resultOther:(document.getElementById('vf-result-other')?.value||''),
       promoRequested:!!ST.visit.vals.promoRequested,
       promaSumma:ST.visit.vals.promaSumma||0,
-      nextVisitDate:(document.getElementById('vf-next-date')?.value||''),
+      nextVisitDate:(document.getElementById('vf-next-date')?.value||nextWeekStr()),
       comment:(document.getElementById('vf-comment')?.value||''),
       visitStartTime:nowTimeFromTs(ST.visit.timerStart),
       visitEndTime:nowTimeStr(), durationSec:duration,
