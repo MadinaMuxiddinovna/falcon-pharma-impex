@@ -125,7 +125,7 @@ async function renderMgrDashboard(){
       const diagInfo=document.getElementById('mgr-diag-info');
       if(diagInfo){
         diagInfo.textContent='ID: '+ST.user.id+' | isSuperManager: '+(ST.user.isSuperManager?'HA':"YO'Q")+
-          (ST.user.isSuperManager?' | Qo\'l ostidagi menejerlar: '+(ST.user.subManagerIds||[]).join(', '):' | Hech kim Menejer ID ustunida '+ST.user.id+' deb yozmagan');
+          (ST.user.isSuperManager?'':' | Hech kimning Menejer ID yoki G ustuni '+ST.user.id+' ga ishora qilmagan');
       }
       if(rInfo){
         // Login paytida saqlangan districts dan olamiz (tez)
