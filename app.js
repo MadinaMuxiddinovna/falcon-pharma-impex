@@ -1,6 +1,10 @@
+// app.js v12
+// Login: faqat server (Hodimlar_Login Sheets) - kod ichida parol yo'q
+// Yangi hodim qo'shilsa - Sheets ga qo'shiladi, kod o'zgarmaydi
+// Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbz-30YqEq-Y8bNEkepn_01MUYXk5zEqQWWQhk_2zvM8u6xMZC4_XGPzACRSwCQDQyylOg/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxulITyVzORepEIfPQDuHATr9BmJ6kgc_YSMrATesLh8Lop8YGyzYgzKERzkRGiaX3Jqg/exec',
   API_KEY: 'FPI-2026-XkQ9mZr4tVwLbN',
 };
 
@@ -29,6 +33,13 @@ let ST = {
          vals:{promoRequested:false,promaSumma:0},products:[],fotoData:null},
   mgrPay:{type:null,target:null},
 };
+
+// ═══ FAQAT SERVER DAN LOGIN ══════════════════════════
+// Hodimlar_Login Sheets dan o'qiydi
+// Yangi hodim qo'shilsa - Sheets ga qo'shish kifoya, kod o'zgarmaydi
+// Xavfsiz: parollar GitHub da ko'rinmaydi
+
+// Hodim ma'lumotlari cache (parolsiz - faqat offline uchun)
 let _userInfoCache = {};
 
 async function doLogin() {
@@ -43,7 +54,7 @@ async function doLogin() {
   // Server dan tekshiramiz (Hodimlar_Login Sheets)
   try {
     const srv = await fetch(
-      CFG.SCRIPT_URL + '?action=checkLoginGet&id=' + encodeURIComponent(id) + '&pass=' + encodeURIComponent(pass),
+      CFG.SCRIPT_URL + '?action=checkLoginGet&id=' + encodeURIComponent(id) + '&pass=' + encodeURIComponent(pass) + '&apiKey=' + encodeURIComponent(CFG.API_KEY),
       { redirect: 'follow' }
     );
     const data = await srv.json();
