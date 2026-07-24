@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxulITyVzORepEIfPQDuHATr9BmJ6kgc_YSMrATesLh8Lop8YGyzYgzKERzkRGiaX3Jqg/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwrhNKL8xJOlLq83eC_ng0NdEZYzvWXBRnfjkzAgos8_vwFQ1mF_dFso9EDEZSeaaWAnA/exec',
   API_KEY: 'FPI-2026-XkQ9mZr4tVwLbN',
 };
 
@@ -49,7 +49,7 @@ async function doLogin() {
 
   // Overlay ko'rsatamiz - server tekshiruvi
   showOv('Kirish tekshirilmoqda...');
-  let result = null;
+  let result = null, serverErr = null;
 
   // Server dan tekshiramiz (Hodimlar_Login Sheets)
   try {
@@ -59,6 +59,7 @@ async function doLogin() {
     );
     const data = await srv.json();
     if (data && data.status === 'ok') result = data;
+    else if (data && data.error) serverErr = data.error;
   } catch(e) {
     // Server xato - lokal cache dan tekshiramiz (oflayn)
     const cached = JSON.parse(localStorage.getItem('ff_user_cache_' + id) || 'null');
@@ -69,7 +70,7 @@ async function doLogin() {
 
   hideOv();
   if (!result || result.status !== 'ok') {
-    showLoginErr('Login yoki parol noto\'g\'ri');
+    showLoginErr(serverErr ? ('Server xatosi: '+serverErr) : 'Login yoki parol noto\'g\'ri');
     return;
   }
 
