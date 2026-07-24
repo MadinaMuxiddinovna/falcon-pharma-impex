@@ -405,6 +405,10 @@ async function vfLoadCrossRefList(){
   const sel=document.getElementById('vf-crossref-sel');
   if(!block||!sel) return;
   block.style.display=''; // avvalgi vizitning 'none' holatini bekor qilamiz
+  // Bu bog'lash faqat Toshkent shahriga tegishli — boshqa viloyatlarda Torgoviy Agent umuman yo'q
+  const myRegion=(ST.user.region||'').toLowerCase();
+  const isToshkentShahri=myRegion.includes('toshkent')&&(myRegion.includes('shahri')||myRegion.includes('shahar'));
+  if(!isToshkentShahri){ block.style.display='none'; window._crossRefLoaded=true; return; }
   if(ST.user.role==='mp'){
     // MGR01'ning o'z MP'si bo'lsa — bog'lash kerak emas, bu blok butunlay yashiriladi
     if((ST.user.mgrId||'').toUpperCase()==='MGR01'){ block.style.display='none'; window._crossRefLoaded=true; return; }
