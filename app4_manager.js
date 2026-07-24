@@ -954,8 +954,10 @@ async function renderMapPage(){
   _leafletMarkers.clearLayers();
   filtered.slice(0,200).forEach(l=>{
     let color;
-    if(l.type==='Vrach viziti'||l.type==='doctor'){
-      color=(l.role==='manager')?'#e67e22':'#e74c3c';
+    if(l.role==='manager'){
+      color='#000000';
+    } else if(l.type==='Vrach viziti'||l.type==='doctor'){
+      color='#e74c3c';
     } else {
       color=(l.role==='ta'||l.role==='agent')?'#2980b9':'#27ae60';
     }
