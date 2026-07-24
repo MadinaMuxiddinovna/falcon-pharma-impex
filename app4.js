@@ -131,13 +131,6 @@ function renderDoctorForm() {
           style="font-size:18px;font-weight:700;text-align:center" />
       </div>
     </div>
-  </div>
-
-  <div class="card">
-    <div class="card-h">Keyingi vizit sanasi</div>
-    <div class="card-b">
-      <input type="date" id="vf-next-date" value="${nextWeekStr()}" />
-    </div>
   </div>`;
 }
 
