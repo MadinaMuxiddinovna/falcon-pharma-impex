@@ -60,12 +60,20 @@ function renderVfStep2Doctor() {
           <label>Mutaxassisligi <span class="req">*</span></label>
           <select id="nd-spec">
             <option value="">— Tanlang —</option>
-            <option>Allergolog</option><option>Dermatolog</option><option>Endokrinolog</option>
+            <option>Akusher-ginekolog</option><option>Allergolog</option>
+            <option>Anesteziolog-reanimatolog</option><option>Dermatolog</option>
+            <option>Endokrinolog</option><option>Fizioterapevt</option><option>Flebolog</option>
+            <option>Gastroenterolog</option><option>Gematolog</option><option>Genetik</option>
             <option>Gepatolog</option><option>Ginekolog</option><option>Immunolog</option>
-            <option>Infeksionist</option><option>Kardiolog</option><option>LOR</option>
-            <option>Neonatolog</option><option>Nevropatolog</option><option>Oftalomolog</option>
-            <option>Onkolog</option><option>Ortoped</option><option>Pediatr</option>
-            <option>Terapevt</option><option>Urolog</option><option>VOP</option><option>Xirurg</option>
+            <option>Infeksionist</option><option>Kardiolog</option><option>Kardio-revmatolog</option>
+            <option>LOR</option><option>Logoped</option><option>Mammolog</option>
+            <option>Nefrolog</option><option>Neonatolog</option><option>Nevropatolog</option>
+            <option>Nutritsiolog</option><option>Oftalmolog</option><option>Onkolog</option>
+            <option>Ortoped-travmatolog</option><option>Pediatr</option><option>Proktolog</option>
+            <option>Psixiatr</option><option>Psixolog</option><option>Pulmonolog</option>
+            <option>Radiolog</option><option>Revmatolog</option><option>Stomatolog</option>
+            <option>Terapevt</option><option>Toksikolog</option><option>Trixolog</option>
+            <option>Urolog</option><option>Venerolog</option><option>VOP</option><option>Xirurg</option>
           </select>
         </div>
         <div class="fg">
