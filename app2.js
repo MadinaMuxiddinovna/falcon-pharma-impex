@@ -163,6 +163,10 @@ function pageHomeMP(){return `
         <div class="alert alert-i" style="font-size:12px">Rejalar yuklanmoqda...</div>
       </div>
     </div>
+    <div class="card hide" id="home-bron-incoming-card">
+      <div class="card-h">Sizga yuborilgan bron so'rovlari</div>
+      <div class="card-b" id="home-bron-incoming-list"></div>
+    </div>
     <div class="card" id="home-newvisit-card"><div class="card-h">Yangi vizit boshlash</div>
       <div class="card-b">
         <div class="rg">
@@ -202,6 +206,10 @@ function pageHomeTA(){return `
         <div class="kpi-card"><div class="kpi-num" id="home-pct">0%</div><div class="kpi-lbl">Bajarilgan %</div></div>
       </div>
     </div></div>
+    <div class="card hide" id="home-bron-incoming-card">
+      <div class="card-h">Sizga yuborilgan bron so'rovlari</div>
+      <div class="card-b" id="home-bron-incoming-list"></div>
+    </div>
     <div class="card" id="home-newvisit-card"><div class="card-h">Yangi dorixona viziti</div>
       <div class="card-b"><button class="btn btn-p btn-bl btn-lg" onclick="startVisitFlow('pharmacy')">Boshlash</button></div>
     </div>
@@ -275,10 +283,36 @@ function startWtTicker(){
   tick();_wtInterval=setInterval(tick,1000);
 }
 
+async function renderIncomingBron(){
+  const card=document.getElementById('home-bron-incoming-card');
+  const list=document.getElementById('home-bron-incoming-list');
+  if(!card||!list)return;
+  const items=await apiGet('getIncomingBronRequests',{myName:ST.user.name},false).catch(()=>[]);
+  if(!items||!items.length){ card.classList.add('hide'); return; }
+  card.classList.remove('hide');
+  window._incomingBron=items;
+  list.innerHTML=items.map((it,i)=>`
+    <div class="vcard" style="cursor:pointer;margin-bottom:6px" onclick="showIncomingBronDetail(${i})">
+      <div class="vcard-h"><span class="vcard-name">${it['Agent Ismi']||''}</span></div>
+      <div class="vcard-meta">${it['Dorixona']||''} · ${it['Tumani']||''} · ${it['Sana']||''} ${it['Vaqt']||''}</div>
+    </div>`).join('');
+}
+function showIncomingBronDetail(i){
+  const it=(window._incomingBron||[])[i];if(!it)return;
+  showModal('Bron so\'rovi tafsiloti',`
+    <div class="irow"><span class="irow-l">Kimdan</span><span class="irow-v"><b>${it['Agent Ismi']||''}</b></span></div>
+    <div class="irow"><span class="irow-l">Dorixona</span><span class="irow-v">${it['Dorixona']||''}</span></div>
+    <div class="irow"><span class="irow-l">Tuman</span><span class="irow-v">${it['Tumani']||''}</span></div>
+    <div class="irow"><span class="irow-l">Filial</span><span class="irow-v">${it['Filial raqami']||''}</span></div>
+    <div class="irow"><span class="irow-l">Sana/Vaqt</span><span class="irow-v">${it['Sana']||''} ${it['Vaqt']||''}</span></div>
+    <div class="irow"><span class="irow-l"><b>Jami summasi</b></span><span class="irow-v" style="font-weight:800">${fmtNum(it["Preparat jami summasi"]||0)}</span></div>
+  `,'<button class="btn btn-p" onclick="closeModal()">Yopish</button>');
+}
 function renderHome(){
   const dateEl=document.getElementById('home-date');if(!dateEl)return;
   dateEl.textContent=uzDate();
   document.getElementById('home-name').textContent=ST.user.name;
+  renderIncomingBron();
   // Meta: Menejer FIO + rayon (region faqat bir marta)
   const meta=[];
   if(ST.user.mgrId){
