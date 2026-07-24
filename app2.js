@@ -299,12 +299,20 @@ async function renderIncomingBron(){
 }
 function showIncomingBronDetail(i){
   const it=(window._incomingBron||[])[i];if(!it)return;
+  const prepRows=PREPS.filter(p=>Number(it[p]||0)>0).map(p=>{
+    const qty=Number(it[p]||0), price=PRICES[p]||0, summa=qty*price;
+    return `<div class="irow"><span class="irow-l">${p}</span><span class="irow-v">${qty} × ${fmtNum(price)} = <b>${fmtNum(summa)}</b></span></div>`;
+  }).join('');
   showModal('Bron so\'rovi tafsiloti',`
     <div class="irow"><span class="irow-l">Kimdan</span><span class="irow-v"><b>${it['Agent Ismi']||''}</b></span></div>
     <div class="irow"><span class="irow-l">Dorixona</span><span class="irow-v">${it['Dorixona']||''}</span></div>
     <div class="irow"><span class="irow-l">Tuman</span><span class="irow-v">${it['Tumani']||''}</span></div>
     <div class="irow"><span class="irow-l">Filial</span><span class="irow-v">${it['Filial raqami']||''}</span></div>
     <div class="irow"><span class="irow-l">Sana/Vaqt</span><span class="irow-v">${it['Sana']||''} ${it['Vaqt']||''}</span></div>
+    <div style="margin:10px 0;border-top:1px solid var(--border);padding-top:8px">
+      <div style="font-weight:700;font-size:12px;color:var(--muted);margin-bottom:6px">Preparatlar</div>
+      ${prepRows||'<div style="font-size:12px;color:var(--muted)">Preparat kiritilmagan</div>'}
+    </div>
     <div class="irow"><span class="irow-l"><b>Jami summasi</b></span><span class="irow-v" style="font-weight:800">${fmtNum(it["Preparat jami summasi"]||0)}</span></div>
   `,'<button class="btn btn-p" onclick="closeModal()">Yopish</button>');
 }
