@@ -117,13 +117,17 @@ function renderVfStep2Doctor() {
 function vfSearchDoc(q, isFocus) {
   q = (q||'').trim();
   const dist=(ST.user.district||'').toLowerCase();
-  const myRegion=(ST.user.region||'').toLowerCase();
+  const myRegionKey=(function(){
+    let k=normRegionKey(ST.user.region);
+    if(!k)k=findRegionKeyByDistrict((ST.user.district||'').split(',')[0]);
+    return k;
+  })();
   const sameRegion=r=>{
-    if(!myRegion)return true; // hudud noma'lum bo'lsa — cheklamaymiz
-    const rr=(r.region||'').toLowerCase();
-    if(!rr)return true; // vrachning hududi bo'sh bo'lsa — chiqarib tashlamaymiz
-    // "Toshkent shahri" va "Toshkent viloyati" alohida hisoblanadi, boshqa viloyatlar nomi bo'yicha solishtiriladi
-    return rr.includes(myRegion.split(' ')[0])||myRegion.includes(rr.split(' ')[0]);
+    if(!myRegionKey)return true; // o'zimizning hududimiz umuman aniqlanmasa — cheklamaymiz
+    let rk=normRegionKey(r.region);
+    if(!rk)rk=findRegionKeyByDistrict(r.district);
+    if(!rk)return false; // vrachning hududi HECH QANDAY yo'l bilan aniqlanmasa — ko'rsatmaymiz (aralashmasin)
+    return rk===myRegionKey;
   };
   let res;
   if (q.length < 2) {
@@ -399,17 +403,12 @@ function vfValidateINN(input) {
 function vfSearchPharm(q, isFocus) {
   q = (q||'').trim();
   const dist=(ST.user.district||'').toLowerCase();
-  const myRegion=(ST.user.region||'').toLowerCase();
-  const sameRegion=r=>{
-    if(!myRegion)return true;
-    const rr=(r.region||'').toLowerCase();
-    if(!rr)return true;
-    return rr.includes(myRegion.split(' ')[0])||myRegion.includes(rr.split(' ')[0]);
-  };
   let res;
   if (q.length < 2) {
     if (!isFocus) { hideEl('vf-pharm-res'); return; }
-    res = dist ? ST.pharmacies.filter(r => (r.district||'').toLowerCase()===dist) : ST.pharmacies.filter(sameRegion);
+    // Dorixona (yuridik shaxs) hudud bilan bog'lanmagan — bir kompaniyaning butun O'zbekiston
+    // bo'ylab filiallari bo'lishi mumkin, shuning uchun hudud bo'yicha cheklamaymiz
+    res = dist ? ST.pharmacies.filter(r => (r.district||'').toLowerCase()===dist) : ST.pharmacies.slice();
   } else {
     const ql = q.toLowerCase();
     res = ST.pharmacies.filter(r =>
