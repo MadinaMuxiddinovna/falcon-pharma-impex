@@ -577,11 +577,16 @@ function toggleAddPlanForm(){
 function apSearchObject(q,isFocus){
   q=q.trim();
   const myD=(ST.user.district||'').toLowerCase(),myR=(ST.user.region||'').toLowerCase();
+  let myRegionKey=normRegionKey(ST.user.region);
+  if(!myRegionKey)myRegionKey=findRegionKeyByDistrict((ST.user.district||'').split(',')[0]);
   if(q.length<2){
     if(!isFocus){hideEl('ap-search-res');return;}
     const objMap0=new Map();
     ST.doctors.forEach(d=>{
-      if(!(d.district||'').toLowerCase().includes(myD.slice(0,4)))return;
+      if(myRegionKey){
+        let dk=normRegionKey(d.region);if(!dk)dk=findRegionKeyByDistrict(d.district);
+        if(dk!==myRegionKey)return; // boshqa hudud — chiqarib tashlaymiz
+      } else if(!(d.district||'').toLowerCase().includes(myD.slice(0,4))) return;
       if(!objMap0.has(d.object))objMap0.set(d.object,{object:d.object,region:d.region,district:d.district,pri:0});
     });
     const res0=[...objMap0.values()].slice(0,10);
@@ -601,6 +606,10 @@ function apSearchObject(q,isFocus){
   ST.doctors.forEach(d=>{
     const ok=(d.object||'').toLowerCase().includes(ql)||(d.name||'').toLowerCase().includes(ql);
     if(!ok)return;
+    if(myRegionKey){
+      let dk=normRegionKey(d.region);if(!dk)dk=findRegionKeyByDistrict(d.district);
+      if(dk!==myRegionKey)return; // boshqa hudud — chiqarib tashlaymiz
+    }
     const pri=(d.district||'').toLowerCase().includes(myD.slice(0,4))?0:(d.region||'').toLowerCase().includes(myR.slice(0,5))?1:2;
     if(!objMap.has(d.object)||objMap.get(d.object).pri>pri)
       objMap.set(d.object,{object:d.object,region:d.region,district:d.district,pri});
