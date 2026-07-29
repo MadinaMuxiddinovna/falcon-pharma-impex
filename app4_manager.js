@@ -579,11 +579,14 @@ async function renderPlansManagerView(){
         const obj=p['Obyekt nomi']||p.targetName||'';
         const date=p['Vizit sanasi']||p.date||'';
         const maqsad=p['Maqsad']||p.goal||'';
-        return `<div class="vcard" data-plan-row="${p._row}">
+        const vizitHolati=p['Vizit holati (reja)']||'';
+        const notVisited=vizitHolati.indexOf('Shubhali')>=0;
+        return `<div class="vcard" data-plan-row="${p._row}"${notVisited?' style="background:#fff0f0;border-color:#ffb3b3"':''}>
           <div class="vcard-h"><span class="vcard-name">${obj}</span>
             <span class="bdg ${status==='Tasdiqlangan'?'bdg-g':status==='Rad etildi'?'bdg-r':'bdg-y'}">${status}</span>
           </div>
           <div class="vcard-meta">${date}${maqsad?' · '+maqsad:''}</div>
+          ${notVisited?`<div class="vcard-meta" style="color:var(--danger);font-weight:600">⚠ ${vizitHolati}</div>`:''}
           ${!isAdmin&&status==='Kutilmoqda'?`<div class="btn-row" style="margin-top:6px">
             <button class="btn btn-r" style="padding:4px 10px;font-size:12px" data-emp="${empName.replace(/"/g,'&quot;')}" data-obj="${obj.replace(/"/g,'&quot;')}" onclick="planMgrConfirmReject(${p._row},this.dataset.emp,this.dataset.obj)">Rad</button>
             <button class="btn btn-ok" style="padding:4px 10px;font-size:12px" onclick="planMgrDecide(${p._row},true)">Tasdiqlash</button>
