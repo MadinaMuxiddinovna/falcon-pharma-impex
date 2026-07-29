@@ -725,12 +725,15 @@ async function renderPlans(){
         if(!obj||obj==='undefined')return '';
         const sentAt=p['Yaratilgan vaqt']||'';
         const canCancel=status==='Kutilmoqda'&&p._row;
-        return `<div class="vcard">
+        const vizitHolati=p['Vizit holati (reja)']||'';
+        const notVisited=vizitHolati.indexOf('Shubhali')>=0;
+        return `<div class="vcard" ${notVisited?'style="cursor:pointer;background:#fff0f0;border-color:#ffb3b3" onclick="alert(\''+vizitHolati.replace(/'/g,"\\'")+'\')"':''}>
           <div class="vcard-h"><span class="vcard-name">${obj}</span>
             <span class="bdg ${status==='Tasdiqlangan'?'bdg-g':status==='Rad etildi'?'bdg-r':status==='Bekor qilindi'?'bdg-r':'bdg-y'}">${status}</span>
             ${canCancel?`<span onclick="cancelMyPlan(${p._row})" style="margin-left:8px;cursor:pointer;color:var(--danger);font-weight:800" title="Bekor qilish">✕</span>`:''}
           </div>
           ${sentAt?`<div class="vcard-meta">Yuborildi: ${sentAt}</div>`:''}
+          ${notVisited?`<div class="vcard-meta" style="color:var(--danger);font-weight:600">⚠ ${vizitHolati}</div>`:''}
           </div>`;
       }).join('')}
     </div>`).join('');
