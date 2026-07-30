@@ -150,7 +150,8 @@ function pageHomeMP(){return `
     <div class="card"><div class="card-b" style="text-align:center;padding:16px">
       <div id="home-date" style="font-size:13px;color:var(--muted);margin-bottom:2px"></div>
       <div id="home-name" style="font-size:19px;font-weight:800;color:var(--primary);margin-bottom:2px"></div>
-      <div id="home-meta" style="font-size:11.5px;color:var(--muted);margin-bottom:12px"></div>
+      <div id="home-meta" style="font-size:11.5px;color:var(--muted)"></div>
+      <div id="home-tuman" style="font-size:11.5px;color:var(--muted);margin-bottom:12px"></div>
       <div class="kpi-grid" style="margin-bottom:0">
         <div class="kpi-card"><div class="kpi-num" id="home-done">0</div><div class="kpi-lbl">Bugungi vizitlar</div></div>
         <div class="kpi-card"><div class="kpi-num" id="home-plan">0</div><div class="kpi-lbl">Bugungi reja</div></div>
@@ -200,7 +201,8 @@ function pageHomeTA(){return `
     <div class="card"><div class="card-b" style="text-align:center;padding:16px">
       <div id="home-date" style="font-size:13px;color:var(--muted);margin-bottom:2px"></div>
       <div id="home-name" style="font-size:19px;font-weight:800;color:var(--primary);margin-bottom:2px"></div>
-      <div id="home-meta" style="font-size:11.5px;color:var(--muted);margin-bottom:12px"></div>
+      <div id="home-meta" style="font-size:11.5px;color:var(--muted)"></div>
+      <div id="home-tuman" style="font-size:11.5px;color:var(--muted);margin-bottom:12px"></div>
       <div class="kpi-grid" style="margin-bottom:0">
         <div class="kpi-card"><div class="kpi-num" id="home-done">0</div><div class="kpi-lbl">Bugungi vizitlar</div></div>
         <div class="kpi-card"><div class="kpi-num" id="home-pct">0%</div><div class="kpi-lbl">Bajarilgan %</div></div>
@@ -321,18 +323,18 @@ function renderHome(){
   dateEl.textContent=uzDate();
   document.getElementById('home-name').textContent=ST.user.name;
   renderIncomingBron();
-  // Meta: Menejer FIO + rayon (region faqat bir marta)
+  // Meta: Menejer FIO + region (1-qator), Tuman (2-qator, aniq yorliq bilan)
   const meta=[];
   if(ST.user.mgrId){
     const mgrDisplay=ST.user.mgrName||'';
     if(mgrDisplay) meta.push('Menejer: '+mgrDisplay);
   }
-  // Rayon va region — ikki xil bo'lsa ikkalasini, bir xil bo'lsa faqat bittasini
-  const dist=(ST.user.district||'').trim();
   const reg=(ST.user.region||'').trim();
-  if(dist && dist!==reg) meta.push(dist);
   if(reg) meta.push(reg);
   const metaEl=document.getElementById('home-meta');if(metaEl)metaEl.textContent=meta.join(' · ');
+  const dist=(ST.user.district||'').trim();
+  const tumanEl=document.getElementById('home-tuman');
+  if(tumanEl) tumanEl.textContent=dist?('Tuman: '+dist):'';
   // Ish vaqti: yakunlangan yoki ishlayotgan
   const key='ff_wt_'+ST.user.id+'_'+todayStr();
   const endedToday=localStorage.getItem('ff_endday_'+ST.user.id)===todayStr();
