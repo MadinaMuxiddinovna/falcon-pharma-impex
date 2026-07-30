@@ -255,11 +255,11 @@ const TASHKENT_SHAHAR_TUMANLAR=["Chilonzor","Yunusobod","Sergeli","Shayxontohur"
 // O'zbekistonning barcha viloyatlari/respublikasi va ularning to'liq tuman ro'yxati (#2)
 const UZ_REGIONS_TUMANLAR={
   "qoraqalpogiston":["Amudaryo","Beruniy","Bo'zatov","Chimboy","Ellikqal'a","Kegeyli","Mo'ynoq","Nukus tumani","Qanliko'l","Qorao'zak","Shumanay","Taxtako'pir","Taxiatosh","To'rtko'l","Xo'jayli"],
-  "andijon":["Andijon","Asaka","Baliqchi","Bo'z","Buloqboshi","Izboskan","Jalaquduq","Marhamat","Oltinko'l","Paxtaobod","Qo'rg'ontepa","Shahrixon","Ulug'nor","Xo'jaobod"],
+  "andijon":["Andijon","Andijon shahri","Asaka","Baliqchi","Bo'z","Buloqboshi","Izboskan","Jalaquduq","Marhamat","Oltinko'l","Paxtaobod","Qo'rg'ontepa","Shahrixon","Ulug'nor","Xo'jaobod","Xonobod shahri"],
   "buxoro":["Buxoro","G'ijduvon","Jondor","Kogon","Olot","Peshku","Qorako'l","Qorovulbozor","Romitan","Shofirkon","Vobkent"],
-  "fargona":["Bog'dod","Beshariq","Buvayda","Dang'ara","Farg'ona","Furqat","Oltiariq","O'zbekiston","Qo'qon shahri","Qo'shtepa","Quva","Rishton","So'x","Toshloq","Uchko'prik","Yozyovon"],
+  "fargona":["Bog'dod","Beshariq","Buvayda","Dang'ara","Farg'ona","Farg'ona shahri","Furqat","Marg'ilon","Oltiariq","O'zbekiston","Qo'qon shahri","Qo'shtepa","Quva","Quvasoy","Rishton","So'x","Toshloq","Uchko'prik","Yozyovon"],
   "jizzax":["Arnasoy","Baxmal","Do'stlik","Forish","G'allaorol","Sharof Rashidov","Mirzacho'l","Paxtakor","Yangiobod","Zafarobod","Zarbdor","Zomin"],
-  "namangan":["Chortoq","Chust","Kosonsoy","Mingbuloq","Namangan","Norin","Pop","To'raqo'rg'on","Uchqo'rg'on","Uychi","Yangiqo'rg'on"],
+  "namangan":["Chortoq","Chust","Kosonsoy","Mingbuloq","Namangan","Namangan shahri","Norin","Pop","To'raqo'rg'on","Uchqo'rg'on","Uychi","Yangiqo'rg'on"],
   "navoiy":["Konimex","Karmana","Qiziltepa","Navbahor","Nurota","Tomdi","Uchquduq","Xatirchi"],
   "qashqadaryo":["Chiroqchi","Dehqonobod","G'uzor","Qamashi","Qarshi","Koson","Kasbi","Kitob","Ko'kdala","Mirishkor","Muborak","Nishon","Shahrisabz","Yakkabog'"],
   "samarqand":["Bulung'ur","Ishtixon","Jomboy","Kattaqo'rg'on","Qo'shrabot","Narpay","Nurobod","Oqdaryo","Payariq","Pastdarg'om","Paxtachi","Samarqand","Toyloq","Urgut"],
