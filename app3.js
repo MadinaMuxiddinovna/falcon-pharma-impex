@@ -343,7 +343,8 @@ function renderVfStep2Pharmacy() {
         </div>
         <div class="fg">
           <label>Filial raqami <span class="req">*</span></label>
-          <input id="np-branch" type="number" min="0" placeholder="Masalan: 1, 2, 5... (yo'q bo'lsa 0)" />
+          <input id="np-branch" type="number" min="0" inputmode="numeric" placeholder="Masalan: 1, 2, 5... (yo'q bo'lsa 0)"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
         </div>
         <div class="fg">
           <label>ЛПР F.I.Sh (mas'ul shaxs)</label>
@@ -372,8 +373,8 @@ function renderVfStep2Pharmacy() {
       <label style="margin-top:10px">Filial raqami <span class="req">*</span></label>
       <div id="vf-branch-known" class="alert alert-ok hide"></div>
       <div id="vf-branch-ask" class="hide">
-        <input id="vf-branch-no" type="number" min="1" placeholder="Masalan: 2 yoki 45..."
-          oninput="ST.visit.vals.branchNo=this.value;vfCheckBranchReady();" />
+        <input id="vf-branch-no" type="number" min="1" inputmode="numeric" placeholder="Masalan: 2 yoki 45..."
+          oninput="this.value=this.value.replace(/[^0-9]/g,'');ST.visit.vals.branchNo=this.value;vfCheckBranchReady();" />
       </div>
       <div class="fg" style="margin-top:10px">
         <label>ЛПР F.I.Sh (mas'ul shaxs) <span class="req">*</span></label>
