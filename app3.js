@@ -359,11 +359,11 @@ function renderVfStep2Pharmacy() {
             oninput="this.value=this.value.replace(/[^0-9]/g,'')" />
         </div>
         <div class="fg">
-          <label>ЛПР F.I.Sh (mas'ul shaxs)</label>
+          <label>ЛПР F.I.Sh (mas'ul shaxs) <span class="req">*</span></label>
           <input id="np-lpr-name" placeholder="Familiya Ismi Sharifi" />
         </div>
         <div class="fg">
-          <label>ЛПР Telefon raqami</label>
+          <label>ЛПР Telefon raqami <span class="req">*</span></label>
           <div style="display:flex;align-items:center;gap:0">
             <span style="background:#eef2fb;border:1.5px solid var(--border);border-right:none;
               padding:10px 12px;border-radius:8px 0 0 8px;font-size:14px;color:var(--muted);white-space:nowrap">+998</span>
@@ -371,6 +371,10 @@ function renderVfStep2Pharmacy() {
               style="border-radius:0 8px 8px 0;border-left:none"
               oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9)" />
           </div>
+        </div>
+        <div class="fg">
+          <label>ЛПУ (obyekt nomi) <span class="req">*</span></label>
+          <input id="np-lpu" placeholder="Masalan: 6-Oilaviy Poliklinika" />
         </div>
         <button class="btn btn-ok btn-bl" onclick="vfConfirmNewPharm()">Ma'lumotni tasdiqlash</button>
       </div>
@@ -508,22 +512,26 @@ function vfConfirmNewPharm() {
   const branchVal = (document.getElementById('np-branch')?.value||'').trim();
   const lprName = cleanName(document.getElementById('np-lpr-name')?.value);
   const lprPhoneRaw = (document.getElementById('np-lpr-phone')?.value||'').replace(/\D/g,'');
+  const lpuObject = cleanName(document.getElementById('np-lpu')?.value);
   if (inn.length !== 9) { alert('INN aynan 9 ta raqam bo\'lishi kerak!'); return; }
   if (!name) { alert('Dorixona Yuridik Nomini kiriting!'); return; }
   if (branchVal==='') { alert('Filial raqamini kiriting (yo\'q bo\'lsa 0 yozing)!'); return; }
-  if (lprPhoneRaw && lprPhoneRaw.length !== 9) { alert('ЛПР telefon aynan 9 ta raqamdan iborat bo\'lishi kerak!'); return; }
-  const lprPhone = lprPhoneRaw ? '+998'+lprPhoneRaw : '';
+  if (!lprName) { alert('ЛПР F.I.Sh kiriting!'); return; }
+  if (lprPhoneRaw.length !== 9) { alert('ЛПР telefon aynan 9 ta raqamdan iborat bo\'lishi kerak!'); return; }
+  if (!lpuObject) { alert('ЛПУ (obyekt nomi) kiriting!'); return; }
+  const lprPhone = '+998'+lprPhoneRaw;
 
   const region = (document.getElementById('np-region')?.value||ST.user.region||'').trim();
-  const newP = { id:'NEW-'+Date.now(), region, district:dist, inn, legalName:name, branch:branchVal, lprName, lprPhone, _isNew:true };
+  const newP = { id:'NEW-'+Date.now(), region, district:dist, inn, legalName:name, branch:branchVal, lprName, lprPhone, lpuObject, _isNew:true };
 
   showModal('Ma\'lumotni tekshiring',
     `<div class="irow"><span class="irow-l">Mintaqa</span><span class="irow-v">${region}</span></div>
      <div class="irow"><span class="irow-l">Tuman</span><span class="irow-v">${dist}</span></div>
      <div class="irow"><span class="irow-l">INN</span><span class="irow-v">${inn}</span></div>
      <div class="irow"><span class="irow-l">Yuridik Nomi</span><span class="irow-v">${name}</span></div>
-     ${lprName?`<div class="irow"><span class="irow-l">ЛПР</span><span class="irow-v">${lprName}</span></div>`:''}
-     ${lprPhone?`<div class="irow"><span class="irow-l">ЛПР tel</span><span class="irow-v">${lprPhone}</span></div>`:''}
+     <div class="irow"><span class="irow-l">ЛПР</span><span class="irow-v">${lprName}</span></div>
+     <div class="irow"><span class="irow-l">ЛПР tel</span><span class="irow-v">${lprPhone}</span></div>
+     <div class="irow"><span class="irow-l">ЛПУ</span><span class="irow-v">${lpuObject}</span></div>
      <p style="margin-top:10px;font-size:13px;color:var(--ok)">To'g'rimi?</p>`,
     `<button class="btn btn-o" onclick="closeModal()">← Tahrirlash</button>
      <button class="btn btn-ok" onclick='closeModal();vfFinalizeNewPharm(${JSON.stringify(newP).replace(/'/g,"&apos;")})'>Ha, to'g'ri</button>`);
@@ -547,11 +555,11 @@ async function vfFinalizeNewPharm(newP) {
     ST.visit.vals.branchNo = 0;
     hideEl('vf-branch-known'); hideEl('vf-branch-ask');
   }
-  // ЛПР F.I.Sh/telefon dorixona qo'shish shaklida kiritilgan bo'lsa — Stage 2 maydonlariga o'tkazamiz
+  // ЛПР F.I.Sh/telefon/ЛПУ dorixona qo'shish shaklida kiritilgan — Stage 2 maydonlariga o'tkazamiz, qayta so'ramaymiz
   const lprNameInp2=document.getElementById('vf-pharm-lpr-name'); if(lprNameInp2) lprNameInp2.value=newP.lprName||'';
   const lprPhoneInp2=document.getElementById('vf-pharm-lpr-phone'); if(lprPhoneInp2) lprPhoneInp2.value=(newP.lprPhone||'').replace('+998','');
-  // ЛПУ (obyekt nomi) — yangi dorixona shaklida so'ralmagan, hali ham to'ldirilishi kerak
-  vfCheckBranchReady(); // tugma FAQAT hamma maydon (jumladan ЛПУ) to'ldirilganda yoqiladi
+  const lpuInp2=document.getElementById('vf-pharm-lpu'); if(lpuInp2) lpuInp2.value=newP.lpuObject||'';
+  vfCheckBranchReady(); // hamma maydon allaqachon to'ldirilgan — tugma darhol yoqiladi
   // Bazaga yuborish (INN + Yuridik Nomi)
   await apiPost({ action:'addNewPharmacy', ...newP, empName:ST.user.name });
 }
