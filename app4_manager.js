@@ -106,16 +106,28 @@ function pageManagerDashboard(){
     <div class="card"><div class="card-h">Jamoa holati (bugun)</div>
       <div class="card-b" id="mgr-team"><div class="alert alert-i">Yuklanmoqda...</div></div>
     </div>
+    <div class="card hide" id="mgr-absent-card"><div class="card-h">Bugun ishga chiqmaganlar</div>
+      <div class="card-b" id="mgr-absent-list"></div>
+    </div>
   </div>`;
 }
 
 async function renderMgrDashboard(){
   try{
-    const[kpi,promos,bal]=await Promise.all([
+    const[kpi,promos,bal,absent]=await Promise.all([
       apiGet('getKPI',{role:ST.user.role,empId:ST.user.id,date:todayStr()},false).catch(()=>({})),
       apiGet('getPromoQueue',{role:ST.user.role,empId:ST.user.id},false).catch(()=>[]),
       ST.user.role==='manager'?apiGet('getMgrBalance',{mgrId:ST.user.id},false).catch(()=>null):Promise.resolve(null),
+      apiGet('getAbsentToday',{role:ST.user.role,empId:ST.user.id},false).catch(()=>[]),
     ]);
+    const absentCard=document.getElementById('mgr-absent-card');
+    const absentList=document.getElementById('mgr-absent-list');
+    if(absentCard&&absentList){
+      if(absent&&absent.length){
+        absentCard.classList.remove('hide');
+        absentList.innerHTML=absent.map(a=>`<div class="vcard-meta">${a.name}${a.mgrName?' · '+a.mgrName:''}</div>`).join('');
+      } else absentCard.classList.add('hide');
+    }
     if(bal){
       ST.mgrBalance=bal;
       const el=document.getElementById('mgr-bal-qolgan');
