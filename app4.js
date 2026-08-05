@@ -135,6 +135,11 @@ function renderDoctorForm() {
 }
 
 function nextWeekStr(){const d=new Date();d.setDate(d.getDate()+7);return d.toISOString().split('T')[0];}
+// Ism/matn maydonlarini tozalaydi: bosh/oxiridagi bo'shliq, ichkaridagi ortiqcha bo'shliqlarni
+// bittaga tushiradi, vergul/nuqtani olib tashlaydi, lekin ' belgisini saqlaydi (o'/g' uchun) (#15)
+function cleanName(s){
+  return String(s||'').trim().replace(/\s+/g,' ').replace(/[,.;]+/g,'');
+}
 
 // Faqat 1 tanlash — boshqalari bekor bo'ladi
 function vfPickOne(el, containerId, key, val) {
