@@ -195,10 +195,10 @@ function vfSelectDoc(r) {
 }
 
 function vfConfirmNewDoctor() {
-  const familiya = (document.getElementById('nd-familiya')?.value||'').trim();
-  const ism      = (document.getElementById('nd-ism')?.value||'').trim();
-  const sharif   = (document.getElementById('nd-sharif')?.value||'').trim();
-  const obj      = (document.getElementById('nd-obj')?.value||'').trim();
+  const familiya = cleanName(document.getElementById('nd-familiya')?.value);
+  const ism      = cleanName(document.getElementById('nd-ism')?.value);
+  const sharif   = cleanName(document.getElementById('nd-sharif')?.value);
+  const obj      = cleanName(document.getElementById('nd-obj')?.value);
   const spec     = (document.getElementById('nd-spec')?.value||'').trim();
   const phone    = (document.getElementById('nd-phone')?.value||'').replace(/\D/g,'');
 
@@ -455,7 +455,7 @@ function vfSelectPharmByIdx(i) {
 function vfCheckBranchReady(){
   const tuman=document.getElementById('vf-pharm-tuman')?.value||'';
   const branch=ST.visit.vals.branchNo;
-  const lprName=(document.getElementById('vf-pharm-lpr-name')?.value||'').trim();
+  const lprName=cleanName(document.getElementById('vf-pharm-lpr-name')?.value);
   const lprPhoneRaw=(document.getElementById('vf-pharm-lpr-phone')?.value||'').trim();
   const lpu=(document.getElementById('vf-pharm-lpu')?.value||'').trim();
   // Har bir o'zgarishda darhol ST.visit'ga yozamiz — bosqich almashsa ham yo'qolmasin
@@ -494,7 +494,7 @@ function vfConfirmNewPharm() {
   const name = (document.getElementById('np-name')?.value||'').trim();
   const dist = (document.getElementById('np-dist')?.value||'').trim();
   const branchVal = (document.getElementById('np-branch')?.value||'').trim();
-  const lprName = (document.getElementById('np-lpr-name')?.value||'').trim();
+  const lprName = cleanName(document.getElementById('np-lpr-name')?.value);
   const lprPhoneRaw = (document.getElementById('np-lpr-phone')?.value||'').replace(/\D/g,'');
   if (inn.length !== 9) { alert('INN aynan 9 ta raqam bo\'lishi kerak!'); return; }
   if (!name) { alert('Dorixona Yuridik Nomini kiriting!'); return; }
@@ -550,7 +550,7 @@ function vfStartTimer() {
   if(ST.visit.type==='pharmacy'){
     const lprPhoneRaw=(document.getElementById('vf-pharm-lpr-phone')?.value||'').replace(/\D/g,'');
     ST.visit._lprData={
-      lprName:(document.getElementById('vf-pharm-lpr-name')?.value||'').trim(),
+      lprName:cleanName(document.getElementById('vf-pharm-lpr-name')?.value),
       lprPhone:lprPhoneRaw?('+998'+lprPhoneRaw):'',
       lpuObject:(document.getElementById('vf-pharm-lpu')?.value||'').trim(),
     };
