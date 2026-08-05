@@ -109,11 +109,23 @@ function renderVfStep2Doctor() {
   if(window._pendingPlanObj){
     const objName=window._pendingPlanObj;
     window._pendingPlanObj=null;
-    const matches=ST.doctors.filter(d=>(d.object||'')===objName);
+    const normObj=s=>String(s||'').toLowerCase().replace(/["'.,\-№#]/g,'').replace(/\s+/g,'').trim();
+    const targetNorm=normObj(objName);
+    const matches=ST.doctors.filter(d=>normObj(d.object)===targetNorm);
     const inp=document.getElementById('vf-doc-q');
     if(inp){
       if(matches.length===1){
         vfSelectDoc(matches[0]);
+      } else if(matches.length>1){
+        // Bir nechta vrach shu aniq obyektda — hammasini (hudud filtrisiz) ko'rsatamiz
+        inp.value=objName;
+        window._docSearchRes=matches;
+        const resEl=document.getElementById('vf-doc-res');
+        if(resEl){
+          resEl.innerHTML=matches.map((r,i)=>`<div class="sres-item" onclick="vfSelectDocByIdx(${i})">
+            <b>${r.name}</b><br><span style="font-size:11px;color:var(--muted)">${r.specialty||''} · ${r.object||''}</span></div>`).join('');
+          showEl('vf-doc-res');
+        }
       } else if(objName){
         inp.value=objName;
         vfSearchDoc(objName);
