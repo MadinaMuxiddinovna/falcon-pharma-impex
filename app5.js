@@ -154,6 +154,14 @@ async function vfFinishVisit() {
   }
 
   const resp=await apiPost(payload);
+  if(resp&&resp.status==='queued'){
+    // Server sekin javob berdi yoki oflayn — vizit qurilmada xavfsiz saqlandi, avtomatik qayta yuboriladi
+    if(btn){btn.textContent='Saqlandi (navbatda) ✅';}
+    showModal('Vizit saqlandi',
+      '<p>Internet/server sekin javob berdi, lekin vizitingiz qurilmangizda xavfsiz saqlandi va internet borligida avtomatik yuboriladi. Qayta kiritishning hojati yo\'q.</p>',
+      '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'visit-flow-container\').innerHTML=\'\'">OK</button>');
+    return;
+  }
   if(resp&&resp.error){
     if(btn){btn.disabled=false;btn.textContent='Vizitni saqlash ✅';}
     alert(resp.error);
