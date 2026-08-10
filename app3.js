@@ -41,19 +41,19 @@ function renderVfStep2Doctor() {
         <!-- FIO: 3 ta alohida qator -->
         <div class="fg">
           <label>Familiya <span class="req">*</span></label>
-          <input id="nd-familiya" placeholder="Masalan: Karimov" />
+          <input id="nd-familiya" placeholder="Masalan: Karimov" oninput="latinOnly(this)" />
         </div>
         <div class="fg">
           <label>Ismi <span class="req">*</span></label>
-          <input id="nd-ism" placeholder="Masalan: Sardor" />
+          <input id="nd-ism" placeholder="Masalan: Sardor" oninput="latinOnly(this)" />
         </div>
         <div class="fg">
           <label>Sharifi <span class="req">*</span></label>
-          <input id="nd-sharif" placeholder="Masalan: Aliyevich" />
+          <input id="nd-sharif" placeholder="Masalan: Aliyevich" oninput="latinOnly(this)" />
         </div>
         <div class="fg">
           <label>Ish joyi (obyekt) <span class="req">*</span></label>
-          <input id="nd-obj" placeholder="Klinika / Poliklinika nomi" />
+          <input id="nd-obj" placeholder="Klinika / Poliklinika nomi" oninput="latinOnly(this)" />
         </div>
         <div class="fg">
           <!-- Mutaxassislik — faqat tanlash, yozish mumkin emas -->
@@ -351,7 +351,7 @@ function renderVfStep2Pharmacy() {
         <div class="fg">
           <!-- Dorixona Yuridik Nomi — qo'lda yoziladi -->
           <label>Dorixona Yuridik Nomi <span class="req">*</span></label>
-          <input id="np-name" placeholder="Masalan: DOBRIY DOKTOR AYBOLIT MCHJ" />
+          <input id="np-name" placeholder="Masalan: DOBRIY DOKTOR AYBOLIT MCHJ" oninput="latinOnly(this)" />
         </div>
         <div class="fg">
           <label>Filial raqami <span class="req">*</span></label>
@@ -360,7 +360,7 @@ function renderVfStep2Pharmacy() {
         </div>
         <div class="fg">
           <label>ЛПР F.I.Sh (mas'ul shaxs) <span class="req">*</span></label>
-          <input id="np-lpr-name" placeholder="Familiya Ismi Sharifi" />
+          <input id="np-lpr-name" placeholder="Familiya Ismi Sharifi" oninput="latinOnly(this)" />
         </div>
         <div class="fg">
           <label>ЛПР Telefon raqami <span class="req">*</span></label>
@@ -394,7 +394,7 @@ function renderVfStep2Pharmacy() {
       </div>
       <div class="fg" style="margin-top:10px">
         <label>ЛПР F.I.Sh (mas'ul shaxs) <span class="req">*</span></label>
-        <input id="vf-pharm-lpr-name" placeholder="Familiya Ismi Sharifi" oninput="vfCheckBranchReady();" />
+        <input id="vf-pharm-lpr-name" placeholder="Familiya Ismi Sharifi" oninput="latinOnly(this);vfCheckBranchReady();" />
       </div>
       <div class="fg">
         <label>ЛПР Telefon raqami <span class="req">*</span></label>
