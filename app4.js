@@ -140,6 +140,11 @@ function nextWeekStr(){const d=new Date();d.setDate(d.getDate()+7);return d.toIS
 function cleanName(s){
   return String(s||'').trim().replace(/\s+/g,' ').replace(/[,.;]+/g,'');
 }
+// Faqat lotin harflarini qoldiradi (rus klaviaturasida kirillcha yozib qo'yishning oldini oladi)
+function latinOnly(el){
+  const clean=el.value.replace(/[^a-zA-Z0-9' \-]/g,'');
+  if(clean!==el.value) el.value=clean;
+}
 
 // Faqat 1 tanlash — boshqalari bekor bo'ladi
 function vfPickOne(el, containerId, key, val) {
