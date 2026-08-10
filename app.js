@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwAllstFtgM3MIUfzrYSFemCkxvwGvRXTBDublQHfo-zaOF3Q6BQTbdunwErex8SVzCfA/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzITeNfFlRp1HzNDzlbdg4pqFgQgirRPlQxkac5LxDyhGuaP8r7Ln7B1R4XCmwh7ypVnQ/exec',
   API_KEY: 'FPI-2026-XkQ9mZr4tVwLbN',
 };
 
@@ -175,18 +175,24 @@ async function apiPost(d) {
     // maydonlar doim "undefined" bo'lgan (#14 — balans yangilanmasligi shundan edi).
     // text/plain Content-Type + standart 'cors' rejimi — bu "simple request" hisoblanadi,
     // Apps Script preflight (OPTIONS) so'ramaydi VA javobni o'qish mumkin bo'ladi.
+    // 45 soniyalik vaqt chegarasi — server sekin javob bersa ham ekran cheksiz
+    // "Saqlanmoqda..." holatida qolib ketmasin, aks holda oflayn navbatga o'tadi (#tezlik)
+    const ctrl = new AbortController();
+    const timeoutId = setTimeout(()=>ctrl.abort(), 45000);
     const r = await fetch(CFG.SCRIPT_URL, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify(d)
+      body: JSON.stringify(d),
+      signal: ctrl.signal
     });
+    clearTimeout(timeoutId);
     let resp = { status:'sent' };
     try { const j = await r.json(); if (j && typeof j==='object') resp = { status:'sent', ...j }; } catch(e2) {}
     invalidateApiCache(d.action);
     return resp;
   } catch(e) {
     queueSave(d);
-    return { status:'queued', error:e.message };
+    return { status:'queued', error:e.message, timedOut:e.name==='AbortError' };
   }
 }
 // Amal bajarilgandan keyin tegishli GET keshlarini tozalaymiz — tez yangilanish uchun (#9,#12,#13)
