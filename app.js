@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzITeNfFlRp1HzNDzlbdg4pqFgQgirRPlQxkac5LxDyhGuaP8r7Ln7B1R4XCmwh7ypVnQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycby_8i75g3xianiKZS43CGwO3u6UrIw9HDIVb8dl9o_nVHhi-Sy6WWCv-Q8hpeNiXvSYRw/exec',
   API_KEY: 'FPI-2026-XkQ9mZr4tVwLbN',
 };
 
@@ -499,25 +499,35 @@ function renderVfStep1() {
 }
 function vfGetGps() {
   hideEl('vf-gps-skip'); hideEl('vf-gps-retry');
-  const timer = setTimeout(() => {
-    const s = document.getElementById('vf-gps-status');
-    if (s) { s.className='alert alert-w'; s.textContent='GPS sekin — davom etishingiz mumkin'; }
+  const s = document.getElementById('vf-gps-status');
+  let done=false;
+  const succeed=(pos,label)=>{
+    if(done)return; done=true;
+    ST.visit.gpsStart = { lat:pos.coords.latitude, lng:pos.coords.longitude, acc:Math.round(pos.coords.accuracy) };
+    if (s) { s.className='alert alert-ok'; s.textContent='✅ Joylashuv aniqlandi ('+ST.visit.gpsStart.acc+'m)'+(label?' — '+label:''); }
+    setTimeout(() => vfShowStep(2), 500);
+  };
+  const fail=()=>{
+    if(done)return; done=true;
+    if (s) { s.className='alert alert-r'; s.textContent='GPS ruxsati kerak — Sozlamalar → Joylashuv'; }
     showEl('vf-gps-skip'); showEl('vf-gps-retry');
-  }, 10000);
+  };
+  // 1-urinish: aniq (satellite) usul — indoor joylarda sekin/ishlamasligi mumkin
   navigator.geolocation?.getCurrentPosition(
-    pos => {
-      clearTimeout(timer);
-      ST.visit.gpsStart = { lat:pos.coords.latitude, lng:pos.coords.longitude, acc:Math.round(pos.coords.accuracy) };
-      const s = document.getElementById('vf-gps-status');
-      if (s) { s.className='alert alert-ok'; s.textContent='✅ Joylashuv aniqlandi ('+ST.visit.gpsStart.acc+'m)'; }
-      setTimeout(() => vfShowStep(2), 500);
-    },
-    () => {
-      clearTimeout(timer);
-      const s = document.getElementById('vf-gps-status');
-      if (s) { s.className='alert alert-r'; s.textContent='GPS ruxsati kerak — Sozlamalar → Joylashuv'; }
-      showEl('vf-gps-skip'); showEl('vf-gps-retry');
-    },
-    { enableHighAccuracy:true, timeout:9000 }
-  ) || (() => { clearTimeout(timer); vfShowStep(2); })();
+    pos=>succeed(pos),
+    ()=>{}, // xato bo'lsa ham kutamiz — pastdagi zaxira usul ishga tushadi
+    {enableHighAccuracy:true, timeout:8000, maximumAge:0}
+  );
+  // 2-urinish (zaxira): 8 soniyadan keyin ham natija bo'lmasa, tezroq/kam aniq usulni sinaymiz
+  setTimeout(()=>{
+    if(done)return;
+    if (s) { s.className='alert alert-w'; s.textContent='Aniqroq usulni sinamoqda...'; }
+    navigator.geolocation?.getCurrentPosition(
+      pos=>succeed(pos,'tezkor usul'),
+      fail,
+      {enableHighAccuracy:false, timeout:5000, maximumAge:30000}
+    );
+  }, 8000);
+  // Umumiy vaqt chegarasi — 14 soniyadan keyin ham hech narsa bo'lmasa, tugatamiz
+  setTimeout(()=>{ if(!done) fail(); }, 14000);
 }
