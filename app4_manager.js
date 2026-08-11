@@ -254,7 +254,7 @@ function pdSetType(type){
 function pdShowDoctorFlow(){
   document.getElementById('pd-flow').innerHTML=`
     <div class="card" style="border:2px solid #7a3ca0">
-      <div class="card-h" style="background:#7a3ca0">👨‍⚕️ Doktor puli
+      <div class="card-h" style="background:#7a3ca0">👨‍⚕️ Doktor FCOIN
         <button onclick="document.getElementById('pd-flow').innerHTML=''"
           style="margin-left:auto;padding:4px 10px;border:1.5px solid #fff;background:#fff;color:#7a3ca0;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer">✕</button>
       </div>
@@ -392,7 +392,10 @@ function pdSearchDoc(q){
   q=q.trim();if(q.length<2){hideEl('pd-doc-res');return;}
   const ql=q.toLowerCase();
   let myRegionKey=normRegionKey(ST.user.region);
-  if(!myRegionKey)myRegionKey=findRegionKeyByDistrict((ST.user.district||'').split(',')[0]);
+  if(!myRegionKey){
+    const myDistricts=ST.user.districts&&ST.user.districts.length?ST.user.districts:(ST.user.district||'').split(',');
+    for(const dd of myDistricts){ myRegionKey=findRegionKeyByDistrict(dd); if(myRegionKey)break; }
+  }
   const res=ST.doctors.filter(r=>{
     if(!(r.name||'').toLowerCase().includes(ql))return false;
     if(!myRegionKey)return true; // menejerning o'z hududi aniqlanmasa — cheklamaymiz
@@ -406,7 +409,8 @@ function pdSearchDoc(q){
   box.innerHTML=res.length
     ?res.map((r,i)=>`<div class="sitem" onclick="pdSelectDocByIdx(${i})">
         <span class="sitem-name">${r.name}</span>
-        <span class="sitem-meta">${r.specialty||''} · ${r.object||''}</span></div>`).join('')
+        <span class="sitem-meta">${r.specialty||''} · ${r.object||''}</span>
+        <span class="sitem-meta">${r.region||''} · ${r.district||''}${r.category?' · '+r.category:''}${r.status?' · '+r.status:''}</span></div>`).join('')
     :'<div class="sitem"><span class="sitem-meta">Topilmadi</span></div>';
   showEl('pd-doc-res');
 }
