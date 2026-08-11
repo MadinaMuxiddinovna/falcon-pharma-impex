@@ -391,7 +391,16 @@ async function pdFinalizePromaPay(summa,comment){
 function pdSearchDoc(q){
   q=q.trim();if(q.length<2){hideEl('pd-doc-res');return;}
   const ql=q.toLowerCase();
-  const res=ST.doctors.filter(r=>(r.name||'').toLowerCase().includes(ql)).slice(0,8);
+  let myRegionKey=normRegionKey(ST.user.region);
+  if(!myRegionKey)myRegionKey=findRegionKeyByDistrict((ST.user.district||'').split(',')[0]);
+  const res=ST.doctors.filter(r=>{
+    if(!(r.name||'').toLowerCase().includes(ql))return false;
+    if(!myRegionKey)return true; // menejerning o'z hududi aniqlanmasa — cheklamaymiz
+    let rk=normRegionKey(r.region);
+    if(!rk)rk=findRegionKeyByDistrict(r.district);
+    if(!rk)return false; // vrachning hududi hech qanday yo'l bilan aniqlanmasa — ko'rsatmaymiz
+    return rk===myRegionKey;
+  }).slice(0,8);
   window._pdDocRes=res;
   const box=document.getElementById('pd-doc-res');
   box.innerHTML=res.length
