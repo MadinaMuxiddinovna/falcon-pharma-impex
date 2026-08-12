@@ -75,23 +75,16 @@ async function vfFinishVisit() {
   const btn = document.getElementById('vf-finish-btn');
   if (btn) { btn.disabled=true; btn.textContent='Saqlanmoqda...'; }
 
-  // GPS oxirgi koordinata — avval aniq (satellite) usulda, indoor joylarda ishlamasa
-  // tezroq (WiFi/uyali aloqa) usulga o'tamiz — bo'sh qoldirmaslik uchun
+  // GPS oxirgi koordinata — SODDA, bitta urinish, qat'iy 8 soniyalik chegara bilan.
+  // (Oldingi ko'p bosqichli mantiq murakkab bo'lib, o'zi muammo manbai bo'lgani uchun soddalashtirildi.)
   await new Promise(resolve=>{
     let done=false;
     const finish=()=>{ if(!done){ done=true; resolve(); } };
-    const t=setTimeout(()=>{
-      // Aniq GPS topilmadi — tezroq, kam aniq usulni sinaymiz (indoor uchun yaxshiroq)
-      navigator.geolocation.getCurrentPosition(
-        pos=>{ST.visit.gpsEnd={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};finish();},
-        ()=>finish(),
-        {enableHighAccuracy:false,timeout:4000,maximumAge:60000}
-      );
-    },8000);
+    setTimeout(finish, 8000); // 8 soniyadan keyin, GPS topilmagan bo'lsa ham, baribir davom etamiz
     navigator.geolocation.getCurrentPosition(
-      pos=>{ST.visit.gpsEnd={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};clearTimeout(t);finish();},
-      ()=>{}, // xato bo'lsa ham kutamiz — timeout orqali fallback ishga tushadi
-      {enableHighAccuracy:true,timeout:8000}
+      pos=>{ST.visit.gpsEnd={lat:pos.coords.latitude,lng:pos.coords.longitude,acc:Math.round(pos.coords.accuracy)};finish();},
+      ()=>finish(),
+      {enableHighAccuracy:true,timeout:7000,maximumAge:0}
     );
   });
 
