@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw8KiVWUiuwT6J4EYyz6vMHusrZjP0TRpO0u96h8YA_W3Pa2HRauYLO4z4abdshb9gPzg/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyMOJIH05-8QCNR1pRg_PO_d3jFKhlEptvZdJjr6qMU9dGWWvrf0u3QL7EaPfPXuN9SvA/exec',
   API_KEY: 'FPI-2026-XkQ9mZr4tVwLbN',
 };
 
@@ -501,10 +501,10 @@ function vfGetGps() {
   hideEl('vf-gps-skip'); hideEl('vf-gps-retry');
   const s = document.getElementById('vf-gps-status');
   let done=false;
-  const succeed=(pos,label)=>{
+  const succeed=(pos)=>{
     if(done)return; done=true;
     ST.visit.gpsStart = { lat:pos.coords.latitude, lng:pos.coords.longitude, acc:Math.round(pos.coords.accuracy) };
-    if (s) { s.className='alert alert-ok'; s.textContent='✅ Joylashuv aniqlandi ('+ST.visit.gpsStart.acc+'m)'+(label?' — '+label:''); }
+    if (s) { s.className='alert alert-ok'; s.textContent='✅ Joylashuv aniqlandi ('+ST.visit.gpsStart.acc+'m)'; }
     setTimeout(() => vfShowStep(2), 500);
   };
   const fail=()=>{
@@ -512,22 +512,7 @@ function vfGetGps() {
     if (s) { s.className='alert alert-r'; s.textContent='GPS ruxsati kerak — Sozlamalar → Joylashuv'; }
     showEl('vf-gps-skip'); showEl('vf-gps-retry');
   };
-  // 1-urinish: aniq (satellite) usul — indoor joylarda sekin/ishlamasligi mumkin
-  navigator.geolocation?.getCurrentPosition(
-    pos=>succeed(pos),
-    ()=>{}, // xato bo'lsa ham kutamiz — pastdagi zaxira usul ishga tushadi
-    {enableHighAccuracy:true, timeout:8000, maximumAge:0}
-  );
-  // 2-urinish (zaxira): 8 soniyadan keyin ham natija bo'lmasa, tezroq/kam aniq usulni sinaymiz
-  setTimeout(()=>{
-    if(done)return;
-    if (s) { s.className='alert alert-w'; s.textContent='Aniqroq usulni sinamoqda...'; }
-    navigator.geolocation?.getCurrentPosition(
-      pos=>succeed(pos,'tezkor usul'),
-      fail,
-      {enableHighAccuracy:false, timeout:5000, maximumAge:30000}
-    );
-  }, 8000);
-  // Umumiy vaqt chegarasi — 14 soniyadan keyin ham hech narsa bo'lmasa, tugatamiz
-  setTimeout(()=>{ if(!done) fail(); }, 14000);
+  navigator.geolocation?.getCurrentPosition(succeed, fail, {enableHighAccuracy:true, timeout:9000, maximumAge:0});
+  // Qat'iy xavfsizlik chegarasi — brauzer o'z ichki timeout'iga rioya qilmasa ham, 10 soniyadan keyin javob beramiz
+  setTimeout(()=>{ if(!done) fail(); }, 10000);
 }
