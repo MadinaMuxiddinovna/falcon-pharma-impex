@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxv7aNnK-bpzsaodjkBM9P_kTjlnMV35oZTZbX3zE_DA9gtIcZL1fmxvpJcUvog-pHgSw/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw8KiVWUiuwT6J4EYyz6vMHusrZjP0TRpO0u96h8YA_W3Pa2HRauYLO4z4abdshb9gPzg/exec',
   API_KEY: 'FPI-2026-XkQ9mZr4tVwLbN',
 };
 
