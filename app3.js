@@ -625,7 +625,9 @@ async function vfSaveBranchToBase() {
   if (ST.visit.type !== 'pharmacy' || !ST.visit.target.rowNum) return;
   const branch = ST.visit.vals.branchNo;
   if (branch && branch !== ST.visit.target.branch) {
-    await apiPost({ action:'saveBranchNo', rowNum:ST.visit.target.rowNum, branchNo:branch });
+    await apiPost({ action:'saveBranchNo', rowNum:ST.visit.target.rowNum, branchNo:branch,
+      region:ST.visit.target.region||ST.user.region||'', district:ST.visit.target.district||ST.visit.vals.pharmTuman||'',
+      raw:ST.visit.target.raw||(ST.visit.target.inn+' | '+ST.visit.target.legalName) });
     ST.visit.target.branch = branch;
   }
 }
