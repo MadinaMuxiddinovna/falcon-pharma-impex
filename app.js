@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw2j5zm7DZLqax9bq2KhlwHYN4kHBADQBdcwGwc9V59NNOwFCqX6m7uZZrH2EohE4f2nQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxkOEbIdJ1N4ohm0jD9qxIfWZabQpd2kbTBy89yvqGNDLfkAPx8Qqd5NQjAT_eE8S9VEA/exec',
   API_KEY: 'FPI-2026-XkQ9mZr4tVwLbN',
 };
 
@@ -488,31 +488,19 @@ function vfShowStep(n) {
   if (n===4) renderVfStep4();
 }
 
-// GPS
+// GPS — endi butunlay sokin (foydalanuvchiga hech narsa ko'rsatilmaydi, darhol 2-bosqichga o'tadi)
 function renderVfStep1() {
-  document.getElementById('vfs1').innerHTML = `
-    <div class="alert alert-i">GPS joylashuv aniqlanmoqda...</div>
-    <div id="vf-gps-status" class="alert alert-w">Aniqlanmoqda...</div>
-    <button class="btn btn-o btn-bl hide" id="vf-gps-skip" onclick="vfShowStep(2)">GPS xato — baribir davom etish</button>
-    <button class="btn btn-p btn-bl hide" id="vf-gps-retry" onclick="vfGetGps()">Qayta urinish</button>`;
+  document.getElementById('vfs1').innerHTML = ``;
   vfGetGps();
+  vfShowStep(2); // darhol keyingi bosqichga o'tamiz, GPS fonda davom etadi
 }
 function vfGetGps() {
-  hideEl('vf-gps-skip'); hideEl('vf-gps-retry');
-  const s = document.getElementById('vf-gps-status');
   let done=false;
   const succeed=(pos)=>{
     if(done)return; done=true;
     ST.visit.gpsStart = { lat:pos.coords.latitude, lng:pos.coords.longitude, acc:Math.round(pos.coords.accuracy) };
-    if (s) { s.className='alert alert-ok'; s.textContent='✅ Joylashuv aniqlandi ('+ST.visit.gpsStart.acc+'m)'; }
-    setTimeout(() => vfShowStep(2), 500);
   };
-  const fail=()=>{
-    if(done)return; done=true;
-    if (s) { s.className='alert alert-r'; s.textContent='GPS ruxsati kerak — Sozlamalar → Joylashuv'; }
-    showEl('vf-gps-skip'); showEl('vf-gps-retry');
-  };
+  const fail=()=>{ done=true; };
   navigator.geolocation?.getCurrentPosition(succeed, fail, {enableHighAccuracy:true, timeout:9000, maximumAge:0});
-  // Qat'iy xavfsizlik chegarasi — brauzer o'z ichki timeout'iga rioya qilmasa ham, 10 soniyadan keyin javob beramiz
   setTimeout(()=>{ if(!done) fail(); }, 10000);
 }
