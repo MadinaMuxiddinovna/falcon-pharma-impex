@@ -1,6 +1,18 @@
 // Falcon Pharma Impex — Service Worker
 // Ilovani internetsiz ham OCHILADIGAN qiladi (offline-first PWA)
-const CACHE_NAME = 'fpi-cache-v1'; // Yangi versiya chiqarganda bu raqamni oshiring (masalan v2, v3...)
+//
+// MUHIM TUZATISH (#kritik): avvalgi versiya JS fayllarni "keshdan birinchi"
+// (cache-first) strategiyasi bilan yuklardi — bu degani, GitHub'da yangi
+// tuzatish chiqarilgandan keyin ham, brauzer ESKI, keshlangan app.js/app5.js
+// fayllarni ishlatishda davom etardi, chunki CACHE_NAME hech qachon
+// o'zgarmagan edi. Bu — ko'p sonli tuzatishlarning "ishlamayotganday"
+// ko'rinishining asosiy sababi bo'lgan bo'lishi mumkin edi.
+//
+// Endi: JS/HTML fayllar uchun "tarmoqdan birinchi" (network-first) strategiya —
+// har doim ENG YANGI versiyani olishga harakat qiladi, faqat internet
+// bo'lmasa keshga qaytadi. Rasm/manifest kabi kam o'zgaradigan fayllar esa
+// hamon tezlik uchun keshdan olinadi.
+const CACHE_NAME = 'fpi-cache-v2'; // MUHIM: har safar app*.js o'zgarganda, bu raqamni oshiring (v3, v4...)!
 const APP_SHELL = [
   './',
   './index.html',
@@ -15,12 +27,12 @@ const APP_SHELL = [
   './icon-512.png',
   './tashkent_tumanlar.geojson',
 ];
+// Bu fayllar tez-tez o'zgaradi — HAR DOIM tarmoqdan (eng yangisidan) olinishi kerak
+const NETWORK_FIRST_EXT = ['.js', '.html'];
 
-// O'RNATISH: barcha asosiy fayllarni keshga oldindan yuklab qo'yamiz
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      // Har bir faylni alohida qo'shamiz — biror fayl topilmasa ham, boshqalari saqlanib qolsin
       return Promise.all(
         APP_SHELL.map((url) =>
           cache.add(url).catch((err) => console.warn('SW: keshlab bo\'lmadi:', url, err))
@@ -28,10 +40,9 @@ self.addEventListener('install', (event) => {
       );
     })
   );
-  self.skipWaiting(); // Yangi versiya darhol faollashsin
+  self.skipWaiting(); // Yangi versiya darhol faollashsin, eski kutib turmasin
 });
 
-// FAOLLASHTIRISH: eski keshlarni tozalaymiz
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((names) =>
@@ -40,27 +51,24 @@ self.addEventListener('activate', (event) => {
       )
     )
   );
-  self.clients.claim();
+  self.clients.claim(); // Barcha ochiq oynalarda darhol yangi SW ishlatilsin
 });
 
-// SO'ROVLARNI USHLAB OLISH:
-// - Apps Script (API) so'rovlari — har doim internetdan (tarmoqdan) so'raladi, keshlanmaydi
-//   (chunki bu jonli ma'lumot — vizit saqlash, login va h.k.)
-// - Boshqa barcha fayllar (HTML/JS/CSS/rasm) — avval keshdan, topilmasa tarmoqdan
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
 
-  // Apps Script so'rovlarini (backend API) keshlab bo'lmaydi — har doim tarmoqqa yuboramiz
+  // Apps Script (backend API) so'rovlarini hech qachon keshlamaymiz
   if (url.includes('script.google.com')) {
-    return; // brauzerning o'zi to'g'ridan-to'g'ri tarmoqqa yuboradi, SW aralashmaydi
+    return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached; // Keshda bor — darhol qaytaramiz (tez, internetsiz ham ishlaydi)
-      return fetch(event.request)
+  const isNetworkFirst = NETWORK_FIRST_EXT.some((ext) => url.includes(ext)) || event.request.mode === 'navigate';
+
+  if (isNetworkFirst) {
+    // TARMOQDAN BIRINCHI: har doim eng yangi versiyani olishga harakat qilamiz
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
         .then((response) => {
-          // Muvaffaqiyatli yuklangan yangi faylni ham keshga qo'shib qo'yamiz
           if (response && response.status === 200) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
@@ -68,9 +76,23 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          // Internet ham yo'q, keshda ham yo'q — asosiy sahifani qaytaramiz (bo'sh ekran o'rniga)
-          if (event.request.mode === 'navigate') return caches.match('./index.html');
+          // Internet yo'q — keshdagi (eski bo'lsa ham) versiyani ishlatamiz
+          return caches.match(event.request).then((cached) => cached || caches.match('./index.html'));
+        })
+    );
+  } else {
+    // KESHDAN BIRINCHI: rasm/manifest kabi kam o'zgaradigan fayllar uchun (tezroq)
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
         });
-    })
-  );
+      })
+    );
+  }
 });
