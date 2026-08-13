@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyoG3B-uap7At43RdCMOUWQ6Ux2dPudTGBduUpIsW1CRpAwETepZmu-wCbGQh1oOUdm1A/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwTymvsx25YgNn7YI8YkP1cCTFLKq2KagJd15x1p1fxIQ8rcBJh4nt_EjVdQ64Pudr4-w/exec',
   API_KEY: 'FPI-2026-XkQ9mZr4tVwLbN',
 };
 
@@ -140,20 +140,32 @@ async function flushQueue() {
   for (const item of q) {
     try {
       const { _savedAt, _retries, ...data } = item;
-      await fetch(CFG.SCRIPT_URL, {
-        method:'POST', mode:'no-cors',
-        headers:{'Content-Type':'application/json'},
+      const r = await fetch(CFG.SCRIPT_URL, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
         body: JSON.stringify(data)
       });
+      const j = await r.json().catch(()=>({}));
+      if (j && j.error) {
+        // Server aniq xato qaytardi (masalan "Server band") — qayta urinamiz, navbatdan o'chirmaymiz
+        item._retries = (item._retries||0) + 1;
+        if (item._retries < 8) failed.push(item);
+      }
+      // j.error yo'q bo'lsa — muvaffaqiyatli, navbatdan chiqarib tashlaymiz (failed'ga qo'shmaymiz)
     } catch(e) {
+      // Tarmoq xatosi (internet yo'q va h.k.) — qayta urinamiz
       item._retries = (item._retries||0) + 1;
-      if (item._retries < 5) failed.push(item);
+      if (item._retries < 8) failed.push(item);
     }
   }
   localStorage.setItem('ff_q', JSON.stringify(failed));
 }
 window.addEventListener('online',  () => { const b=document.getElementById('offline-bar'); if(b)b.style.display='none'; setTimeout(flushQueue,1500); });
 window.addEventListener('offline', () => { const b=document.getElementById('offline-bar'); if(b)b.style.display='block'; });
+// Xavfsizlik uchun — har 30 soniyada navbatni tekshirib turamiz (ba'zi qurilmalarda
+// 'online' hodisasi ishonchli ishlamasligi mumkin, bu holda navbatdagi vizitlar
+// abadiy tiqilib qolmasin)
+setInterval(flushQueue, 30000);
 
 // ═══ API ════════════════════════════════════════════
 const _apiCache = {};
