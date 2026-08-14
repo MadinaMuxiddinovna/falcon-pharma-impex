@@ -4,7 +4,7 @@
 // Tezlashtirish: login tezda, ma'lumotlar parallel
 
 const CFG = {
-  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxNtgGKnLjVZwAiZikmKV2a0MR7X_B4YCvCv2MlzkpR1hNwFPVb7EixlW7PUcKGSBzWjQ/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbw9iNbcQ4221BXwDjIrxvtZl4sivpDMoQhx9bYr9XZ_qP31U9Ykwxjg8TQ9BrKk0jop/exec',
   API_KEY: 'FPI-2026-XkQ9mZr4tVwLbN',
 };
 
@@ -187,17 +187,15 @@ async function apiPost(d) {
     // maydonlar doim "undefined" bo'lgan (#14 — balans yangilanmasligi shundan edi).
     // text/plain Content-Type + standart 'cors' rejimi — bu "simple request" hisoblanadi,
     // Apps Script preflight (OPTIONS) so'ramaydi VA javobni o'qish mumkin bo'ladi.
-    // 45 soniyalik vaqt chegarasi — server sekin javob bersa ham ekran cheksiz
-    // "Saqlanmoqda..." holatida qolib ketmasin, aks holda oflayn navbatga o'tadi (#tezlik)
-    const ctrl = new AbortController();
-    const timeoutId = setTimeout(()=>ctrl.abort(), 45000);
+    // MUHIM: sun'iy vaqt chegarasi OLIB TASHLANDI — u haqiqiy muvaffaqiyatli
+    // so'rovlarni erta bekor qilib, ularni ishonchsiz "navbat" mexanizmiga
+    // yuborib, vizit yo'qolishiga sabab bo'lgani aniqlandi. Endi so'rov
+    // tabiiy ravishda tugashigacha kutiladi — sekin bo'lsa ham, VIZIT SAQLANADI.
     const r = await fetch(CFG.SCRIPT_URL, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify(d),
-      signal: ctrl.signal
+      body: JSON.stringify(d)
     });
-    clearTimeout(timeoutId);
     let resp = { status:'sent' };
     try { const j = await r.json(); if (j && typeof j==='object') resp = { status:'sent', ...j }; } catch(e2) {}
     invalidateApiCache(d.action);
