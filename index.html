@@ -295,12 +295,43 @@ textarea{resize:vertical;min-height:76px}
 </div>
 
 <!-- JS FAYLLAR -->
-<script src="app.js?v=30"></script>
-<script src="app2.js?v=30"></script>
-<script src="app3.js?v=30"></script>
-<script src="app4.js?v=30"></script>
-<script src="app5.js?v=30"></script>
-<script src="app4_manager.js?v=30"></script>
+<script src="app.js?v=31"></script>
+<script src="app2.js?v=31"></script>
+<script src="app3.js?v=31"></script>
+<script src="app4.js?v=31"></script>
+<script src="app5.js?v=31"></script>
+<script src="app4_manager.js?v=31"></script>
 
+<script>
+  // Service Worker'ni ro'yxatdan o'tkazamiz — ilova endi internetsiz ham ochiladi
+  //
+  // MUHIM TUZATISH (#kritik-2): eski qurilmalarda ESKI Service Worker allaqachon
+  // faol bo'lib turgan bo'lishi mumkin — u esa hech qachon o'zi tekshirib
+  // yangilanmaydi (brauzer buni kamdan-kam va sekin tekshiradi). Natijada sayt
+  // serverda tuzatilgan bo'lsa ham, o'sha qurilma doim ESKI app*.js larni
+  // ishlatishda davom etadi. Endi: har safar ilova ochilganda MAJBURIY ravishda
+  // yangi SW borligini tekshiramiz (reg.update()) va yangisi topilib, u ishga
+  // tushganda (controllerchange) sahifani BIR MARTA avtomatik qayta yuklaymiz —
+  // shu orqali eski, "qotib qolgan" qurilmalar ham o'zi tuzalib ketadi.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => {
+          console.log('Service Worker ro\'yxatdan o\'tdi:', reg.scope);
+          reg.update().catch(()=>{}); // darhol yangilanishni tekshiramiz
+          // Har 60 soniyada ham tekshirib turamiz — ilova uzoq ochiq tursa ham
+          setInterval(() => reg.update().catch(()=>{}), 60000);
+        })
+        .catch(err => console.warn('Service Worker xatosi:', err));
+
+      let _swRefreshed = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (_swRefreshed) return;
+        _swRefreshed = true;
+        location.reload();
+      });
+    });
+  }
+</script>
 </body>
 </html>
