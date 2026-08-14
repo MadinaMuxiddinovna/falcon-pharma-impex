@@ -12,7 +12,7 @@
 // har doim ENG YANGI versiyani olishga harakat qiladi, faqat internet
 // bo'lmasa keshga qaytadi. Rasm/manifest kabi kam o'zgaradigan fayllar esa
 // hamon tezlik uchun keshdan olinadi.
-const CACHE_NAME = 'fpi-cache-v2'; // MUHIM: har safar app*.js o'zgarganda, bu raqamni oshiring (v3, v4...)!
+const CACHE_NAME = 'fpi-cache-v3'; // MUHIM: har safar app*.js o'zgarganda, bu raqamni oshiring (v4, v5...)!
 const APP_SHELL = [
   './',
   './index.html',
