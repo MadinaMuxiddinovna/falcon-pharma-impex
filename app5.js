@@ -152,7 +152,8 @@ async function vfFinishVisit() {
     if(btn){btn.textContent='Saqlandi (navbatda) ✅';}
     showModal('Vizit saqlandi',
       '<p>Internet/server sekin javob berdi, lekin vizitingiz qurilmangizda xavfsiz saqlandi va internet borligida avtomatik yuboriladi. Qayta kiritishning hojati yo\'q.</p>',
-      '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'visit-flow-container\').innerHTML=\'\'">OK</button>');
+      '<button class="btn btn-p" onclick="closeModal();flushQueue();document.getElementById(\'visit-flow-container\').innerHTML=\'\'">OK</button>');
+    flushQueue(); // Darhol qayta yuborishga urinamiz — 30 soniyalik navbatni kutmasdan
     return;
   }
   if(resp&&resp.error&&resp.error.indexOf('Server band')>=0){
@@ -161,7 +162,7 @@ async function vfFinishVisit() {
     if(btn){btn.textContent='Saqlandi (navbatda) ✅';}
     showModal('Vizit saqlandi',
       '<p>Ayni paytda boshqa xodim ham saqlamoqda edi — vizitingiz avtomatik navbatga qo\'yildi va bir necha soniyada o\'zi yuboriladi. Qayta kiritishning hojati yo\'q.</p>',
-      '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'visit-flow-container\').innerHTML=\'\'">OK</button>');
+      '<button class="btn btn-p" onclick="closeModal();flushQueue();document.getElementById(\'visit-flow-container\').innerHTML=\'\'">OK</button>');
     setTimeout(flushQueue, 3000); // Bir necha soniyadan keyin avtomatik qayta urinamiz
     return;
   }
