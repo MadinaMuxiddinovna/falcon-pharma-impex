@@ -310,11 +310,19 @@ textarea{resize:vertical;min-height:76px}
   // yangilanmaydi (brauzer buni kamdan-kam va sekin tekshiradi). Natijada sayt
   // serverda tuzatilgan bo'lsa ham, o'sha qurilma doim ESKI app*.js larni
   // ishlatishda davom etadi. Endi: har safar ilova ochilganda MAJBURIY ravishda
-  // yangi SW borligini tekshiramiz (reg.update()) va yangisi topilib, u ishga
-  // tushganda (controllerchange) sahifani BIR MARTA avtomatik qayta yuklaymiz —
-  // shu orqali eski, "qotib qolgan" qurilmalar ham o'zi tuzalib ketadi.
+  // yangi SW borligini tekshiramiz (reg.update()).
+  //
+  // MUHIM TUZATISH (#kritik-3): birinchi marta ochilganda (hali SW umuman
+  // bo'lmaganda) 'controllerchange' hodisasi HAM ishga tushadi — bu "yangilanish"
+  // emas, oddiy birinchi o'rnatish. Avvalgi kodda buni farqlamaganim uchun sahifa
+  // ba'zi hollarda ochilib-yopilib, qayta yuklanib turishi mumkin edi ("ozgina
+  // ko'rinib ochib ketish"). Endi: reload FAQAT eski SW allaqachon faol bo'lib,
+  // YANGISI uni almashtirganda ishga tushadi — va sessionStorage bilan bir marta
+  // ortiq ishlamasligi kafolatlanadi.
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
+      const hadControllerBefore = !!navigator.serviceWorker.controller;
+
       navigator.serviceWorker.register('./sw.js')
         .then(reg => {
           console.log('Service Worker ro\'yxatdan o\'tdi:', reg.scope);
@@ -324,12 +332,14 @@ textarea{resize:vertical;min-height:76px}
         })
         .catch(err => console.warn('Service Worker xatosi:', err));
 
-      let _swRefreshed = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (_swRefreshed) return;
-        _swRefreshed = true;
-        location.reload();
-      });
+      // Faqat AVVAL faol SW bo'lgan holatda (ya'ni bu haqiqiy yangilanish,
+      // birinchi o'rnatish emas) — va bir sessiyada faqat bir marta.
+      if (hadControllerBefore && !sessionStorage.getItem('ff_sw_reloaded')) {
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          sessionStorage.setItem('ff_sw_reloaded', '1');
+          location.reload();
+        });
+      }
     });
   }
 </script>
