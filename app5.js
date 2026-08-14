@@ -146,25 +146,33 @@ async function vfFinishVisit() {
     };
   }
 
-  const resp=await apiPost(payload);
+  let resp=await apiPost(payload);
+  // Agar birinchi urinish muvaffaqiyatsiz bo'lsa (tarmoq xatosi/navbatga tushdi),
+  // DARHOL, ANIQ tasdiqlanguncha qayta urinamiz — "ehtimol saqlangandir" deb
+  // taxmin qilib, foydalanuvchini yolg'on tinchlantirmaymiz (#aniq holat)
+  let attempts=0;
+  while(resp&&(resp.status==='queued')&&attempts<3){
+    attempts++;
+    if(btn){btn.textContent='Qayta urinilmoqda... ('+attempts+'/3)';}
+    await new Promise(r=>setTimeout(r,4000));
+    resp=await apiPost(payload);
+  }
   if(resp&&resp.status==='queued'){
-    // Server sekin javob berdi yoki oflayn — vizit qurilmada xavfsiz saqlandi, avtomatik qayta yuboriladi
-    if(btn){btn.textContent='Saqlandi (navbatda) ✅';}
-    showModal('Vizit saqlandi',
-      '<p>Internet/server sekin javob berdi, lekin vizitingiz qurilmangizda xavfsiz saqlandi va internet borligida avtomatik yuboriladi. Qayta kiritishning hojati yo\'q.</p>',
-      '<button class="btn btn-p" onclick="closeModal();flushQueue();document.getElementById(\'visit-flow-container\').innerHTML=\'\'">OK</button>');
-    flushQueue(); // Darhol qayta yuborishga urinamiz — 30 soniyalik navbatni kutmasdan
+    // 3 marta urinishdan keyin ham hali tasdiqlanmadi — bu ANIQ holatni ko'rsatamiz,
+    // "saqlandi" demay, foydalanuvchi internetni tekshirib qayta urinishi kerakligini aytamiz
+    if(btn){btn.disabled=false;btn.textContent='Qayta urinish kerak ⚠️';}
+    alert("Internet aloqasi yo'q yoki juda sekin. Vizit hali SAQLANMADI. Iltimos, internetni tekshirib, \"Vizitni saqlash\" tugmasini qayta bosing.");
     return;
   }
   if(resp&&resp.error&&resp.error.indexOf('Server band')>=0){
-    // Boshqa xodim AYNI shu payt saqlayotgan edi — avtomatik navbatga qo'yamiz, qo'lda qayta urinish shart emas
-    queueSave(payload);
-    if(btn){btn.textContent='Saqlandi (navbatda) ✅';}
-    showModal('Vizit saqlandi',
-      '<p>Ayni paytda boshqa xodim ham saqlamoqda edi — vizitingiz avtomatik navbatga qo\'yildi va bir necha soniyada o\'zi yuboriladi. Qayta kiritishning hojati yo\'q.</p>',
-      '<button class="btn btn-p" onclick="closeModal();flushQueue();document.getElementById(\'visit-flow-container\').innerHTML=\'\'">OK</button>');
-    setTimeout(flushQueue, 3000); // Bir necha soniyadan keyin avtomatik qayta urinamiz
-    return;
+    if(btn){btn.textContent='Qayta urinilmoqda...';}
+    await new Promise(r=>setTimeout(r,4000));
+    resp=await apiPost(payload);
+    if(resp&&resp.error){
+      if(btn){btn.disabled=false;btn.textContent='Qayta urinish kerak ⚠️';}
+      alert("Server hali band. Vizit hali SAQLANMADI. Iltimos, \"Vizitni saqlash\" tugmasini qayta bosing.");
+      return;
+    }
   }
   if(resp&&resp.error){
     if(btn){btn.disabled=false;btn.textContent='Vizitni saqlash ✅';}
