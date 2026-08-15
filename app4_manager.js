@@ -357,6 +357,9 @@ async function pdConfirmPromaPay(){
 
 async function pdFinalizePromaPay(summa,comment){
   const p=ST.mgrPay.promoData;
+  // Vrachning to'liq ma'lumotini (mutaxassislik, tuman, telefon) bazadan topamiz —
+  // Promo yozuvida faqat ism va ish joyi bor, to'liq profil emas
+  const fullDoc=(ST.doctors||[]).find(dd=>(dd.name||'').trim().toLowerCase()===(p['Vrach FISh']||'').trim().toLowerCase());
   // Optimistik balans — darhol ko'rsatamiz (#14)
   const optimisticBal=(ST.mgrBalance?.qolgan||0)-summa;
   updateBalanceUI(optimisticBal);
@@ -365,7 +368,9 @@ async function pdFinalizePromaPay(summa,comment){
     '<button class="btn btn-p" onclick="closeModal();document.getElementById(\'pd-flow\').innerHTML=\'\'">OK</button>');
   const resp=await apiPost({action:'mgrPayDoctor',mgrId:ST.user.id,mgrName:ST.user.name,
     type:'PROMA',date:todayStr(),doctorName:p['Vrach FISh']||'',
-    doctorSpec:'',doctorObject:p['Ish joyi']||'',doctorDistrict:'',doctorPhone:'',
+    doctorSpec:fullDoc?.specialty||'',doctorObject:p['Ish joyi']||fullDoc?.object||'',
+    doctorDistrict:fullDoc?.district||'',doctorPhone:fullDoc?.phone||'',
+    mgrDistrict:ST.user.district||'',mgrRegion:ST.user.region||'',
     mpId:p['Hodim ID']||'',mpName:p['Hodim Ismi']||'',summa,comment});
   // Promo holati yangilash (fon rejimida) — menejer GPS bilan (#13)
   if(p._row){
@@ -449,6 +454,7 @@ async function pdFinalizePay(summa,comment){
   const doPay=(lat,lng)=>apiPost({action:'mgrPayDoctor',mgrId:ST.user.id,mgrName:ST.user.name,
     type:'DOKTOR',date:todayStr(),doctorName:t.name,doctorSpec:t.specialty||'',
     doctorObject:t.object||'',doctorDistrict:t.district||'',doctorPhone:t.phone||'',
+    mgrDistrict:ST.user.district||'',mgrRegion:ST.user.region||'',
     mpId:'',mpName:'',summa,comment,lat:lat||'',lng:lng||''});
   let resp;
   if(navigator.geolocation){
