@@ -356,6 +356,9 @@ async function pdConfirmPromaPay(){
 }
 
 async function pdFinalizePromaPay(summa,comment){
+  if(window._pdPaying) return; // Ikki marta bosishning oldini olamiz (#1)
+  window._pdPaying=true;
+  try{
   const p=ST.mgrPay.promoData;
   // Vrachning to'liq ma'lumotini (mutaxassislik, tuman, telefon) bazadan topamiz —
   // Promo yozuvida faqat ism va ish joyi bor, to'liq profil emas
@@ -391,6 +394,7 @@ async function pdFinalizePromaPay(summa,comment){
     const modalBal=document.getElementById('pd-modal-bal');
     if(modalBal){modalBal.textContent=fmtNum(newBal);modalBal.style.color=newBal<0?'var(--danger)':'var(--ok)';}
   }
+  }finally{ window._pdPaying=false; }
 }
 
 function pdSearchDoc(q){
@@ -444,6 +448,9 @@ async function pdConfirmPay(){
      <button class="btn btn-pu" onclick="closeModal();pdFinalizePay(${summa},'${comment}')">Tasdiqlash</button>`);
 }
 async function pdFinalizePay(summa,comment){
+  if(window._pdPaying) return; // Ikki marta bosishning oldini olamiz (#1)
+  window._pdPaying=true;
+  try{
   const t=ST.mgrPay.target;
   // Optimistik balans — darhol hisoblab ko'rsatamiz (#14), server javobi kelganda aniqlashtiramiz
   const optimisticBal=(ST.mgrBalance?.qolgan||0)-summa;
@@ -475,6 +482,7 @@ async function pdFinalizePay(summa,comment){
     const modalBal=document.getElementById('pd-modal-bal');
     if(modalBal){modalBal.textContent=fmtNum(newBal);modalBal.style.color=newBal<0?'var(--danger)':'var(--ok)';}
   }
+  }finally{ window._pdPaying=false; }
 }
 function updateBalanceUI(newBal){
   ST.mgrBalance=ST.mgrBalance||{};ST.mgrBalance.qolgan=newBal;
