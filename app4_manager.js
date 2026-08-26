@@ -697,7 +697,10 @@ async function renderTeamKPI(){
   const effRole=(ST.user.role==='ta'&&ST.user.isTeamLead)?'manager':ST.user.role;
   const kpi=await apiGet('getKPI',{role:effRole,empId:ST.user.id,date},false).catch(()=>({}));
   const el=document.getElementById('kpi-team');if(!el)return;
-  const entries=Object.entries(kpi);
+  const entries=Object.entries(kpi).filter(([id,s])=>{
+    const r=(s.role||'').toLowerCase();
+    return r!=='manager'&&r!=='admin';
+  });
   if(!entries.length){el.innerHTML='<div class="alert alert-i">Bu sana uchun ma\'lumot yo\'q</div>';el.className='';return;}
   el.className='';
   const isAgentTeam=(ST.user.role==='ta'&&ST.user.isTeamLead);
