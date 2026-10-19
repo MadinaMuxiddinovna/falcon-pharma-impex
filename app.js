@@ -197,6 +197,10 @@ async function apiPost(d) {
       body: JSON.stringify(d)
     });
     let resp = { status:'sent' };
+    // Server JSON o'rniga HTML sahifa (kirish/ruxsat so'rovi yoki xato sahifasi) qaytarsa — amal BAJARILMAGAN,
+    // uni "yuborildi" deb hisoblamaymiz: navbatga qo'yib qayta urinamiz
+    const ct = (r.headers && r.headers.get && r.headers.get('content-type')) || '';
+    if (/html/i.test(ct) || r.status >= 500) { queueSave(d); return { status:'queued', error:'server javobi noto\'g\'ri ('+r.status+')' }; }
     try { const j = await r.json(); if (j && typeof j==='object') resp = { status:'sent', ...j }; } catch(e2) {}
     invalidateApiCache(d.action);
     return resp;
