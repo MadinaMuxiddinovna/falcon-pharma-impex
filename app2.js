@@ -684,8 +684,13 @@ async function renderPlans(){
   el.innerHTML='<div class="alert alert-i">Yuklanmoqda...</div>';
   // Har safar server dan yangi ma'lumot olamiz — reja tasdiqlangani/avtomatik
   // qo'shilgani darhol ko'rinishi uchun (#1, #8)
+  let loadErr='';
   try{
-    const fresh=await apiGet('getPlans',{empId:ST.user.id,role:ST.user.role},false).catch(()=>null);
+    const t0=Date.now();
+    const fresh=await apiGet('getPlans',{empId:ST.user.id,role:ST.user.role},false).catch(e=>{loadErr=(e&&e.message)||'tarmoq xatosi';return null;});
+    if(fresh&&fresh.error) loadErr=String(fresh.error);
+    else if(fresh&&!Array.isArray(fresh)) loadErr='kutilmagan javob';
+    if(loadErr) console.warn('getPlans xato:',loadErr,(Date.now()-t0)+'ms');
     if(fresh&&!fresh.error&&Array.isArray(fresh)){
       // Server hali "ko'rmagan" (yozuv kechikkan) lekin shu sessiyada qo'shilgan rejalarni yo'qotmaymiz
       const merged=[...fresh];
@@ -713,9 +718,10 @@ async function renderPlans(){
     // Sana formatini tekshiramiz
     console.log('Plans:', ST.plans.slice(0,3).map(p=>p['Vizit sanasi']||p.date));
   }
-  if(!list.length){el.innerHTML='<div class="alert alert-i">Bu davr uchun reja yo\'q</div>';return;}
+  const errBanner=loadErr?('<div class="alert alert-w" style="margin-bottom:10px">Rejalarni serverdan yangilab bo\'lmadi ('+loadErr+'). <span style="text-decoration:underline;cursor:pointer;font-weight:700" onclick="renderPlans()">Qayta urinish</span></div>'):'';
+  if(!list.length){el.innerHTML=errBanner+'<div class="alert alert-i">Bu davr uchun reja yo\'q</div>';return;}
   const byDate={};list.forEach(p=>{const d=p['Vizit sanasi']||p.date||'';if(!byDate[d])byDate[d]=[];byDate[d].push(p);});
-  el.innerHTML=Object.entries(byDate).sort().map(([date,plans])=>`
+  el.innerHTML=errBanner+Object.entries(byDate).sort().map(([date,plans])=>`
     <div style="margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;
         letter-spacing:.5px;margin-bottom:6px;padding:5px 0;border-bottom:1px solid var(--border)">
