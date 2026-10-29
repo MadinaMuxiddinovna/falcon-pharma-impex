@@ -719,7 +719,14 @@ async function renderPlans(){
     console.log('Plans:', ST.plans.slice(0,3).map(p=>p['Vizit sanasi']||p.date));
   }
   const errBanner=loadErr?('<div class="alert alert-w" style="margin-bottom:10px">Rejalarni serverdan yangilab bo\'lmadi ('+loadErr+'). <span style="text-decoration:underline;cursor:pointer;font-weight:700" onclick="renderPlans()">Qayta urinish</span></div>'):'';
-  if(!list.length){el.innerHTML=errBanner+'<div class="alert alert-i">Bu davr uchun reja yo\'q</div>';return;}
+  if(!list.length){
+    let hint='';
+    if(ST.plans&&ST.plans.length){
+      const ds=[...new Set(ST.plans.map(p=>(p['Vizit sanasi']||p.date||'').toString().slice(0,10)).filter(Boolean))].sort();
+      hint='<div style="font-size:12px;color:var(--muted);margin-top:6px">Sizda jami '+ST.plans.length+' ta reja bor (sanalari: '+ds.slice(-6).join(', ')+'). Tanlangan davr: '+from+' – '+to+'</div>';
+    }
+    el.innerHTML=errBanner+'<div class="alert alert-i">Bu davr uchun reja yo\'q'+hint+'</div>';return;
+  }
   const byDate={};list.forEach(p=>{const d=p['Vizit sanasi']||p.date||'';if(!byDate[d])byDate[d]=[];byDate[d].push(p);});
   el.innerHTML=errBanner+Object.entries(byDate).sort().map(([date,plans])=>`
     <div style="margin-bottom:14px">
