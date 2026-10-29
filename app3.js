@@ -200,10 +200,20 @@ function vfSelectDoc(r) {
   ST.visit.target = r;
   hideEl('vf-doc-res'); hideEl('vf-new-doc-block');
   document.getElementById('vf-doc-q').value = r.name;
+  const noDist = !String(r.district||'').trim();
   document.getElementById('vf-doc-sel').innerHTML =
-    `✅ <b>${r.name}</b> · ${r.specialty||''} · ${r.object||''} · ${r.district||''} · ${r.phone||''} · Kat: <b>${r.category||'—'}</b>`;
+    `✅ <b>${r.name}</b> · ${r.specialty||''} · ${r.object||''} · ${r.district||''} · ${r.phone||''} · Kat: <b>${r.category||'—'}</b>` +
+    (noDist ? `<div style="margin-top:8px"><label style="font-size:12px;font-weight:700">Vrachning tumani <span class="req">*</span> (bazada ko'rsatilmagan)</label>
+      <select id="vf-doc-dist" onchange="vfSetDocDistrict(this.value)"><option value="">— Tumanni tanlang —</option>${vfBuildTumanOptions().replace(' selected','')}</select></div>` : '');
   showEl('vf-doc-sel');
-  document.getElementById('vf-next2').disabled = false;
+  // Tuman bazada bo'sh bo'lsa — tanlanmaguncha davom etib bo'lmaydi (sheetsga to'liq tushishi uchun)
+  document.getElementById('vf-next2').disabled = noDist;
+}
+function vfSetDocDistrict(v) {
+  if (!ST.visit.target) return;
+  ST.visit.target.district = v || '';
+  const b = document.getElementById('vf-next2');
+  if (b) b.disabled = !v;
 }
 
 function vfConfirmNewDoctor() {
@@ -253,12 +263,14 @@ function vfConfirmNewDoctor() {
 }
 
 async function vfFinalizeNewDoctor(newDoc) {
+  // Serverga yuborishni DARHOL boshlaymiz (pastdagi ekran amallari xato bersa ham yo'qolmasin)
+  const _savePromise = apiPost({ action:'addNewDoctor', ...newDoc, empName:ST.user.name });
   ST.doctors.push(newDoc); ST.visit.target = newDoc; ST.visit.newObjData = newDoc;
   document.getElementById('vf-doc-q').value = newDoc.name;
   document.getElementById('vf-doc-sel').innerHTML = `✅ <b>${newDoc.name}</b> (yangi) · ${newDoc.object}`;
   showEl('vf-doc-sel'); hideEl('vf-new-doc-block');
   document.getElementById('vf-next2').disabled = false;
-  await apiPost({ action:'addNewDoctor', ...newDoc, empName:ST.user.name });
+  await _savePromise;
 }
 
 // ── DORIXONA TANLASH ────────────────────────────────
