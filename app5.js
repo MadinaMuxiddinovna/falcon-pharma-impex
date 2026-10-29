@@ -103,6 +103,7 @@ async function vfFinishVisit() {
       doctorName:ST.visit.target.name, doctorSpec:ST.visit.target.specialty,
       doctorObject:ST.visit.target.object, doctorDistrict:ST.visit.target.district,
       doctorCategory:ST.visit.target.category, doctorPhone:ST.visit.target.phone,
+      newDoc:(ST.visit.target._isNew?ST.visit.target:undefined),
       goal:ST.visit.vals.goal||'', goalOther:(document.getElementById('vf-goal-other')?.value||''),
       products:ST.visit.products.filter(p=>p.name&&p.qty>0),
       sampleRequested:ST.visit.vals.sample==='Ha',
