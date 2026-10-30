@@ -704,8 +704,23 @@ async function renderPlans(){
     }
   }catch(e){}
   const today=todayStr();let from=today,to=today;
-  if(planFilter==='week'){const w=new Date();w.setDate(w.getDate()+7);to=w.toISOString().split('T')[0];}
-  if(planFilter==='month'){const m=new Date();m.setMonth(m.getMonth()+1);to=m.toISOString().split('T')[0];}
+  const _iso=function(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0');};
+  if(planFilter==='week'){
+    // Joriy hafta (dushanbadan) + bugundan keyingi 7 kun — o'tgan kunlari ham, kelgusi kunlari ham ko'rinsin
+    const now=new Date();const dow=(now.getDay()+6)%7;
+    const mon=new Date(now);mon.setDate(now.getDate()-dow);
+    const sun=new Date(mon);sun.setDate(mon.getDate()+6);
+    const p7=new Date(now);p7.setDate(now.getDate()+7);
+    from=_iso(mon);to=_iso(sun>p7?sun:p7);
+  }
+  if(planFilter==='month'){
+    // Joriy oy boshidan (1-sana) oy oxirigacha / bugundan 1 oy keyingacha
+    const now=new Date();
+    const first=new Date(now.getFullYear(),now.getMonth(),1);
+    const last=new Date(now.getFullYear(),now.getMonth()+1,0);
+    const p1=new Date(now);p1.setMonth(now.getMonth()+1);
+    from=_iso(first);to=_iso(last>p1?last:p1);
+  }
   const list=ST.plans.filter(p=>{
     const d=(p['Vizit sanasi']||p.date||'').toString().slice(0,10);
     if(!d||d==='undefined'||d==='NaN') return false;
