@@ -725,7 +725,18 @@ async function renderPlans(){
       const ds=[...new Set(ST.plans.map(p=>(p['Vizit sanasi']||p.date||'').toString().slice(0,10)).filter(Boolean))].sort();
       hint='<div style="font-size:12px;color:var(--muted);margin-top:6px">Sizda jami '+ST.plans.length+' ta reja bor (sanalari: '+ds.slice(-6).join(', ')+'). Tanlangan davr: '+from+' – '+to+'</div>';
     }
-    el.innerHTML=errBanner+'<div class="alert alert-i">Bu davr uchun reja yo\'q'+hint+'</div>';return;
+    el.innerHTML=errBanner+'<div class="alert alert-i">Bu davr uchun reja yo\'q'+hint+'</div><div id="plan-diag" style="font-size:11px;color:var(--muted);margin-top:8px;word-break:break-word">Tekshirilmoqda...</div>';
+    // Avtomatik tashxis: serverdagi Rejalar_MP va shu xodimning rejalari haqida qisqa ma'lumot
+    apiGet('debugPlans',{empId:ST.user.id},false).then(j=>{
+      const dEl=document.getElementById('plan-diag'); if(!dEl) return;
+      let t;
+      if(!j) t='Tashxis: serverdan javob yo\'q';
+      else if(j.error) t='Tashxis: '+j.error;
+      else if(j.status==='ok'&&j.v&&!j.sarlavhalar) t='Tashxis: serverda ESKI kod ishlayapti (yangi Code.gs "New version" qilib deploy qilinmagan yoki boshqa manzil)';
+      else t='Tashxis: Rejalar_MP da '+j.jamiQator+' qator; ID '+ST.user.id+' uchun '+j.sizningRejalar+' ta reja; sanalar: '+((j.sizningSanalar||[]).slice(0,4).join(' | ')||'—')+'; server bugun: '+j.bugun+'; telefon bugun: '+todayStr()+'; sana turlari: '+JSON.stringify(j.sanaTurlari);
+      dEl.textContent=t;
+    }).catch(e=>{const dEl=document.getElementById('plan-diag'); if(dEl) dEl.textContent='Tashxis xatosi: '+(e&&e.message||e);});
+    return;
   }
   const byDate={};list.forEach(p=>{const d=p['Vizit sanasi']||p.date||'';if(!byDate[d])byDate[d]=[];byDate[d].push(p);});
   el.innerHTML=errBanner+Object.entries(byDate).sort().map(([date,plans])=>`
