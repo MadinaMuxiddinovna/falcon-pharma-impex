@@ -733,7 +733,7 @@ async function renderPlans(){
       if(!j) t='Tashxis: serverdan javob yo\'q';
       else if(j.error) t='Tashxis: '+j.error;
       else if(j.status==='ok'&&j.v&&!j.sarlavhalar) t='Tashxis: serverda ESKI kod ishlayapti (yangi Code.gs "New version" qilib deploy qilinmagan yoki boshqa manzil)';
-      else t='Tashxis: Rejalar_MP da '+j.jamiQator+' qator; ID '+ST.user.id+' uchun '+j.sizningRejalar+' ta reja; sanalar: '+((j.sizningSanalar||[]).slice(0,4).join(' | ')||'—')+'; server bugun: '+j.bugun+'; telefon bugun: '+todayStr()+'; sana turlari: '+JSON.stringify(j.sanaTurlari);
+      else t='Tashxis: Rejalar_MP da '+j.jamiQator+' qator; ID '+JSON.stringify(ST.user.id)+' uchun '+j.sizningRejalar+' ta reja; sanalar: '+((j.sizningSanalar||[]).slice(0,4).join(' | ')||'—')+'; jadvaldagi eng oxirgi sana: '+(j.oxirgiSana||'—')+'; o\'xshash ID lar: '+((j.oxshashIDlar||[]).join(', ')||'yo\'q')+'; ID ustuni #'+j.hodimIDUstunIndeksi+'; oxirgi qatorlar: '+JSON.stringify(j.songgi4Qator||[])+'; sarlavhalar: '+(j.sarlavhalar||[]).join(',')+'; server bugun: '+j.bugun+'; telefon bugun: '+todayStr();
       dEl.textContent=t;
     }).catch(e=>{const dEl=document.getElementById('plan-diag'); if(dEl) dEl.textContent='Tashxis xatosi: '+(e&&e.message||e);});
     return;
