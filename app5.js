@@ -248,3 +248,44 @@ function endVisitFlow(){
   document.getElementById('visit-flow-container').innerHTML='';
   renderHome();
 }
+
+// ── GEOLOKATSIYA: kirishdan keyin o'zi so'raydi / ruxsat holatini nazorat qiladi (#11) ──
+// Brauzer ruxsatni dasturiy "o'zi bermaydi" — lekin sayt ochilishi bilan (tugma bosishni kutmasdan)
+// so'rov chiqadi va "Ruxsat" bir marta bosilgach, brauzer eslab qoladi. Rad etilgan bo'lsa — ko'rinadigan ko'rsatma chiqadi.
+(function(){
+  let asked=false, banner=null;
+  function showDenied(){
+    if(banner||!document.body)return;
+    banner=document.createElement('div');
+    banner.style.cssText='position:fixed;left:8px;right:8px;bottom:8px;z-index:99999;background:#b42318;color:#fff;padding:10px 12px;border-radius:10px;font-size:12.5px;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.3)';
+    banner.innerHTML='📍 <b>Joylashuvga ruxsat berilmagan.</b> Brauzer manzil qatoridagi 🔒 belgisini bosing → "Joylashuv" → <b>Ruxsat berish</b>, so\'ng sahifani yangilang. '+
+      '<span style="text-decoration:underline;cursor:pointer;font-weight:700" id="geo-retry">Qayta urinish</span>';
+    document.body.appendChild(banner);
+    const r=document.getElementById('geo-retry'); if(r) r.onclick=function(){ hide(); ask(true); };
+  }
+  function hide(){ if(banner&&banner.parentNode)banner.parentNode.removeChild(banner); banner=null; }
+  function ask(force){
+    if(!navigator.geolocation)return;
+    if(asked&&!force)return; asked=true;
+    navigator.geolocation.getCurrentPosition(
+      function(){ hide(); },
+      function(err){ if(err&&err.code===1) showDenied(); },
+      {enableHighAccuracy:true,timeout:12000,maximumAge:60000}
+    );
+  }
+  function tick(){
+    try{
+      if(typeof ST==='undefined'||!ST.user)return; // kirishdan keyin
+      if(navigator.permissions&&navigator.permissions.query){
+        navigator.permissions.query({name:'geolocation'}).then(function(p){
+          if(p.state==='granted'){ hide(); }
+          else if(p.state==='denied'){ showDenied(); }
+          else { ask(false); }
+          p.onchange=function(){ if(p.state==='granted')hide(); else if(p.state==='denied')showDenied(); };
+        }).catch(function(){ ask(false); });
+      } else ask(false);
+    }catch(e){}
+  }
+  setInterval(tick,4000);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) tick(); });
+})();
