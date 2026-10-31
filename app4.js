@@ -156,7 +156,7 @@ function vfPickOne(el, containerId, key, val) {
   if(key==='result') tgl('vf-result-other-block', val==='BOSHQA');
 }
 
-// Probnik tanlash — So'raldi bosilganda 25 preparat chiqadi
+// Probnik tanlash — So'raldi bosilganda barcha preparatlar chiqadi
 function vfPickProbnik(val) {
   const yes = document.getElementById('prob-yes');
   const no  = document.getElementById('prob-no');
@@ -192,11 +192,11 @@ function vfPickProbnik(val) {
 }
 function renderProbnikList25() {
   const el = document.getElementById('vf-probnik-list'); if(!el) return;
-  // Barcha 25 preparat
+  // Barcha preparatlar
   el.innerHTML = PREPS.map((p,i) => `
     <div class="ropt" style="margin-bottom:5px;font-size:12px;padding:7px 10px"
       onclick="vfToggleProbnik25(this,'${p.replace(/'/g,"\'")}')">
-      ${p}
+      ${prepLabel(p)}
     </div>`).join('');
 }
 function vfToggleProbnik25(el, prep) {
@@ -224,7 +224,7 @@ function vfPickProma(el, want) {
 
 // Preparat qo'shish/o'chirish
 function vfAddProductRow() {
-  if(ST.visit.products.length>=25){alert('Barcha preparatlar qo\'shilgan');return;}
+  if(ST.visit.products.length>=PREPS.length){alert('Barcha preparatlar qo\'shilgan');return;}
   ST.visit.products.push({name:'',qty:0});
   renderProductRows();
 }
@@ -234,7 +234,7 @@ function renderProductRows() {
     <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
       <select style="flex:1" onchange="vfUpdateProduct(${i},'name',this.value)">
         <option value="">— Preparat tanlang —</option>
-        ${PREPS.map(pr=>`<option value="${pr}"${p.name===pr?' selected':''}>${pr}</option>`).join('')}
+        ${PREPS.map(pr=>`<option value="${pr}"${p.name===pr?' selected':''}>${prepLabel(pr)}</option>`).join('')}
       </select>
       <!-- Soni MAJBURIY, 0 bo'lmasin -->
       <input type="number" min="1" max="999" placeholder="Soni*" value="${p.qty||''}"
@@ -344,7 +344,7 @@ function buildBronTable(){
   tbody.innerHTML=PREPS.map((p,i)=>`
     <tr>
       <td style="color:var(--muted);font-size:11px">${i+1}</td>
-      <td style="font-size:11px">${p}</td>
+      <td style="font-size:11px">${prepLabel(p)}</td>
       <td><input type="number" min="0" value="0" id="vf-bron-${i}" oninput="vfUpdateBronSum();vfCheckPaymentTypeVisibility();" style="width:65px" /></td>
       <td style="font-size:11px;color:var(--muted)">${fmtMoney(PRICES[p]||0)}</td>
       <td class="sum-cell" id="vf-bron-sum-${i}">0</td>
@@ -468,7 +468,7 @@ function buildStockTableRows(){
   tbody.innerHTML=PREPS.map((p,i)=>`
     <tr>
       <td style="color:var(--muted);font-size:11px">${i+1}</td>
-      <td style="font-size:11px">${p}</td>
+      <td style="font-size:11px">${prepLabel(p)}</td>
       <td><input type="number" min="0" value="0" id="vf-st-${i}" oninput="vfUpdateStockSum();vfCheckPaymentTypeVisibility();" style="width:65px" /></td>
       <td style="font-size:11px;color:var(--muted)">${fmtMoney(PRICES[p]||0)}</td>
       <td class="sum-cell" id="vf-sum-${i}">0</td>
