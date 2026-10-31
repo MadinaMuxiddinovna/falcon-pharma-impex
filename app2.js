@@ -807,8 +807,8 @@ async function renderPlans(){
       const ds=[...new Set(ST.plans.map(p=>(p['Vizit sanasi']||p.date||'').toString().slice(0,10)).filter(Boolean))].sort();
       hint='<div style="font-size:12px;color:var(--muted);margin-top:6px">Sizda jami '+ST.plans.length+' ta reja bor (sanalari: '+ds.slice(-6).join(', ')+'). Tanlangan davr: '+from+' – '+to+'</div>';
     }
-    el.innerHTML=errBanner+'<div class="alert alert-i">Bu davr uchun reja yo\'q'+hint+'</div>';
-    attachPlanDiag(el);
+    el.innerHTML=errBanner+'<div class="alert alert-i">Bu davr uchun reja yo\'q'+(/[?&]debug=1/.test(location.search)?hint:'')+'</div>';
+    if(/[?&]debug=1/.test(location.search))attachPlanDiag(el);
     return;
   }
   const byDate={};list.forEach(p=>{const d=(p['Vizit sanasi']||p.date||'').toString().slice(0,10);if(!byDate[d])byDate[d]=[];byDate[d].push(p);});
@@ -848,7 +848,7 @@ async function renderPlans(){
           </div>`;
       }).join('')}
     </div>`).join('');
-  attachPlanDiag(el);
+  if(/[?&]debug=1/.test(location.search))attachPlanDiag(el);
 }
 function planPageStart(i){
   const p=(window._planPageArr||[])[i];if(!p)return;
