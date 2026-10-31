@@ -18,11 +18,30 @@ const PREPS = [
   'ОЯВИС Капсулы №60','МЕНАПОЛ Капсулы №60','ИММУНОФОР Капсулы №20',
   'BioAmicus REUTERI 10мл','BioAmicus COMPLETE 10мл','BioAmicus VITAMIN D3 10мл',
   'BioAmicus OMEGA-3 30мл',
+  'BioAmicus VITAMIN K2+D3, 10 ml',
 ];
+// Kalit (PREPS) — sheetsdagi mavjud ustun nomlari bilan MOS qoladi; foydalanuvchiga esa lotincha (o'zbekcha) nom ko'rsatiladi
+const PREP_LABEL={
+ 'ФДП - Ментор 5гр №1':'FDP - Mentor 5 gr №1','ФДП - Ментор 10гр №1':'FDP - Mentor 10 gr №1',
+ 'Фдп-Sinopharm 10г (флаконы)':'FDP-Sinopharm 10 g (flakon)','Ментофер 100мг/5мл №5':'Mentofer 100 mg/5 ml №5',
+ 'Л-ЦИНАТ 5мг №10':'L-CINAT 5 mg №10','БЕРРИМУН Сироп 100мл №1':'BERRIMUN Sirop 100 ml №1',
+ 'ГРОВЭЛЛ Сироп 120мл №1':'GROVELL Sirop 120 ml №1','КАЛМИСОН Сироп 150мл №1':'KALMISON Sirop 150 ml №1',
+ 'КАРВИЛИКС Сироп 120мл №1':'KARVILIKS Sirop 120 ml №1','СОЛАРВИТ Капли 10мл №1':'SOLARVIT Tomchi 10 ml №1',
+ 'СОНВИЛ Капли 50мл №1':'SONVIL Tomchi 50 ml №1','ФРУТАВИЛ Капли 50мл №1':'FRUTAVIL Tomchi 50 ml №1',
+ 'ДОЛАТИХИН Капсула №60':'DOLATIXIN Kapsula №60','ЗЕРАПРОСТ Капсула №30':'ZERAPROST Kapsula №30',
+ 'НИТИРОЛ Таблетка №30':'NITIROL Tabletka №30','НЕФИТОР Таблетка №30':'NEFITOR Tabletka №30',
+ 'ПОГЕНИЛ Таблетка №30':'POGENIL Tabletka №30','ТИРОФОРТ Таблетка №30':'TIROFORT Tabletka №30',
+ 'ОЯВИС Капсулы №60':'OYAVIS Kapsula №60','МЕНАПОЛ Капсулы №60':'MENAPOL Kapsula №60',
+ 'ИММУНОФОР Капсулы №20':'IMMUNOFOR Kapsula №20',
+ 'BioAmicus REUTERI 10мл':'BioAmicus REUTERI 10 ml','BioAmicus COMPLETE 10мл':'BioAmicus COMPLETE 10 ml',
+ 'BioAmicus VITAMIN D3 10мл':'BioAmicus VITAMIN D3 10 ml','BioAmicus OMEGA-3 30мл':'BioAmicus OMEGA-3 30 ml',
+};
+function prepLabel(p){ return PREP_LABEL[p]||p; }
 const PRICES = {};
 [168038.06,235828.91,238663.53,250196.48,175125.36,145600,123200,145600,162400,112000,
  123200,134400,364000,160160,129920,135520,135520,147840,160160,246400,147840,168000,
  168000,145600,140000].forEach((p,i)=>PRICES[PREPS[i]]=p);
+PRICES['BioAmicus VITAMIN K2+D3, 10 ml']=156200;
 
 const MIN_VISIT_SEC = 300;
 
