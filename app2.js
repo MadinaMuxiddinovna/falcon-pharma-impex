@@ -218,6 +218,40 @@ function pageHomeTA(){return `
     <div id="visit-flow-container"></div>
   </div>`;}
 
+// ── REJA ↔ VIZIT solishtirish (borilgan / borilmagan / rejadan tashqari) ──
+function pObjKey(x){return String(x||'').toLowerCase().replace(/["'’`ʼ.,\-№#]/g,'').replace(/\s+/g,'');}
+function pObjSame(a,b){
+  const x=pObjKey(a),y=pObjKey(b);
+  if(!x||!y)return false;
+  if(x===y)return true;
+  const sh=x.length<=y.length?x:y,lg=x.length<=y.length?y:x;
+  return sh.length>=5&&lg.indexOf(sh)>=0;
+}
+async function loadPlanVisits(from,to){
+  if(!ST.user||ST.user.role!=='mp')return null;
+  try{
+    const res=await apiGet('getMyVisits',{empId:ST.user.id,from,to,role:'mp'},false);
+    const arr=Array.isArray(res)?res:(res&&Array.isArray(res.visits)?res.visits:null);
+    return arr?arr.filter(v=>v.type==='doctor'&&String(v.empId||ST.user.id)===String(ST.user.id)):null;
+  }catch(e){return null;}
+}
+function planVisited(p,date,visits){
+  if(!visits)return false;
+  const obj=p['Obyekt nomi']||p.targetName||'';
+  return visits.some(v=>v.date===date&&pObjSame(v.target,obj));
+}
+function planCardStyle(state){
+  if(state==='visited')return 'background:#e8f8ee;border-color:#8fd6a8';
+  if(state==='missed')return 'background:#fff4e5;border-color:#ffc27a';
+  if(state==='unplanned')return 'background:#ffecec;border-color:#ffb3b3';
+  return '';
+}
+function planStateLabel(state){
+  if(state==='visited')return '<div class="vcard-meta" style="color:#1a7f3c;font-weight:700">✅ Borilgan</div>';
+  if(state==='missed')return '<div class="vcard-meta" style="color:#b25e00;font-weight:700">⚠ Borilmagan</div>';
+  if(state==='unplanned')return '<div class="vcard-meta" style="color:var(--danger);font-weight:700">📌 Rejada yo\'q — rejaga qo\'shilmagan holda borilgan</div>';
+  return '';
+}
 function homeStartVisitFromPlanIdx(idx) {
   const p=(window._todayPlansArr||[])[idx];
   if(!p) return;
@@ -303,7 +337,7 @@ function showIncomingBronDetail(i){
   const it=(window._incomingBron||[])[i];if(!it)return;
   const prepRows=PREPS.filter(p=>Number(it[p]||0)>0).map(p=>{
     const qty=Number(it[p]||0), price=PRICES[p]||0, summa=qty*price;
-    return `<div class="irow"><span class="irow-l">${p}</span><span class="irow-v">${qty} × ${fmtNum(price)} = <b>${fmtNum(summa)}</b></span></div>`;
+    return `<div class="irow"><span class="irow-l">${prepLabel(p)}</span><span class="irow-v">${qty} × ${fmtNum(price)} = <b>${fmtNum(summa)}</b></span></div>`;
   }).join('');
   showModal('Bron so\'rovi tafsiloti',`
     <div class="irow"><span class="irow-l">Kimdan</span><span class="irow-v"><b>${it['Agent Ismi']||''}</b></span></div>
@@ -390,20 +424,31 @@ function renderHome(){
       if(!visiblePlans.length){
         plList.innerHTML="<div class='alert alert-i' style='font-size:12px'>Bugungi reja yoq</div>";
       } else {
-        plList.innerHTML=visiblePlans.map(function(p,idx){
-          var obj=p['Obyekt nomi']||p.targetName||'';
-          var status=p['Holati']||p.status||'';
-          if(!obj||obj==='undefined') return '';
-          var bdg=status==='Tasdiqlangan'?'bdg-g':'bdg-y';
-          return '<div class="vcard" style="cursor:pointer;margin-bottom:6px"'+
-            ' onclick="homeStartVisitFromPlanIdx('+idx+')">'+
-            '<div class="vcard-h">'+
-            '<span class="vcard-name">🏥 '+obj+'</span>'+
-            '<span class="bdg '+bdg+'">'+status+'</span>'+
-            '</div>'+
-            '<div style="font-size:11px;color:var(--primary);margin-top:4px">Bosib vizit boshlang →</div>'+
-            '</div>';
-        }).join('');
+        const drawHome=function(visits){
+          let html=visiblePlans.map(function(p,idx){
+            var obj=p['Obyekt nomi']||p.targetName||'';
+            var status=p['Holati']||p.status||'';
+            if(!obj||obj==='undefined') return '';
+            var bdg=status==='Tasdiqlangan'?'bdg-g':'bdg-y';
+            var st=visits?(planVisited(p,todayStr(),visits)?'visited':'pending'):'pending';
+            return '<div class="vcard" style="cursor:pointer;margin-bottom:6px;'+planCardStyle(st)+'"'+
+              ' onclick="homeStartVisitFromPlanIdx('+idx+')">'+
+              '<div class="vcard-h">'+
+              '<span class="vcard-name">🏥 '+obj+'</span>'+
+              '<span class="bdg '+bdg+'">'+status+'</span>'+
+              '</div>'+
+              (st==='visited'?planStateLabel('visited'):'<div style="font-size:11px;color:var(--primary);margin-top:4px">Bosib vizit boshlang →</div>')+
+              '</div>';
+          }).join('');
+          if(visits){
+            visits.filter(v=>v.date===todayStr()&&v.unplanned).forEach(v=>{
+              html+='<div class="vcard" style="margin-bottom:6px;'+planCardStyle('unplanned')+'"><div class="vcard-h"><span class="vcard-name">🏥 '+(v.target||v.doctor||'')+'</span></div>'+planStateLabel('unplanned')+'</div>';
+            });
+          }
+          plList.innerHTML=html;
+        };
+        drawHome(null);
+        loadPlanVisits(todayStr(),todayStr()).then(function(vs){ if(vs) drawHome(vs); });
       }
     }
   } else {
@@ -474,7 +519,8 @@ async function renderHistory(){
         const durStr=dur?(typeof dur==='number'&&dur>200?Math.round(dur/60)+' min':Math.round(dur)+' min'):'';
         // #2: to'liq ma'lumot (FIO, ish joyi, sana, vaqt) darhol ko'rinadi — bosish shart emas
         const isDocV=v.type==='doctor'||!!v['Med Vakili ID'];
-        return `<div class="vcard" onclick="showHistDetail('${date}',${i})" style="cursor:pointer">
+        return `<div class="vcard" onclick="showHistDetail('${date}',${i})" style="cursor:pointer${v.unplanned?';background:#ffecec;border-color:#ffb3b3':''}">
+          ${v.unplanned?'<div style="font-size:11px;font-weight:700;color:#c0392b;margin-bottom:4px">📌 Rejada yo\'q — bu obyekt shu sanada rejaga qo\'shilmagan</div>':''}
           <div class="vcard-h">
             <span>${isDocV?'🏥':'💊'} <b>${doc||target}</b></span>
             ${isDocV&&res?`<span class="bdg ${res==='ISHLAYDI'?'bdg-g':res==='QABUL QILMADI'?'bdg-r':'bdg-y'}">${res}</span>`:''}
@@ -524,7 +570,8 @@ function renderHistList(visits,from,today,el){
       const bdgClass=res==='ISHLAYDI'?'bdg-g':res==='QABUL QILMADI'?'bdg-r':'bdg-y';
       const resDisplay=res==='BOSHQA'?(v.resultOther||v["Natija qo'shimcha"]||res):res;
       const showRes=(res&&res!=='OK'&&res!=='Vizit')?('<span class="bdg '+bdgClass+'">'+resDisplay+'</span>'):'';
-      html+='<div class="vcard" data-hdate="'+date+'" data-hidx="'+i+'" onclick="showHistDetail(this.dataset.hdate,this.dataset.hidx)" style="cursor:pointer">';
+      html+='<div class="vcard" data-hdate="'+date+'" data-hidx="'+i+'" onclick="showHistDetail(this.dataset.hdate,this.dataset.hidx)" style="cursor:pointer'+(v.unplanned?';background:#ffecec;border-color:#ffb3b3':'')+'">';
+      if(v.unplanned)html+='<div style="font-size:11px;font-weight:700;color:#c0392b;margin-bottom:4px">📌 Rejada yo\'q — bu obyekt shu sanada rejaga qo\'shilmagan</div>';
       html+='<div class="vcard-h">';
       html+='<span>'+(isDoc?'🏥':'💊')+' <b>'+(displayName||'—')+'</b></span>'+showRes;
       html+='</div>';
@@ -567,7 +614,7 @@ function showHistDetail(date,idx){
       let html='<div style="margin:10px 0 4px;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase">Preparatlar</div>';
       let qoldiqSum=0,bronSum=0;
       v.products.forEach(p=>{
-        html+='<div class="irow" style="font-size:12.5px"><span class="irow-l">'+p.prep+'</span>'
+        html+='<div class="irow" style="font-size:12.5px"><span class="irow-l">'+prepLabel(p.prep)+'</span>'
           +'<span class="irow-v">Qoldiq: '+p.qoldiq+' · Bron: '+p.bron+' · '+fmtMoney(p.summa)+'</span></div>';
       });
       html+='<div class="irow" style="margin-top:6px"><span class="irow-l"><b>Jami</b></span><span class="irow-v" style="font-weight:800;color:var(--ok)">'+fmtMoney(v.jamiSumma||0)+'</span></div>';
@@ -679,6 +726,21 @@ function apSelectObject(obj){
   document.getElementById('ap-selected').innerHTML='✅ '+obj.object+(obj.district?' · '+obj.district:'');
   showEl('ap-selected');
 }
+function attachPlanDiag(el){
+  // Serverning sizning rejalaringiz haqidagi qisqa hisoboti (kulrang kichik qator)
+  const box=document.createElement('div');
+  box.id='plan-diag';box.style.cssText='font-size:11px;color:var(--muted);margin-top:10px;word-break:break-word';
+  box.textContent='Tashxis: tekshirilmoqda...';
+  el.appendChild(box);
+  apiGet('debugPlans',{empId:ST.user.id},false).then(j=>{
+    let t;
+    if(!j) t='Tashxis: serverdan javob yo\'q';
+    else if(j.error) t='Tashxis: '+j.error;
+    else if(j.status==='ok'&&j.v&&!j.sarlavhalar) t='Tashxis: serverda ESKI kod ishlayapti (yangi Code.gs "New version" qilib deploy qilinmagan)';
+    else t='Tashxis: serverda ID '+JSON.stringify(ST.user.id)+' uchun '+j.sizningRejalar+' ta reja; sanalari: '+((j.sizningSanalar||[]).slice(0,12).join(', ')||'—')+'; jadvaldagi eng oxirgi sana: '+(j.oxirgiSana||'—')+'; o\'xshash ID lar: '+((j.oxshashIDlar||[]).join(', ')||'yo\'q')+'; telefon bugun: '+todayStr();
+    box.textContent=t;
+  }).catch(e=>{box.textContent='Tashxis xatosi: '+(e&&e.message||e);});
+}
 async function renderPlans(){
   const el=document.getElementById('plan-list');if(!el)return;
   el.innerHTML='<div class="alert alert-i">Yuklanmoqda...</div>';
@@ -728,32 +790,29 @@ async function renderPlans(){
     // Haftalik/oylik: from dan to gacha
     return d>=from && d<=to;
   });
+  // Borilgan / borilmagan / rejadan tashqari vizitlar (faqat Med vakil, o'tgan va bugungi kunlar uchun)
+  const visitsTo=to<today?to:today;
+  const pVisits=(from<=visitsTo)?await loadPlanVisits(from,visitsTo):null;
+  const extras=(pVisits||[]).filter(v=>v.unplanned&&v.date>=from&&v.date<=to);
+  window._planPageArr=list;
   // Debug: agar bo'sh bo'lsa barcha rejalarni ko'rsatamiz
   if(!list.length && ST.plans.length) {
     // Sana formatini tekshiramiz
     console.log('Plans:', ST.plans.slice(0,3).map(p=>p['Vizit sanasi']||p.date));
   }
   const errBanner=loadErr?('<div class="alert alert-w" style="margin-bottom:10px">Rejalarni serverdan yangilab bo\'lmadi ('+loadErr+'). <span style="text-decoration:underline;cursor:pointer;font-weight:700" onclick="renderPlans()">Qayta urinish</span></div>'):'';
-  if(!list.length){
+  if(!list.length&&!extras.length){
     let hint='';
     if(ST.plans&&ST.plans.length){
       const ds=[...new Set(ST.plans.map(p=>(p['Vizit sanasi']||p.date||'').toString().slice(0,10)).filter(Boolean))].sort();
       hint='<div style="font-size:12px;color:var(--muted);margin-top:6px">Sizda jami '+ST.plans.length+' ta reja bor (sanalari: '+ds.slice(-6).join(', ')+'). Tanlangan davr: '+from+' – '+to+'</div>';
     }
-    el.innerHTML=errBanner+'<div class="alert alert-i">Bu davr uchun reja yo\'q'+hint+'</div><div id="plan-diag" style="font-size:11px;color:var(--muted);margin-top:8px;word-break:break-word">Tekshirilmoqda...</div>';
-    // Avtomatik tashxis: serverdagi Rejalar_MP va shu xodimning rejalari haqida qisqa ma'lumot
-    apiGet('debugPlans',{empId:ST.user.id},false).then(j=>{
-      const dEl=document.getElementById('plan-diag'); if(!dEl) return;
-      let t;
-      if(!j) t='Tashxis: serverdan javob yo\'q';
-      else if(j.error) t='Tashxis: '+j.error;
-      else if(j.status==='ok'&&j.v&&!j.sarlavhalar) t='Tashxis: serverda ESKI kod ishlayapti (yangi Code.gs "New version" qilib deploy qilinmagan yoki boshqa manzil)';
-      else t='Tashxis: Rejalar_MP da '+j.jamiQator+' qator; ID '+JSON.stringify(ST.user.id)+' uchun '+j.sizningRejalar+' ta reja; sanalar: '+((j.sizningSanalar||[]).slice(0,4).join(' | ')||'—')+'; jadvaldagi eng oxirgi sana: '+(j.oxirgiSana||'—')+'; o\'xshash ID lar: '+((j.oxshashIDlar||[]).join(', ')||'yo\'q')+'; ID ustuni #'+j.hodimIDUstunIndeksi+'; oxirgi qatorlar: '+JSON.stringify(j.songgi4Qator||[])+'; sarlavhalar: '+(j.sarlavhalar||[]).join(',')+'; server bugun: '+j.bugun+'; telefon bugun: '+todayStr();
-      dEl.textContent=t;
-    }).catch(e=>{const dEl=document.getElementById('plan-diag'); if(dEl) dEl.textContent='Tashxis xatosi: '+(e&&e.message||e);});
+    el.innerHTML=errBanner+'<div class="alert alert-i">Bu davr uchun reja yo\'q'+hint+'</div>';
+    attachPlanDiag(el);
     return;
   }
-  const byDate={};list.forEach(p=>{const d=p['Vizit sanasi']||p.date||'';if(!byDate[d])byDate[d]=[];byDate[d].push(p);});
+  const byDate={};list.forEach(p=>{const d=(p['Vizit sanasi']||p.date||'').toString().slice(0,10);if(!byDate[d])byDate[d]=[];byDate[d].push(p);});
+  extras.forEach(v=>{if(!byDate[v.date])byDate[v.date]=[];byDate[v.date].push({__unplanned:true,v:v});});
   el.innerHTML=errBanner+Object.entries(byDate).sort().map(([date,plans])=>`
     <div style="margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;
@@ -761,23 +820,39 @@ async function renderPlans(){
         ${uzDateShort(date)} · ${date}
       </div>
       ${plans.map(p=>{
+        if(p.__unplanned){
+          return `<div class="vcard" style="${planCardStyle('unplanned')}"><div class="vcard-h"><span class="vcard-name">${p.v.target||p.v.doctor||''}</span></div>${planStateLabel('unplanned')}</div>`;
+        }
         const status=p['Holati']||p.status||'';
         const obj=p['Obyekt nomi']||p.targetName||'';
         if(!obj||obj==='undefined')return '';
+        const pdate=(p['Vizit sanasi']||p.date||'').toString().slice(0,10);
+        const okStatus=status!=='Rad etildi'&&status!=='Bekor qilindi';
+        let pstate='';
+        if(pVisits&&okStatus&&pdate<=today){ pstate=planVisited(p,pdate,pVisits)?'visited':(pdate<today?'missed':''); }
+        const clickToday=(ST.user.role==='mp'&&pdate===today&&status==='Tasdiqlangan'&&!pstate);
+        const pidx=list.indexOf(p);
         const sentAt=p['Yaratilgan vaqt']||'';
         const canCancel=status==='Kutilmoqda'&&p._row;
         const vizitHolati=p['Vizit holati (reja)']||'';
         const notVisited=vizitHolati.indexOf('Shubhali')>=0;
-        return `<div class="vcard" ${notVisited?'style="cursor:pointer;background:#fff0f0;border-color:#ffb3b3" onclick="alert(\''+vizitHolati.replace(/'/g,"\\'")+'\')"':''}>
+        return `<div class="vcard" ${notVisited?'style="cursor:pointer;background:#fff0f0;border-color:#ffb3b3" onclick="alert(\''+vizitHolati.replace(/'/g,"\\'")+'\')"':(pstate?'style="'+planCardStyle(pstate)+'"':(clickToday?'style="cursor:pointer" onclick="planPageStart('+pidx+')"':''))}>
           <div class="vcard-h"><span class="vcard-name">${obj}</span>
             <span class="bdg ${status==='Tasdiqlangan'?'bdg-g':status==='Rad etildi'?'bdg-r':status==='Bekor qilindi'?'bdg-r':'bdg-y'}">${status}</span>
             ${canCancel?`<span onclick="cancelMyPlan(${p._row})" style="margin-left:8px;cursor:pointer;color:var(--danger);font-weight:800" title="Bekor qilish">✕</span>`:''}
           </div>
+          ${planStateLabel(pstate)}
+          ${clickToday?`<div style="font-size:11px;color:var(--primary);margin-top:4px">Bosib vizit boshlang →</div>`:''}
           ${sentAt?`<div class="vcard-meta">Yuborildi: ${sentAt}</div>`:''}
           ${notVisited?`<div class="vcard-meta" style="color:var(--danger);font-weight:600">⚠ ${vizitHolati}</div>`:''}
           </div>`;
       }).join('')}
     </div>`).join('');
+  attachPlanDiag(el);
+}
+function planPageStart(i){
+  const p=(window._planPageArr||[])[i];if(!p)return;
+  homeStartVisitFromPlan(p['Obyekt nomi']||p.targetName||'');
 }
 async function cancelMyPlan(row){
   if(!confirm('Ushbu rejani bekor qilmoqchimisiz?'))return;
