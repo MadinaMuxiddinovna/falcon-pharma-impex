@@ -136,24 +136,33 @@ function renderVfStep2Doctor() {
 
 function vfSearchDoc(q, isFocus) {
   q = (q||'').trim();
-  const dist=(ST.user.district||'').toLowerCase();
+  const ownList=(ST.user.district||'').split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const dist=ownList[0]||'';
   const myRegionKey=(function(){
     let k=normRegionKey(ST.user.region);
-    if(!k)k=findRegionKeyByDistrict((ST.user.district||'').split(',')[0]);
+    const dk=findRegionKeyByDistrict((ST.user.district||'').split(',')[0]);
+    if(!k)k=dk;
+    else if(k==='toshkent viloyati'&&dk&&dk!=='toshkent shahri')k=dk; // Sirdaryo va h.k. Toshkent viloyatiga aralashmasin
     return k;
   })();
   const sameRegion=r=>{
     if(!myRegionKey)return true; // o'zimizning hududimiz umuman aniqlanmasa — cheklamaymiz
     let rk=normRegionKey(r.region);
-    if(!rk)rk=findRegionKeyByDistrict(r.district);
+    const dk=findRegionKeyByDistrict(r.district);
+    if(!rk)rk=dk;
+    else if(rk==='toshkent viloyati'&&dk&&dk!=='toshkent shahri')rk=dk;
     if(!rk)return false; // vrachning hududi HECH QANDAY yo'l bilan aniqlanmasa — ko'rsatmaymiz (aralashmasin)
-    return rk===myRegionKey;
+    if(rk!==myRegionKey)return false;
+    // Xodimga tuman biriktirilgan bo'lsa: faqat shu tuman vrachlari + tumani kiritilmagan vrachlar
+    const rd=String(r.district||'').trim().toLowerCase();
+    if(ownList.length&&rd&&!ownList.includes(rd))return false;
+    return true;
   };
   let res;
   if (q.length < 2) {
     if (!isFocus) { hideEl('vf-doc-res'); return; }
     // Fokus qilinganda, hali hech narsa yozilmagan bo'lsa — o'z rayoni vrachlarini ko'rsatamiz
-    res = dist ? ST.doctors.filter(r => (r.district||'').toLowerCase()===dist) : ST.doctors.filter(sameRegion);
+    res = ST.doctors.filter(sameRegion);
   } else {
     const ql = q.toLowerCase();
     res = ST.doctors.filter(r =>
@@ -203,7 +212,7 @@ function vfSelectDoc(r) {
   const noDist = !String(r.district||'').trim();
   document.getElementById('vf-doc-sel').innerHTML =
     `✅ <b>${r.name}</b> · ${r.specialty||''} · ${r.object||''} · ${r.district||''} · ${r.phone||''} · Kat: <b>${r.category||'—'}</b>` +
-    (noDist ? `<div style="margin-top:8px"><label style="font-size:12px;font-weight:700">Vrachning tumani <span class="req">*</span> (bazada ko'rsatilmagan)</label>
+    (noDist ? `<div style="margin-top:10px;padding:10px;border:2px solid #d92d20;background:#fff1f0;border-radius:10px"><div style="font-size:13px;font-weight:800;color:#b42318;margin-bottom:6px">⚠ Bu vrachning tumani bazada yo'q — tumanni tanlang (majburiy) *</div>
       <select id="vf-doc-dist" onchange="vfSetDocDistrict(this.value)"><option value="">— Tumanni tanlang —</option>${vfBuildTumanOptions().replace(' selected','')}</select></div>` : '');
   showEl('vf-doc-sel');
   // Tuman bazada bo'sh bo'lsa — tanlanmaguncha davom etib bo'lmaydi (sheetsga to'liq tushishi uchun)
