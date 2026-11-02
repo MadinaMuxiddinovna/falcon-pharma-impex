@@ -23,6 +23,7 @@ function renderVfStep2Doctor() {
       <div id="vf-doc-res" class="slist hide"></div>
     </div>
     <div id="vf-doc-sel" class="alert alert-ok hide"></div>
+    <div id="vf-add-new-link" style="margin:-4px 0 10px;font-size:13px">Vrach topilmadimi? <span style="color:var(--primary);font-weight:700;text-decoration:underline;cursor:pointer" onclick="vfOpenNewDocForm()">➕ Yangi vrach qo'shish</span></div>
 
     <div id="vf-new-doc-block" class="hide">
       <div class="alert alert-w">Vrach bazada topilmadi — yangi vrach ma'lumotlarini kiriting:</div>
@@ -130,6 +131,10 @@ function renderVfStep2Doctor() {
       }
     }
   }
+}
+function vfOpenNewDocForm(){
+  hideEl('vf-doc-res'); showEl('vf-new-doc-block');
+  const f=document.getElementById('nd-familiya'); if(f) f.focus();
 }
 function vfAddDocToPlanObj(){
   const L=window._planLock||{};
