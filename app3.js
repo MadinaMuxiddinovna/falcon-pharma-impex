@@ -113,7 +113,7 @@ function renderVfStep2Doctor() {
     const targetNorm=normObj(objName);
     const same=d=>{const x=normObj(d.object);if(!x||!targetNorm)return false;if(x===targetNorm)return true;
       const sh=x.length<=targetNorm.length?x:targetNorm,lg=x.length<=targetNorm.length?targetNorm:x;return sh.length>=5&&lg.indexOf(sh)>=0;};
-    const matches=ST.doctors.filter(same);
+    const matches=ST.doctors.filter(d=>same(d)&&vfDocAllowed(d));
     const inp=document.getElementById('vf-doc-q');
     if(inp){
       // Reja obyekti qotiriladi: yangi vrach shu obyektga, shu viloyat/tumanga qo'shiladi
@@ -122,6 +122,7 @@ function renderVfStep2Doctor() {
       window._docSearchRes=matches;
       const resEl=document.getElementById('vf-doc-res');
       if(resEl){
+        resEl.style.marginTop='10px';resEl.style.paddingTop='6px';
         resEl.innerHTML=matches.map((r,i)=>`<div class="sres-item" onclick="vfSelectDocByIdx(${i})">
           <b>${r.name}</b><br><span style="font-size:11px;color:var(--muted)">${r.specialty||''} · ${r.object||''}</span></div>`).join('')+
           `<div class="sres-item" style="background:#eef7ff;font-weight:700;color:var(--primary)" onclick="vfAddDocToPlanObj()">➕ Shu obyektga yangi vrach qo'shish</div>`;
@@ -139,6 +140,151 @@ function vfAddDocToPlanObj(){
   const d=document.getElementById('nd-dist');
   if(d&&L.district){ d.value=L.district; if(d.value!==L.district){ const op=document.createElement('option'); op.textContent=L.district; d.appendChild(op); d.value=L.district; } d.disabled=true; }
   const f=document.getElementById('nd-familiya'); if(f) f.focus();
+}
+
+function vfDocAllowed(r){
+  const ownList=(ST.user.district||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
+  let myRegionKey=normRegionKey(ST.user.region);
+  const dk0=findRegionKeyByDistrict((ST.user.district||'').split(',')[0]);
+  if(!myRegionKey)myRegionKey=dk0;
+  else if(myRegionKey==='toshkent viloyati'&&dk0&&dk0!=='toshkent shahri')myRegionKey=dk0;
+  if(!myRegionKey)return true; // o'zimizning hududimiz umuman aniqlanmasa — cheklamaymiz
+  let rk=normRegionKey(r.region);
+  const dk=findRegionKeyByDistrict(r.district);
+  if(!rk)rk=dk;
+  else if(rk==='toshkent viloyati'&&dk&&dk!=='toshkent shahri')rk=dk;
+  if(!rk)return false;
+  if(rk!==myRegionKey)return false;
+  const rd=String(r.district||'').trim().toLowerCase();
+  if(ownList.length&&rd&&!ownList.includes(rd))return false;
+  return true;
+}
+function vfSearchDoc(q, isFocus) {
+  q = (q||'').trim();
+  const dist=((ST.user.district||'').split(',')[0]||'').trim().toLowerCase();
+  const sameRegion=vfDocAllowed;
+  let res;
+  if (q.length < 2) {
+    if (!isFocus) { hideEl('vf-doc-res'); return; }
+    // Fokus qilinganda, hali hech narsa yozilmagan bo'lsa — o'z rayoni vrachlarini ko'rsatamiz
+    res = ST.doctors.filter(sameRegion);
+  } else {
+    const ql = q.toLowerCase();
+    res = ST.doctors.filter(r =>
+      sameRegion(r) && (
+        (r.name||'').toLowerCase().includes(ql) ||
+        (r.object||'').toLowerCase().includes(ql) ||
+        (r.specialty||'').toLowerCase().includes(ql)
+      )
+    );
+  }
+  // O'z rayoni natijalari birinchi chiqadi
+  res = res.slice().sort((a,b)=>{
+    const ad=(a.district||'').toLowerCase()===dist?0:1;
+    const bd=(b.district||'').toLowerCase()===dist?0:1;
+    return ad-bd;
+  }).slice(0, 10);
+  window._docSearchRes = res;
+  const box = document.getElementById('vf-doc-res');
+  if (!res.length) {
+    box.innerHTML = '<div class="sitem"><span class="sitem-meta">Topilmadi — pastda yangi vrach qo\'shing</span></div>';
+    showEl('vf-new-doc-block');
+  } else {
+    hideEl('vf-new-doc-block');
+    // To'liq ma'lumot: rayon, tel ko'rinadi
+    box.innerHTML = res.map((r,i) => `
+      <div class="sitem" onclick="vfSelectDocByIdx(${i})">
+        <span class="sitem-name">${r.name}</span>
+        <span class="sitem-meta">
+          ${r.specialty||''} · ${r.object||''} · ${r.district||''}
+          ${r.phone?'· '+r.phone:''}
+          · <span class="bdg ${r.category==='A'?'bdg-g':r.category==='B'?'bdg-y':'bdg-b'}">${r.category||'—'}</span>
+          · ${r.status==='Active'?'🟢':'⚪'}
+        </span>
+      </div>`).join('');
+  }
+  showEl('vf-doc-res');
+}
+
+function vfSelectDocByIdx(i) {
+  const r = (window._docSearchRes||[])[i];
+  if (r) vfSelectDoc(r);
+}
+function vfSelectDoc(r) {
+  ST.visit.target = r;
+  hideEl('vf-doc-res'); hideEl('vf-new-doc-block');
+  document.getElementById('vf-doc-q').value = r.name;
+  const noDist = !String(r.district||'').trim();
+  document.getElementById('vf-doc-sel').innerHTML =
+    `✅ <b>${r.name}</b> · ${r.specialty||''} · ${r.object||''} · ${r.district||''} · ${r.phone||''} · Kat: <b>${r.category||'—'}</b>` +
+    (noDist ? `<div style="margin-top:10px;padding:10px;border:2px solid #d92d20;background:#fff1f0;border-radius:10px"><div style="font-size:13px;font-weight:800;color:#b42318;margin-bottom:6px">⚠ Bu vrachning tumani bazada yo'q — tumanni tanlang (majburiy) *</div>
+      <select id="vf-doc-dist" onchange="vfSetDocDistrict(this.value)"><option value="">— Tumanni tanlang —</option>${vfBuildTumanOptions().replace(' selected','')}</select></div>` : '');
+  showEl('vf-doc-sel');
+  // Tuman bazada bo'sh bo'lsa — tanlanmaguncha davom etib bo'lmaydi (sheetsga to'liq tushishi uchun)
+  document.getElementById('vf-next2').disabled = noDist;
+}
+function vfSetDocDistrict(v) {
+  if (!ST.visit.target) return;
+  ST.visit.target.district = v || '';
+  const b = document.getElementById('vf-next2');
+  if (b) b.disabled = !v;
+}
+
+function vfConfirmNewDoctor() {
+  const familiya = cleanName(document.getElementById('nd-familiya')?.value);
+  const ism      = cleanName(document.getElementById('nd-ism')?.value);
+  const sharif   = cleanName(document.getElementById('nd-sharif')?.value);
+  const obj      = cleanName(document.getElementById('nd-obj')?.value);
+  const spec     = (document.getElementById('nd-spec')?.value||'').trim();
+  const phone    = (document.getElementById('nd-phone')?.value||'').replace(/\D/g,'');
+
+  if (!familiya||!ism||!sharif) { alert('Familiya, Ismi va Sharifi — har birini to\'ldiring!'); return; }
+  if (!obj)  { alert('Ish joyini kiriting!'); return; }
+  if (!spec) { alert('Mutaxassisligini tanlang!'); return; }
+  if (phone.length !== 9) {
+    document.getElementById('nd-phone-err').classList.remove('hide');
+    alert('Telefon aynan 9 ta raqam bo\'lishi kerak!'); return;
+  }
+  document.getElementById('nd-phone-err').classList.add('hide');
+
+  const fullName = familiya + ' ' + ism + ' ' + sharif;
+  const region   = (document.getElementById('nd-region')?.value||ST.user.region||'').trim();
+  const district = (document.getElementById('nd-dist')?.value||ST.user.district||'').trim();
+  const fullPhone = '+998' + phone;
+
+  const newDoc = {
+    id: 'NEW-'+Date.now(),
+    name: fullName, familiya, ism, sharif,
+    region, district, object: obj,
+    specialty: spec, phone: fullPhone,
+    category: document.getElementById('nd-cat')?.value||'',
+    status: 'Active', _isNew: true,
+  };
+
+  showModal('Ma\'lumotni tekshiring',
+    `<div class="irow"><span class="irow-l">Mintaqa</span><span class="irow-v">${region}</span></div>
+     <div class="irow"><span class="irow-l">Tuman</span><span class="irow-v">${district}</span></div>
+     <div class="irow"><span class="irow-l">Familiya</span><span class="irow-v">${familiya}</span></div>
+     <div class="irow"><span class="irow-l">Ismi</span><span class="irow-v">${ism}</span></div>
+     <div class="irow"><span class="irow-l">Sharifi</span><span class="irow-v">${sharif}</span></div>
+     <div class="irow"><span class="irow-l">Ish joyi</span><span class="irow-v">${obj}</span></div>
+     <div class="irow"><span class="irow-l">Mutaxassisligi</span><span class="irow-v">${spec}</span></div>
+     <div class="irow"><span class="irow-l">Telefon</span><span class="irow-v">${fullPhone}</span></div>
+     <div class="irow"><span class="irow-l">Kategoriya</span><span class="irow-v">${newDoc.category||'—'}</span></div>
+     <p style="margin-top:10px;font-size:13px;color:var(--ok)">✅ To'g'ri bo'lsa tasdiqlang — vizit davom etadi.</p>`,
+    `<button class="btn btn-o" onclick="closeModal()">← Tahrirlash</button>
+     <button class="btn btn-ok" onclick='closeModal();vfFinalizeNewDoctor(${JSON.stringify(newDoc).replace(/'/g,"&apos;")})'>Ha, to'g'ri</button>`);
+}
+
+async function vfFinalizeNewDoctor(newDoc) {
+  // Serverga yuborishni DARHOL boshlaymiz (pastdagi ekran amallari xato bersa ham yo'qolmasin)
+  const _savePromise = apiPost({ action:'addNewDoctor', ...newDoc, empName:ST.user.name });
+  ST.doctors.push(newDoc); ST.visit.target = newDoc; ST.visit.newObjData = newDoc;
+  document.getElementById('vf-doc-q').value = newDoc.name;
+  document.getElementById('vf-doc-sel').innerHTML = `✅ <b>${newDoc.name}</b> (yangi) · ${newDoc.object}`;
+  showEl('vf-doc-sel'); hideEl('vf-new-doc-block');
+  document.getElementById('vf-next2').disabled = false;
+  await _savePromise;
 }
 
 // ── DORIXONA TANLASH ────────────────────────────────
