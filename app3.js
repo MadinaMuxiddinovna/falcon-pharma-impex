@@ -23,6 +23,7 @@ function renderVfStep2Doctor() {
       <div id="vf-doc-res" class="slist hide"></div>
     </div>
     <div id="vf-doc-sel" class="alert alert-ok hide"></div>
+    <div id="vf-add-new-link" style="margin:-4px 0 10px;font-size:13px">Vrach topilmadimi? <span style="color:var(--primary);font-weight:700;text-decoration:underline;cursor:pointer" onclick="vfOpenNewDocForm()">➕ Yangi vrach qo'shish</span></div>
 
     <div id="vf-new-doc-block" class="hide">
       <div class="alert alert-w">Vrach bazada topilmadi — yangi vrach ma'lumotlarini kiriting:</div>
@@ -109,51 +110,67 @@ function renderVfStep2Doctor() {
   if(window._pendingPlanObj){
     const objName=window._pendingPlanObj;
     window._pendingPlanObj=null;
-    const normObj=s=>String(s||'').toLowerCase().replace(/["'.,\-№#]/g,'').replace(/\s+/g,'').trim();
+    const normObj=s=>String(s||'').toLowerCase().replace(/["'’`ʼ.,\-№#]/g,'').replace(/\s+/g,'').trim();
     const targetNorm=normObj(objName);
-    const matches=ST.doctors.filter(d=>normObj(d.object)===targetNorm);
+    const same=d=>{const x=normObj(d.object);if(!x||!targetNorm)return false;if(x===targetNorm)return true;
+      const sh=x.length<=targetNorm.length?x:targetNorm,lg=x.length<=targetNorm.length?targetNorm:x;return sh.length>=5&&lg.indexOf(sh)>=0;};
+    const matches=ST.doctors.filter(d=>same(d)&&vfDocAllowed(d));
     const inp=document.getElementById('vf-doc-q');
     if(inp){
-      if(matches.length===1){
-        vfSelectDoc(matches[0]);
-      } else if(matches.length>1){
-        // Bir nechta vrach shu aniq obyektda — hammasini (hudud filtrisiz) ko'rsatamiz
-        inp.value=objName;
-        window._docSearchRes=matches;
-        const resEl=document.getElementById('vf-doc-res');
-        if(resEl){
-          resEl.innerHTML=matches.map((r,i)=>`<div class="sres-item" onclick="vfSelectDocByIdx(${i})">
-            <b>${r.name}</b><br><span style="font-size:11px;color:var(--muted)">${r.specialty||''} · ${r.object||''}</span></div>`).join('');
-          showEl('vf-doc-res');
-        }
-      } else if(objName){
-        inp.value=objName;
-        vfSearchDoc(objName);
+      // Reja obyekti qotiriladi: yangi vrach shu obyektga, shu viloyat/tumanga qo'shiladi
+      window._planLock={object:(matches[0]&&matches[0].object)||objName, district:(matches[0]&&matches[0].district)||''};
+      inp.value=objName;
+      window._docSearchRes=matches;
+      const resEl=document.getElementById('vf-doc-res');
+      if(resEl){
+        resEl.style.marginTop='10px';resEl.style.paddingTop='6px';
+        resEl.innerHTML=matches.map((r,i)=>`<div class="sres-item" onclick="vfSelectDocByIdx(${i})">
+          <b>${r.name}</b><br><span style="font-size:11px;color:var(--muted)">${r.specialty||''} · ${r.object||''}</span></div>`).join('')+
+          `<div class="sres-item" style="background:#eef7ff;font-weight:700;color:var(--primary)" onclick="vfAddDocToPlanObj()">➕ Shu obyektga yangi vrach qo'shish</div>`;
+        showEl('vf-doc-res');
       }
     }
   }
 }
+function vfOpenNewDocForm(){
+  window._ndManual=true;
+  hideEl('vf-doc-res'); showEl('vf-new-doc-block');
+  const f=document.getElementById('nd-familiya'); if(f) f.focus();
+}
+function vfAddDocToPlanObj(){
+  const L=window._planLock||{};
+  hideEl('vf-doc-res');
+  showEl('vf-new-doc-block');
+  const o=document.getElementById('nd-obj');
+  if(o){ o.value=L.object||''; } // oldindan to'ldiriladi, lekin o'zgartirish mumkin (qotirilmaydi)
+  const d=document.getElementById('nd-dist');
+  if(d&&L.district){ d.value=L.district; }
+  const f=document.getElementById('nd-familiya'); if(f) f.focus();
+}
 
+function vfDocAllowed(r){
+  const ownList=(ST.user.district||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);
+  let myRegionKey=normRegionKey(ST.user.region);
+  const dk0=findRegionKeyByDistrict((ST.user.district||'').split(',')[0]);
+  if(!myRegionKey)myRegionKey=dk0;
+  else if(myRegionKey==='toshkent viloyati'&&dk0&&dk0!=='toshkent shahri')myRegionKey=dk0;
+  if(!myRegionKey)return true; // o'zimizning hududimiz umuman aniqlanmasa — cheklamaymiz
+  let rk=normRegionKey(r.region);
+  const dk=findRegionKeyByDistrict(r.district);
+  if(!rk)rk=dk;
+  else if(rk==='toshkent viloyati'&&dk&&dk!=='toshkent shahri')rk=dk;
+  if(!rk)return true; // vrach hududi aniqlanmasa ham yashirmaymiz — xodim ko'ra olsin
+  return rk===myRegionKey; // faqat viloyat bo'yicha; xodimning o'z tumani ro'yxatda birinchi chiqadi
+}
 function vfSearchDoc(q, isFocus) {
   q = (q||'').trim();
-  const dist=(ST.user.district||'').toLowerCase();
-  const myRegionKey=(function(){
-    let k=normRegionKey(ST.user.region);
-    if(!k)k=findRegionKeyByDistrict((ST.user.district||'').split(',')[0]);
-    return k;
-  })();
-  const sameRegion=r=>{
-    if(!myRegionKey)return true; // o'zimizning hududimiz umuman aniqlanmasa — cheklamaymiz
-    let rk=normRegionKey(r.region);
-    if(!rk)rk=findRegionKeyByDistrict(r.district);
-    if(!rk)return false; // vrachning hududi HECH QANDAY yo'l bilan aniqlanmasa — ko'rsatmaymiz (aralashmasin)
-    return rk===myRegionKey;
-  };
+  const dist=((ST.user.district||'').split(',')[0]||'').trim().toLowerCase();
+  const sameRegion=vfDocAllowed;
   let res;
   if (q.length < 2) {
     if (!isFocus) { hideEl('vf-doc-res'); return; }
     // Fokus qilinganda, hali hech narsa yozilmagan bo'lsa — o'z rayoni vrachlarini ko'rsatamiz
-    res = dist ? ST.doctors.filter(r => (r.district||'').toLowerCase()===dist) : ST.doctors.filter(sameRegion);
+    res = ST.doctors.filter(sameRegion);
   } else {
     const ql = q.toLowerCase();
     res = ST.doctors.filter(r =>
@@ -176,7 +193,7 @@ function vfSearchDoc(q, isFocus) {
     box.innerHTML = '<div class="sitem"><span class="sitem-meta">Topilmadi — pastda yangi vrach qo\'shing</span></div>';
     showEl('vf-new-doc-block');
   } else {
-    hideEl('vf-new-doc-block');
+    if(!window._ndManual) hideEl('vf-new-doc-block');
     // To'liq ma'lumot: rayon, tel ko'rinadi
     box.innerHTML = res.map((r,i) => `
       <div class="sitem" onclick="vfSelectDocByIdx(${i})">
@@ -203,7 +220,7 @@ function vfSelectDoc(r) {
   const noDist = !String(r.district||'').trim();
   document.getElementById('vf-doc-sel').innerHTML =
     `✅ <b>${r.name}</b> · ${r.specialty||''} · ${r.object||''} · ${r.district||''} · ${r.phone||''} · Kat: <b>${r.category||'—'}</b>` +
-    (noDist ? `<div style="margin-top:8px"><label style="font-size:12px;font-weight:700">Vrachning tumani <span class="req">*</span> (bazada ko'rsatilmagan)</label>
+    (noDist ? `<div style="margin-top:10px;padding:10px;border:2px solid #d92d20;background:#fff1f0;border-radius:10px"><div style="font-size:13px;font-weight:800;color:#b42318;margin-bottom:6px">⚠ Bu vrachning tumani bazada yo'q — tumanni tanlang (majburiy) *</div>
       <select id="vf-doc-dist" onchange="vfSetDocDistrict(this.value)"><option value="">— Tumanni tanlang —</option>${vfBuildTumanOptions().replace(' selected','')}</select></div>` : '');
   showEl('vf-doc-sel');
   // Tuman bazada bo'sh bo'lsa — tanlanmaguncha davom etib bo'lmaydi (sheetsga to'liq tushishi uchun)
@@ -278,7 +295,7 @@ const TASHKENT_SHAHAR_TUMANLAR=["Chilonzor","Yunusobod","Sergeli","Shayxontohur"
   "Mirzo Ulug'bek","Olmazor","Qibray","Yashnobod","Bektemir","Mirobod","Yakkasaroy","Yangihayot"];
 // O'zbekistonning barcha viloyatlari/respublikasi va ularning to'liq tuman ro'yxati (#2)
 const UZ_REGIONS_TUMANLAR={
-  "qoraqalpogiston":["Amudaryo","Beruniy","Bo'zatov","Chimboy","Ellikqal'a","Kegeyli","Mo'ynoq","Nukus tumani","Qanliko'l","Qorao'zak","Shumanay","Taxtako'pir","Taxiatosh","To'rtko'l","Xo'jayli"],
+  "qoraqalpogiston":["Amudaryo","Beruniy","Bo'zatov","Chimboy","Ellikqal'a","Kegeyli","Mo'ynoq","Nukus shahri","Nukus tumani","Qanliko'l","Qorao'zak","Shumanay","Taxtako'pir","Taxiatosh","To'rtko'l","Xo'jayli"],
   "andijon":["Andijon","Andijon shahri","Asaka","Baliqchi","Bo'z","Buloqboshi","Izboskan","Jalaquduq","Marhamat","Oltinko'l","Paxtaobod","Qo'rg'ontepa","Shahrixon","Ulug'nor","Xo'jaobod","Xonobod shahri"],
   "buxoro":["Buxoro","G'ijduvon","Jondor","Kogon","Olot","Peshku","Qorako'l","Qorovulbozor","Romitan","Shofirkon","Vobkent"],
   "fargona":["Bog'dod","Beshariq","Buvayda","Dang'ara","Farg'ona","Farg'ona shahri","Furqat","Marg'ilon shahri","Oltiariq","O'zbekiston","Qo'qon shahri","Qo'shtepa","Quva","Quvasoy shahri","Rishton","So'x","Toshloq","Uchko'prik","Yozyovon"],
@@ -294,7 +311,15 @@ const UZ_REGIONS_TUMANLAR={
   "toshkent shahri":TASHKENT_SHAHAR_TUMANLAR,
 };
 function normRegionKey(region){
-  const r=String(region||'').toLowerCase();
+  let r=String(region||'').toLowerCase();
+  if(/[а-яёқғўҳ]/.test(r)){
+    if(/самарқанд|самарканд/.test(r))r='samarqand';
+    else if(/қорақалпоғ|каракалпак|қорақалпоқ/.test(r))r='qoraqalpogiston';
+    else if(/сирдарё|сырдарь/.test(r))r='sirdaryo';
+    else if(/тошкент.*шаҳар|ташкент.*город|^ташкент$|^тошкент$/.test(r))r='toshkent shahri';
+    else if(/тошкент|ташкент/.test(r))r='toshkent viloyati';
+  }
+  r=r.replace(/[ʻʼ’`‘]/g,"'");
   if(r.includes('toshkent')&&(r.includes('shahri')||r.includes('shahar')))return 'toshkent shahri';
   if(r.includes('toshkent'))return 'toshkent viloyati';
   if(r.includes('qoraqalpog'))return 'qoraqalpogiston';
@@ -323,7 +348,12 @@ function vfBuildTumanOptions(){
     for(const dName of own){ const k=findRegionKeyByDistrict(dName); if(k){regionKey=k;break;} }
   }
   const regionList=UZ_REGIONS_TUMANLAR[regionKey]||TASHKENT_SHAHAR_TUMANLAR;
-  const combined=[...new Set([...own,...regionList])].sort((a,b)=>a.localeCompare(b));
+  const combined=[...new Set([...own,...regionList])].sort((a,b)=>{
+    // Qoraqalpog'istonda Nukus birinchi, qolganlari A-Z
+    const na=/^nukus/i.test(a)?0:1, nb=/^nukus/i.test(b)?0:1;
+    if(regionKey==='qoraqalpogiston'&&na!==nb)return na-nb;
+    return a.localeCompare(b);
+  });
   const myFirst=own[0]||'';
   return combined.map(t=>`<option${t===myFirst?' selected':''}>${t}</option>`).join('');
 }
