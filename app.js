@@ -136,8 +136,31 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('l-pass')?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   // Avval kirgan bo'lsa - to'g'ridan sahifaga
   const saved = JSON.parse(localStorage.getItem('ff_user')||'null');
-  if (saved && saved.id && saved.role) { ST.user = saved; enterApp(); }
+  if (saved && saved.id && saved.role) { ST.user = saved; enterApp(); verifySession(); }
+  setInterval(verifySession, 3*60*1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) verifySession(); });
 });
+
+// Parol o'zgartirilgan / xodim o'chirilgan bo'lsa — saqlangan kirish bekor qilinadi (serverdan tekshiriladi).
+// Internet bo'lmasa tekshirilmaydi (oflayn ishlash buzilmasin).
+async function verifySession() {
+  try {
+    if (!ST.user || !ST.user.id) return;
+    const c = JSON.parse(localStorage.getItem('ff_user_cache_' + ST.user.id) || 'null');
+    const h = c && c.passHash;
+    if (!h) return;
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 12000);
+    const r = await fetch(CFG.SCRIPT_URL + '?action=verifySession&id=' + encodeURIComponent(ST.user.id) + '&h=' + encodeURIComponent(h) + '&apiKey=' + encodeURIComponent(CFG.API_KEY), { redirect: 'follow', signal: ctl.signal });
+    clearTimeout(t);
+    const data = await r.json();
+    if (data && data.status === 'denied') {
+      localStorage.removeItem('ff_user');
+      localStorage.removeItem('ff_user_cache_' + ST.user.id);
+      alert('Login yoki parol o\'zgartirilgan. Qaytadan kiring.');
+      location.reload();
+    }
+  } catch (e) { /* tarmoq xatosi — tekshirmaymiz */ }
+}
 
 function logout() {
   if (!confirm('Tizimdan chiqasizmi?')) return;
