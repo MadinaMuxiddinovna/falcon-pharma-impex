@@ -132,6 +132,7 @@ function renderVfStep2Doctor() {
     }
   }
 }
+function latinClean_(v){ return cyrToLat(v).replace(/[^a-zA-Z0-9' \-]/g,''); }
 function vfOpenNewDocForm(){
   window._ndManual=true;
   hideEl('vf-doc-res'); showEl('vf-new-doc-block');
@@ -142,7 +143,7 @@ function vfAddDocToPlanObj(){
   hideEl('vf-doc-res');
   showEl('vf-new-doc-block');
   const o=document.getElementById('nd-obj');
-  if(o){ o.value=L.object||''; } // oldindan to'ldiriladi, lekin o'zgartirish mumkin (qotirilmaydi)
+  if(o){ o.value=latinClean_(L.object||''); } // oldindan to'ldiriladi, lekin o'zgartirish mumkin (qotirilmaydi)
   const d=document.getElementById('nd-dist');
   if(d&&L.district){ d.value=L.district; }
   const f=document.getElementById('nd-familiya'); if(f) f.focus();
@@ -234,16 +235,17 @@ function vfSetDocDistrict(v) {
 }
 
 function vfConfirmNewDoctor() {
-  const familiya = cleanName(document.getElementById('nd-familiya')?.value);
-  const ism      = cleanName(document.getElementById('nd-ism')?.value);
-  const sharif   = cleanName(document.getElementById('nd-sharif')?.value);
-  const obj      = cleanName(document.getElementById('nd-obj')?.value);
+  const familiya = cleanName(latinClean_(document.getElementById('nd-familiya')?.value));
+  const ism      = cleanName(latinClean_(document.getElementById('nd-ism')?.value));
+  const sharif   = cleanName(latinClean_(document.getElementById('nd-sharif')?.value));
+  const obj      = cleanName(latinClean_(document.getElementById('nd-obj')?.value));
   const spec     = (document.getElementById('nd-spec')?.value||'').trim();
   const phone    = (document.getElementById('nd-phone')?.value||'').replace(/\D/g,'');
 
   if (!familiya||!ism||!sharif) { alert('Familiya, Ismi va Sharifi — har birini to\'ldiring!'); return; }
   if (!obj)  { alert('Ish joyini kiriting!'); return; }
   if (!spec) { alert('Mutaxassisligini tanlang!'); return; }
+  if (!(document.getElementById('nd-dist')?.value||'').trim()) { alert('Tumanni ro\'yxatdan tanlang!'); return; }
   if (phone.length !== 9) {
     document.getElementById('nd-phone-err').classList.remove('hide');
     alert('Telefon aynan 9 ta raqam bo\'lishi kerak!'); return;
