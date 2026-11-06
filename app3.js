@@ -125,7 +125,7 @@ function renderVfStep2Doctor() {
       if(resEl){
         resEl.style.marginTop='10px';resEl.style.paddingTop='6px';
         resEl.innerHTML=matches.map((r,i)=>`<div class="sres-item" onclick="vfSelectDocByIdx(${i})">
-          <b>${r.name}</b><br><span style="font-size:11px;color:var(--muted)">${r.specialty||''} · ${r.object||''}</span></div>`).join('')+
+          <b>${r.name}</b><br><span style="font-size:11px;color:var(--muted)">${[r.region,r.district,r.object,r.specialty].filter(Boolean).join(' · ')}</span></div>`).join('')+
           `<div class="sres-item" style="background:#eef7ff;font-weight:700;color:var(--primary)" onclick="vfAddDocToPlanObj()">➕ Shu obyektga yangi vrach qo'shish</div>`;
         showEl('vf-doc-res');
       }
@@ -199,7 +199,7 @@ function vfSearchDoc(q, isFocus) {
       <div class="sitem" onclick="vfSelectDocByIdx(${i})">
         <span class="sitem-name">${r.name}</span>
         <span class="sitem-meta">
-          ${r.specialty||''} · ${r.object||''} · ${r.district||''}
+          ${[r.region,r.district,r.object,r.specialty].filter(Boolean).join(' · ')}
           ${r.phone?'· '+r.phone:''}
           · <span class="bdg ${r.category==='A'?'bdg-g':r.category==='B'?'bdg-y':'bdg-b'}">${r.category||'—'}</span>
           · ${r.status==='Active'?'🟢':'⚪'}
