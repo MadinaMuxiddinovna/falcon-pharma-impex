@@ -348,7 +348,9 @@ function vfBuildTumanOptions(){
     for(const dName of own){ const k=findRegionKeyByDistrict(dName); if(k){regionKey=k;break;} }
   }
   const regionList=UZ_REGIONS_TUMANLAR[regionKey]||TASHKENT_SHAHAR_TUMANLAR;
-  const combined=[...new Set([...own,...regionList])].sort((a,b)=>{
+  // Qoraqalpog'istonda oddiy "Nukus" kerak emas — faqat "Nukus shahri" va "Nukus tumani"
+  const ownF=regionKey==='qoraqalpogiston'?own.filter(x=>x.trim().toLowerCase()!=='nukus'):own;
+  const combined=[...new Set([...ownF,...regionList])].sort((a,b)=>{
     // Qoraqalpog'istonda Nukus birinchi, qolganlari A-Z
     const na=/^nukus/i.test(a)?0:1, nb=/^nukus/i.test(b)?0:1;
     if(regionKey==='qoraqalpogiston'&&na!==nb)return na-nb;
