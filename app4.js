@@ -140,6 +140,15 @@ function nextWeekStr(){const d=new Date();d.setDate(d.getDate()+7);return d.toIS
 function cleanName(s){
   return String(s||'').trim().replace(/\s+/g,' ').replace(/[,.;]+/g,'');
 }
+
+// Kirill → lotin (backup: qo'lda/ko'chirib kiritilgan ruscha-o'zbekcha matnni lotinga o'giradi)
+const _CYR_MAP={"а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "yo", "ж": "j", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m", "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u", "ф": "f", "х": "x", "ц": "ts", "ч": "ch", "ш": "sh", "щ": "sh", "ъ": "'", "ы": "i", "ь": "", "э": "e", "ю": "yu", "я": "ya", "ў": "o'", "қ": "q", "ғ": "g'", "ҳ": "h"};
+function cyrToLat(s){
+  return String(s||'').replace(/[А-Яа-яЁёЎўҚқҒғҲҳ]/g,function(ch){
+    const low=ch.toLowerCase(), t=_CYR_MAP[low]; if(t===undefined) return ch;
+    return (ch!==low && t) ? t.charAt(0).toUpperCase()+t.slice(1) : t;
+  });
+}
 // Faqat lotin harflarini qoldiradi (rus klaviaturasida kirillcha yozib qo'yishning oldini oladi)
 function latinOnly(el){
   const clean=el.value.replace(/[^a-zA-Z0-9' \-]/g,'');
