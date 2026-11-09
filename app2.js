@@ -863,9 +863,14 @@ async function cancelMyPlan(row){
 async function savePlan(){
   if(!apTarget){alert('Ish joyini tanlang!');return;}
   const date=v('ap-date');if(!date){alert('Sanani kiriting!');return;}
-  await apiPost({action:'addPlan',empId:ST.user.id,empName:ST.user.name,mgrId:ST.user.mgrId||'',
+  const _pr=await apiPost({action:'addPlan',empId:ST.user.id,empName:ST.user.name,mgrId:ST.user.mgrId||'',
     type:'doctor',targetName:apTarget.object,targetObject:apTarget.object,
     date,goal:'Vizit',status:'Kutilmoqda',createdAt:new Date().toISOString()});
+  if(_pr&&(_pr.error||_pr.status==='queued')){
+    alert(_pr.error&&_pr.status!=='queued'
+      ? 'Reja saqlanmadi: '+_pr.error
+      : 'Reja hozircha serverga yetib bormadi (internet yoki server band). U telefonda saqlandi va avtomatik qayta yuboriladi. Menejerga ko\'rinishi uchun internetda bo\'lib turing.');
+  }
   // Lokal plans ga ham to'g'ri sana bilan qo'shamiz (filter uchun)
   ST.plans.push({
     'Vizit sanasi': date,
