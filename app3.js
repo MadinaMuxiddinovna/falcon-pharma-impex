@@ -294,7 +294,7 @@ async function vfFinalizeNewDoctor(newDoc) {
 
 // ── DORIXONA TANLASH ────────────────────────────────
 const TASHKENT_SHAHAR_TUMANLAR=["Chilonzor","Yunusobod","Sergeli","Shayxontohur","Uchtepa","Keles",
-  "Mirzo Ulug'bek","Olmazor","Qibray","Yashnobod","Bektemir","Mirobod","Yakkasaroy","Yangihayot"];
+  "Mirzo Ulugbek","Olmazor","Qibray","Yashnobod","Bektemir","Mirobod","Yakkasaroy","Yangihayot"];
 // O'zbekistonning barcha viloyatlari/respublikasi va ularning to'liq tuman ro'yxati (#2)
 const UZ_REGIONS_TUMANLAR={
   "qoraqalpogiston":["Amudaryo","Beruniy","Bo'zatov","Chimboy","Ellikqal'a","Kegeyli","Mo'ynoq","Nukus shahri","Nukus tumani","Qanliko'l","Qorao'zak","Shumanay","Taxtako'pir","Taxiatosh","To'rtko'l","Xo'jayli"],
