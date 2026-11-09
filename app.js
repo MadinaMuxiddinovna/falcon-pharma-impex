@@ -187,17 +187,20 @@ async function flushQueue() {
         headers:{'Content-Type':'text/plain;charset=utf-8'},
         body: JSON.stringify(data)
       });
+      const ct2 = (r.headers && r.headers.get && r.headers.get('content-type')) || '';
+      // HTML sahifa yoki 5xx = server amalni bajarmadi — navbatdan O'CHIRMAYMIZ, qayta urinamiz
+      if (/html/i.test(ct2) || r.status >= 500) { item._retries = (item._retries||0) + 1; if (item._retries < 40) failed.push(item); continue; }
       const j = await r.json().catch(()=>({}));
       if (j && j.error) {
         // Server aniq xato qaytardi (masalan "Server band") — qayta urinamiz, navbatdan o'chirmaymiz
         item._retries = (item._retries||0) + 1;
-        if (item._retries < 8) failed.push(item);
+        if (item._retries < 40) failed.push(item);
       }
       // j.error yo'q bo'lsa — muvaffaqiyatli, navbatdan chiqarib tashlaymiz (failed'ga qo'shmaymiz)
     } catch(e) {
       // Tarmoq xatosi (internet yo'q va h.k.) — qayta urinamiz
       item._retries = (item._retries||0) + 1;
-      if (item._retries < 8) failed.push(item);
+      if (item._retries < 40) failed.push(item);
     }
   }
   localStorage.setItem('ff_q', JSON.stringify(failed));
