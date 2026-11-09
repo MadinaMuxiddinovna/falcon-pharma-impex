@@ -749,7 +749,7 @@ async function renderPlans(){
   let loadErr='';
   try{
     const t0=Date.now();
-    const fresh=await apiGet('getPlans',{empId:ST.user.id,role:ST.user.role},false).catch(e=>{loadErr=(e&&e.message)||'tarmoq xatosi';return null;});
+    const fresh=await apiGet('getPlans',(planFilter==='month'?{empId:ST.user.id,role:ST.user.role,back:35,fwd:35}:{empId:ST.user.id,role:ST.user.role,back:7,fwd:7}),false).catch(e=>{loadErr=(e&&e.message)||'tarmoq xatosi';return null;});
     if(fresh&&fresh.error) loadErr=String(fresh.error);
     else if(fresh&&!Array.isArray(fresh)) loadErr='kutilmagan javob';
     if(loadErr) console.warn('getPlans xato:',loadErr,(Date.now()-t0)+'ms');
